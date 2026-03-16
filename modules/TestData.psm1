@@ -14,20 +14,24 @@ function Send-TestData {
         [PSCustomObject]$Config
     )
 
+    # Send all emails from the signed-in admin account to avoid permission issues
+    $context = Get-MgContext
+    $adminUpn = $context.Account
+
     $sentEmails = [System.Collections.Generic.List[hashtable]]::new()
 
     foreach ($email in $Config.workloads.testData.emails) {
         $fromUpn = "$($email.from)@$($Config.domain)"
         $toUpn = "$($email.to)@$($Config.domain)"
 
-        if ($PSCmdlet.ShouldProcess("Send email from $fromUpn to $toUpn`: $($email.subject)")) {
+        if ($PSCmdlet.ShouldProcess("Send email to $toUpn (on behalf of $fromUpn)`: $($email.subject)")) {
             try {
                 $body = @{
                     message = @{
                         subject      = $email.subject
                         body         = @{
                             contentType = 'Text'
-                            content     = $email.body
+                            content     = "From: $fromUpn`n`n$($email.body)"
                         }
                         toRecipients = @(
                             @{
@@ -41,7 +45,7 @@ function Send-TestData {
                 }
 
                 Invoke-MgGraphRequest -Method POST `
-                    -Uri "/v1.0/users/$fromUpn/sendMail" `
+                    -Uri "/v1.0/users/$adminUpn/sendMail" `
                     -Body $body
 
                 Write-LabLog -Message "Sent email from $fromUpn to $toUpn`: $($email.subject)" -Level Success
