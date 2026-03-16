@@ -3,6 +3,10 @@
 <#
 .SYNOPSIS
     Communication Compliance workload module for purview-lab-deployer.
+.DESCRIPTION
+    Uses New-FeatureConfiguration with FeatureScenario KnowYourData to create
+    DSPM for AI collection policies. The retired SupervisoryReviewPolicyV2 cmdlets
+    are no longer available in the SCC module.
 #>
 
 function Deploy-CommunicationCompliance {
@@ -18,62 +22,68 @@ function Deploy-CommunicationCompliance {
 
     foreach ($policy in $policies) {
         $name = "$($Config.prefix)-$($policy.name)"
-        $ruleName = "$name-Rule"
 
-        Write-LabLog -Message "Processing communication compliance policy: $name" -Level Info
+        Write-LabLog -Message "Processing DSPM for AI collection policy: $name" -Level Info
 
-        # --- Policy ---
+        # Check if a KnowYourData feature config with this name already exists
         $existing = $null
         try {
-            $existing = Get-SupervisoryReviewPolicyV2 -Identity $name -ErrorAction SilentlyContinue
+            $existing = Get-FeatureConfiguration -FeatureScenario KnowYourData -ErrorAction SilentlyContinue |
+                Where-Object { $_.Name -eq $name }
         }
         catch {
-            # Policy does not exist
+            # Config does not exist
         }
 
         if (-not $existing) {
-            if ($PSCmdlet.ShouldProcess($name, 'New-SupervisoryReviewPolicyV2')) {
-                Write-LabLog -Message "Creating communication compliance policy: $name" -Level Info
-                New-SupervisoryReviewPolicyV2 -Name $name -Reviewers $policy.reviewers -Comment 'Created by purview-lab-deployer' | Out-Null
+            if ($PSCmdlet.ShouldProcess($name, 'New-FeatureConfiguration -FeatureScenario KnowYourData')) {
+                Write-LabLog -Message "Creating DSPM for AI collection policy: $name" -Level Info
+
+                $scenarioConfig = @{
+                    Activities        = @('UploadText', 'DownloadText')
+                    SensitiveTypeIds  = @('All')
+                    IsIngestionEnabled = $true
+                } | ConvertTo-Json -Compress
+
+                $locations = @(
+                    @{
+                        Workload       = 'Applications'
+                        Location       = 'All'
+                        LocationSource = 'Entra'
+                        LocationType   = 'Group'
+                        Inclusions     = @(
+                            @{
+                                Type     = 'Tenant'
+                                Identity = 'All'
+                            }
+                        )
+                    }
+                ) | ConvertTo-Json -Depth 4 -Compress
+
+                New-FeatureConfiguration `
+                    -FeatureScenario KnowYourData `
+                    -Name $name `
+                    -Mode Enable `
+                    -ScenarioConfig $scenarioConfig `
+                    -Locations $locations `
+                    -ErrorAction Stop | Out-Null
+
+                Write-LabLog -Message "Created DSPM for AI collection policy: $name" -Level Info
+                Write-LabLog -Message (
+                    "NOTE: Full Communication Compliance policy review/remediation " +
+                    "configuration requires the Microsoft Purview portal " +
+                    "(DSPM for AI > Recommendations > 'Control Unethical Behavior in AI')"
+                ) -Level Warning
             }
         }
         else {
-            Write-LabLog -Message "Communication compliance policy already exists: $name" -Level Info
-        }
-
-        # --- Rule ---
-        if ($PSCmdlet.ShouldProcess($ruleName, 'New-SupervisoryReviewRule')) {
-            Write-LabLog -Message "Creating communication compliance rule: $ruleName" -Level Info
-
-            $ruleParams = @{
-                Name         = $ruleName
-                Policy       = $name
-                SamplingRate = 100
-                Condition    = $policy.condition
-            }
-
-            if ($policy.supervisedUsers) {
-                $ruleParams['SamplingRate'] = 100
-                # Supervised users define the scope of monitored users
-                New-SupervisoryReviewRule @ruleParams | Out-Null
-
-                # Set supervised users on the policy after rule creation
-                try {
-                    Set-SupervisoryReviewPolicyV2 -Identity $name -AddReviewUser $policy.supervisedUsers -ErrorAction SilentlyContinue
-                }
-                catch {
-                    Write-LabLog -Message "Could not set supervised users on $name`: $_" -Level Warning
-                }
-            }
-            else {
-                New-SupervisoryReviewRule @ruleParams | Out-Null
-            }
+            Write-LabLog -Message "DSPM for AI collection policy already exists: $name" -Level Info
         }
 
         $manifestPolicies.Add([PSCustomObject]@{
-            policyName     = $name
-            ruleName       = $ruleName
-            reviewers      = $policy.reviewers
+            policyName      = $name
+            featureScenario = 'KnowYourData'
+            reviewers       = $policy.reviewers
             supervisedUsers = $policy.supervisedUsers
         })
     }
@@ -97,36 +107,31 @@ function Remove-CommunicationCompliance {
 
     foreach ($policy in $policies) {
         $name = "$($Config.prefix)-$($policy.name)"
-        $ruleName = "$name-Rule"
 
-        Write-LabLog -Message "Removing communication compliance resources for policy: $name" -Level Info
+        Write-LabLog -Message "Removing DSPM for AI collection policy: $name" -Level Info
 
-        # --- Remove rule first ---
+        $existing = $null
         try {
-            $existing = Get-SupervisoryReviewPolicyV2 -Identity $name -ErrorAction SilentlyContinue
-            if ($existing) {
-                if ($PSCmdlet.ShouldProcess($ruleName, 'Remove-SupervisoryReviewRule')) {
-                    Write-LabLog -Message "Removing communication compliance rule: $ruleName" -Level Info
-                    Remove-SupervisoryReviewRule -Identity $ruleName -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
+            $existing = Get-FeatureConfiguration -FeatureScenario KnowYourData -ErrorAction SilentlyContinue |
+                Where-Object { $_.Name -eq $name }
+        }
+        catch {
+            # Not found
+        }
+
+        if ($existing) {
+            if ($PSCmdlet.ShouldProcess($name, 'Remove-FeatureConfiguration')) {
+                try {
+                    Remove-FeatureConfiguration -Identity $existing.Identity -Confirm:$false -ErrorAction Stop | Out-Null
+                    Write-LabLog -Message "Removed DSPM for AI collection policy: $name" -Level Info
+                }
+                catch {
+                    Write-LabLog -Message "Failed to remove DSPM for AI collection policy $name`: $_" -Level Warning
                 }
             }
         }
-        catch {
-            Write-LabLog -Message "Communication compliance rule not found or already removed: $ruleName" -Level Warning
-        }
-
-        # --- Remove policy ---
-        try {
-            $existing = Get-SupervisoryReviewPolicyV2 -Identity $name -ErrorAction SilentlyContinue
-            if ($existing) {
-                if ($PSCmdlet.ShouldProcess($name, 'Remove-SupervisoryReviewPolicyV2')) {
-                    Write-LabLog -Message "Removing communication compliance policy: $name" -Level Info
-                    Remove-SupervisoryReviewPolicyV2 -Identity $name -Confirm:$false | Out-Null
-                }
-            }
-        }
-        catch {
-            Write-LabLog -Message "Communication compliance policy not found or already removed: $name" -Level Warning
+        else {
+            Write-LabLog -Message "DSPM for AI collection policy not found (already removed): $name" -Level Info
         }
     }
 }

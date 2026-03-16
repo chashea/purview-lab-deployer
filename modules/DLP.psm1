@@ -47,7 +47,7 @@ function Deploy-DLP {
                 }
             }
 
-            New-DlpCompliancePolicy -Name $policyName @locationParams | Out-Null
+            New-DlpCompliancePolicy -Name $policyName @locationParams -ErrorAction Stop | Out-Null
             Write-LabLog -Message "Created DLP policy: $policyName" -Level Success
         }
 
@@ -75,14 +75,15 @@ function Deploy-DLP {
                 $sitArray = @()
                 foreach ($sit in $rule.sensitiveInfoTypes) {
                     $sitArray += @{
-                        Name           = $sit
-                        MinCount       = $rule.minCount
+                        name     = $sit
+                        minCount = [string]$rule.minCount
                     }
                 }
 
                 New-DlpComplianceRule -Name $ruleName `
                     -Policy $policyName `
-                    -ContentContainsSensitiveInformation $sitArray | Out-Null
+                    -ContentContainsSensitiveInformation $sitArray `
+                    -ErrorAction Stop | Out-Null
                 Write-LabLog -Message "Created DLP rule: $ruleName" -Level Success
             }
 
