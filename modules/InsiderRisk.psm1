@@ -80,8 +80,10 @@ function Remove-InsiderRisk {
         [PSCustomObject]$Config,
 
         [Parameter()]
-        [PSCustomObject]$Manifest
+        [PSCustomObject]$Manifest  # Reserved for manifest-based removal
     )
+
+    $null = $Manifest  # Manifest-based removal not yet implemented
 
     foreach ($policy in $Config.workloads.insiderRisk.policies) {
         $name = "$($Config.prefix)-$($policy.name)"

@@ -32,7 +32,7 @@ function Deploy-CommunicationCompliance {
                 Where-Object { $_.Name -eq $name }
         }
         catch {
-            # Config does not exist
+            $null = $_ # Config does not exist
         }
 
         if (-not $existing) {
@@ -104,8 +104,10 @@ function Remove-CommunicationCompliance {
         [PSCustomObject]$Config,
 
         [Parameter()]
-        [PSCustomObject]$Manifest
+        [PSCustomObject]$Manifest  # Reserved for manifest-based removal
     )
+
+    $null = $Manifest  # Manifest-based removal not yet implemented
 
     $policies = $Config.workloads.communicationCompliance.policies
 
@@ -120,7 +122,7 @@ function Remove-CommunicationCompliance {
                 Where-Object { $_.Name -eq $name }
         }
         catch {
-            # Not found
+            $null = $_ # Not found
         }
 
         if ($existing) {

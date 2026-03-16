@@ -29,7 +29,7 @@ function Deploy-EDiscovery {
             $existing = Get-ComplianceCase -Identity $name -ErrorAction SilentlyContinue
         }
         catch {
-            # Case does not exist
+            $null = $_ # Case does not exist
         }
 
         if (-not $existing) {
@@ -61,7 +61,7 @@ function Deploy-EDiscovery {
             $existingHold = Get-CaseHoldPolicy -Case $name -Identity $holdName -ErrorAction SilentlyContinue
         }
         catch {
-            # Hold does not exist
+            $null = $_ # Hold does not exist
         }
 
         if (-not $existingHold) {
@@ -85,7 +85,7 @@ function Deploy-EDiscovery {
             $existingSearch = Get-ComplianceSearch -Identity $searchName -ErrorAction SilentlyContinue
         }
         catch {
-            # Search does not exist
+            $null = $_ # Search does not exist
         }
 
         if (-not $existingSearch) {
@@ -119,8 +119,10 @@ function Remove-EDiscovery {
         [PSCustomObject]$Config,
 
         [Parameter()]
-        [PSCustomObject]$Manifest
+        [PSCustomObject]$Manifest  # Reserved for manifest-based removal
     )
+
+    $null = $Manifest  # Manifest-based removal not yet implemented
 
     $cases = $Config.workloads.eDiscovery.cases
     # Process in reverse order for clean teardown

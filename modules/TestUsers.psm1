@@ -102,8 +102,10 @@ function Remove-TestUsers {
         [PSCustomObject]$Config,
 
         [Parameter()]
-        [PSCustomObject]$Manifest
+        [PSCustomObject]$Manifest  # Reserved for manifest-based removal
     )
+
+    $null = $Manifest  # Manifest-based removal not yet implemented
 
     # Remove groups first (reverse dependency order)
     foreach ($group in $Config.workloads.testUsers.groups) {

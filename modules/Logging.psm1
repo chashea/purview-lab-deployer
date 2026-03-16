@@ -84,7 +84,7 @@ function Complete-LabLogging {
         Stop-Transcript | Out-Null
     }
     catch {
-        # Transcript may not be running; safe to ignore
+        $null = $_ # Transcript may not be running; safe to ignore
     }
 }
 

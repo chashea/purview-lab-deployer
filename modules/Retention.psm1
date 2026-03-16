@@ -83,8 +83,10 @@ function Remove-Retention {
         [PSCustomObject]$Config,
 
         [Parameter()]
-        [PSCustomObject]$Manifest
+        [PSCustomObject]$Manifest  # Reserved for manifest-based removal
     )
+
+    $null = $Manifest  # Manifest-based removal not yet implemented
 
     $retentionConfig = $Config.workloads.retention
 

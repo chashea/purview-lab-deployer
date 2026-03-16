@@ -29,7 +29,7 @@ function Deploy-SensitivityLabels {
             $existingLabel = Get-Label -Identity $parentName -ErrorAction Stop
         }
         catch {
-            # Label does not exist
+            $null = $_ # Label does not exist
         }
 
         if ($existingLabel -and $existingLabel.Mode -eq 'PendingDeletion') {
@@ -215,8 +215,10 @@ function Remove-SensitivityLabels {
         [PSCustomObject]$Config,
 
         [Parameter()]
-        [PSCustomObject]$Manifest
+        [PSCustomObject]$Manifest  # Reserved for manifest-based removal
     )
+
+    $null = $Manifest  # Manifest-based removal not yet implemented
 
     $labelConfig = $Config.workloads.sensitivityLabels
 

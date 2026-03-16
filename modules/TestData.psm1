@@ -76,10 +76,14 @@ function Remove-TestData {
         [PSCustomObject]$Config,
 
         [Parameter()]
-        [PSCustomObject]$Manifest
+        [PSCustomObject]$Manifest  # Reserved for manifest-based removal
     )
 
-    Write-LabLog -Message 'Test emails cannot be recalled automatically. Manual cleanup may be required.' -Level Warning
+    $null = $Config, $Manifest  # Test data removal is a no-op
+
+    if ($PSCmdlet.ShouldProcess('test emails', 'Skip removal')) {
+        Write-LabLog -Message 'Test emails cannot be recalled automatically. Manual cleanup may be required.' -Level Warning
+    }
 }
 
 Export-ModuleMember -Function @(

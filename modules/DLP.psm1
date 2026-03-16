@@ -32,7 +32,7 @@ function Deploy-DLP {
             $existing = Get-DlpCompliancePolicy -Identity $policyName -ErrorAction Stop
         }
         catch {
-            # Policy does not exist
+            $null = $_ # Policy does not exist
         }
 
         if ($existing) {
@@ -62,7 +62,7 @@ function Deploy-DLP {
                 $existingRule = Get-DlpComplianceRule -Identity $ruleName -ErrorAction Stop
             }
             catch {
-                # Rule does not exist
+                $null = $_ # Rule does not exist
             }
 
             if ($existingRule) {
@@ -104,8 +104,10 @@ function Remove-DLP {
         [PSCustomObject]$Config,
 
         [Parameter()]
-        [PSCustomObject]$Manifest
+        [PSCustomObject]$Manifest  # Reserved for manifest-based removal
     )
+
+    $null = $Manifest  # Manifest-based removal not yet implemented
 
     # Remove rules first (rules depend on policies)
     foreach ($policy in $Config.workloads.dlp.policies) {
@@ -119,7 +121,7 @@ function Remove-DLP {
                 $existing = Get-DlpComplianceRule -Identity $ruleName -ErrorAction Stop
             }
             catch {
-                # Rule does not exist
+                $null = $_ # Rule does not exist
             }
 
             if (-not $existing) {
@@ -139,7 +141,7 @@ function Remove-DLP {
             $existingPolicy = Get-DlpCompliancePolicy -Identity $policyName -ErrorAction Stop
         }
         catch {
-            # Policy does not exist
+            $null = $_ # Policy does not exist
         }
 
         if (-not $existingPolicy) {
