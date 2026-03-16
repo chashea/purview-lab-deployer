@@ -40,9 +40,10 @@ function Deploy-CommunicationCompliance {
                 Write-LabLog -Message "Creating DSPM for AI collection policy: $name" -Level Info
 
                 $scenarioConfig = @{
-                    Activities        = @('UploadText', 'DownloadText')
-                    SensitiveTypeIds  = @('All')
+                    Activities         = @('UploadText', 'DownloadText')
+                    SensitiveTypeIds   = @('All')
                     IsIngestionEnabled = $true
+                    EnforcementPlanes  = @('Exchange', 'Teams')
                 } | ConvertTo-Json -Compress
 
                 $locationsArray = @(
