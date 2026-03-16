@@ -1,0 +1,255 @@
+{
+  "$schema": "./_schema.json",
+  "labName": "Education FERPA Compliance Demo",
+  "prefix": "PVEdu",
+  "domain": "MngEnvMCAP648165.onmicrosoft.com",
+  "workloads": {
+    "testUsers": {
+      "enabled": true,
+      "users": [
+        {
+          "displayName": "Dr. Helen Cartwright",
+          "mailNickname": "hcartwright",
+          "department": "Academic Affairs",
+          "jobTitle": "Provost",
+          "usageLocation": "US"
+        },
+        {
+          "displayName": "Michael Torres",
+          "mailNickname": "mtorres",
+          "department": "Registrar",
+          "jobTitle": "University Registrar",
+          "usageLocation": "US"
+        },
+        {
+          "displayName": "Jennifer Park",
+          "mailNickname": "jpark",
+          "department": "Financial Aid",
+          "jobTitle": "Director of Financial Aid",
+          "usageLocation": "US"
+        },
+        {
+          "displayName": "Dr. Anil Kapoor",
+          "mailNickname": "akapoor",
+          "department": "Faculty",
+          "jobTitle": "Professor of Computer Science",
+          "usageLocation": "US"
+        },
+        {
+          "displayName": "Sandra Okonkwo",
+          "mailNickname": "sokonkwo",
+          "department": "Student Affairs",
+          "jobTitle": "Dean of Students",
+          "usageLocation": "US"
+        },
+        {
+          "displayName": "David Chen",
+          "mailNickname": "dchen",
+          "department": "IT",
+          "jobTitle": "Chief Information Security Officer",
+          "usageLocation": "US"
+        }
+      ],
+      "groups": [
+        {
+          "displayName": "PVEdu-Academic-Staff",
+          "members": ["hcartwright", "akapoor", "mtorres"]
+        },
+        {
+          "displayName": "PVEdu-Student-Services",
+          "members": ["jpark", "sokonkwo"]
+        },
+        {
+          "displayName": "PVEdu-Administration",
+          "members": ["hcartwright", "dchen"]
+        }
+      ]
+    },
+    "dlp": {
+      "enabled": true,
+      "policies": [
+        {
+          "name": "Student Record Protection",
+          "locations": ["Exchange", "SharePoint", "OneDrive"],
+          "rules": [
+            {
+              "name": "Detect Social Security Numbers",
+              "sensitiveInfoTypes": ["U.S. Social Security Number (SSN)"],
+              "minCount": 1
+            },
+            {
+              "name": "Detect Bank Account Numbers",
+              "sensitiveInfoTypes": ["U.S. Bank Account Number"],
+              "minCount": 1
+            }
+          ]
+        },
+        {
+          "name": "International Student Data",
+          "locations": ["Exchange", "SharePoint", "Teams"],
+          "rules": [
+            {
+              "name": "Detect US Passport Numbers",
+              "sensitiveInfoTypes": ["U.S. Passport Number"],
+              "minCount": 1
+            },
+            {
+              "name": "Detect Credit Card Numbers",
+              "sensitiveInfoTypes": ["Credit Card Number"],
+              "minCount": 1
+            }
+          ]
+        }
+      ]
+    },
+    "sensitivityLabels": {
+      "enabled": true,
+      "labels": [
+        {
+          "name": "FERPA Protected",
+          "tooltip": "Student education records protected under FERPA (20 U.S.C. §1232g)",
+          "color": "#D13438",
+          "sublabels": [
+            {
+              "name": "Education Records",
+              "tooltip": "Student education records — disclosure restricted under FERPA",
+              "encryption": false,
+              "contentMarking": {
+                "footerText": "FERPA: Contains student education records — disclosure restricted under 20 U.S.C. §1232g"
+              }
+            },
+            {
+              "name": "Restricted PII",
+              "tooltip": "Encrypted student PII — requires written consent or qualifying exception",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "FERPA RESTRICTED — Student PII",
+                "footerText": "Do not disclose without written consent or qualifying FERPA exception"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Research",
+          "tooltip": "Research data with varying levels of student identifiability",
+          "color": "#0078D4",
+          "sublabels": [
+            {
+              "name": "IRB Approved",
+              "tooltip": "De-identified research data approved under IRB protocol",
+              "encryption": false,
+              "contentMarking": {
+                "footerText": "Research data — IRB approved protocol, de-identified per FERPA"
+              }
+            },
+            {
+              "name": "Student Identifiable",
+              "tooltip": "Encrypted research data containing student-identifiable information",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "RESEARCH — Contains Student-Identifiable Data",
+                "footerText": "FERPA consent required — contact IRB before sharing"
+              }
+            }
+          ]
+        }
+      ],
+      "autoLabelPolicies": [
+        {
+          "name": "Auto-label SSN as FERPA Protected Restricted PII",
+          "labelName": "FERPA Protected\\Restricted PII",
+          "sensitiveInfoTypes": ["U.S. Social Security Number (SSN)"],
+          "locations": ["Exchange", "SharePoint"]
+        }
+      ]
+    },
+    "retention": {
+      "enabled": true,
+      "policies": [
+        {
+          "name": "Student Records Retention",
+          "retentionDays": 1825,
+          "retentionAction": "retainAndDelete",
+          "locations": ["Exchange", "SharePoint"]
+        },
+        {
+          "name": "Financial Aid Records Hold",
+          "retentionDays": 2190,
+          "retentionAction": "retainOnly",
+          "locations": ["Exchange", "OneDrive"]
+        }
+      ]
+    },
+    "eDiscovery": {
+      "enabled": true,
+      "cases": [
+        {
+          "name": "Student-Data-Breach-Investigation",
+          "description": "Investigation into unauthorized access to student education records and financial aid data",
+          "custodians": [
+            "mtorres@MngEnvMCAP648165.onmicrosoft.com",
+            "jpark@MngEnvMCAP648165.onmicrosoft.com"
+          ],
+          "holdQuery": "\"student record\" OR \"education record\" OR \"financial aid\" OR FERPA",
+          "searchQuery": "\"unauthorized access\" OR breach OR \"data exposure\" OR \"third party\""
+        }
+      ]
+    },
+    "communicationCompliance": {
+      "enabled": true,
+      "policies": [
+        {
+          "name": "Student Data Handling Monitoring",
+          "reviewers": [
+            "dchen@MngEnvMCAP648165.onmicrosoft.com"
+          ],
+          "supervisedUsers": [
+            "mtorres@MngEnvMCAP648165.onmicrosoft.com",
+            "jpark@MngEnvMCAP648165.onmicrosoft.com"
+          ],
+          "direction": "Both",
+          "condition": "offensive language"
+        }
+      ]
+    },
+    "insiderRisk": {
+      "enabled": true,
+      "policies": [
+        {
+          "name": "Departing Staff Data Theft",
+          "template": "Data theft by departing users",
+          "priorityUserGroups": ["PVEdu-Academic-Staff"]
+        }
+      ]
+    },
+    "testData": {
+      "enabled": true,
+      "emails": [
+        {
+          "from": "mtorres",
+          "to": "hcartwright",
+          "subject": "Grade Change Request - Student ID 2024-38571",
+          "body": "Dr. Cartwright, we received a grade change request for student ID 2024-38571. The student's SSN on file is 341-82-6754 and their current cumulative GPA is 3.47. The request is to change BIO-301 from a C+ to a B based on a grading error identified by the instructor. The student's FERPA directory information flag is set to restricted — no disclosure without written consent. Please approve or deny in the academic records system."
+        },
+        {
+          "from": "jpark",
+          "to": "sokonkwo",
+          "subject": "Financial Aid Appeal - Scholarship Recipient",
+          "body": "Sandra, a scholarship recipient has filed a financial aid appeal. Their SSN is 592-41-8703 and direct deposit is set up to bank account 0298471536 (routing 071000013). Current Pell Grant amount is $3,498 per semester with an expected family contribution of $2,150. The student is requesting an increase due to changed family circumstances. Can you provide a letter of support from Student Affairs for the appeal committee?"
+        },
+        {
+          "from": "akapoor",
+          "to": "dchen",
+          "subject": "Research Data Concern - Student Identifiers in Dataset",
+          "body": "David, I discovered that our CS department research dataset for the learning analytics project contains student names and ID numbers that were not properly de-identified. This appears to be a violation of our IRB protocol #EDU-2026-0087 which requires full FERPA de-identification before analysis. The dataset has been shared with two graduate research assistants already. What are our obligations under FERPA for remediation, and should we self-report to the IRB?"
+        },
+        {
+          "from": "sokonkwo",
+          "to": "mtorres",
+          "subject": "FERPA Complaint - Unauthorized Grade Disclosure",
+          "body": "Michael, we received a FERPA complaint from a student (age 19, eligible student under FERPA) alleging that a faculty member disclosed their grades to their parent without authorization. Under FERPA, once a student turns 18 or attends a postsecondary institution, rights transfer to the student — parental access requires written consent. The parent called the department directly and was given the student's semester grades. We need to investigate which faculty member disclosed and document the incident for our FERPA compliance file."
+        }
+      ]
+    }
+  }
+}

@@ -69,7 +69,11 @@ Install-Module Microsoft.Graph.Groups -Scope CurrentUser
 
 | Config | Description |
 |---|---|
-| `full-demo.json` | All workloads enabled — complete Purview demo |
+| `full-demo.json` | All workloads enabled — complete Purview demo (financial/corporate) |
+| `medical-demo.json` | All workloads enabled — HIPAA/healthcare demo (PHI, DEA, medical records) |
+| `eu-gdpr-demo.json` | All workloads enabled — EU GDPR demo (personal data, cross-border transfers) |
+| `government-demo.json` | All workloads enabled — Government CUI demo (ITAR, classified data, NIST 800-171) |
+| `education-demo.json` | All workloads enabled — Education FERPA demo (student records, financial aid) |
 | `dlp-only.json` | DLP policies + test users + test data |
 | `ediscovery-retention.json` | eDiscovery cases + retention policies |
 
@@ -94,7 +98,11 @@ modules/
   InsiderRisk.psm1      # IRM via Graph beta API
   TestData.psm1         # Seed emails with sensitive content
 configs/
-  full-demo.json        # All workloads
+  full-demo.json        # All workloads (financial/corporate)
+  medical-demo.json     # All workloads (HIPAA/healthcare)
+  eu-gdpr-demo.json     # All workloads (EU GDPR)
+  government-demo.json  # All workloads (Government CUI)
+  education-demo.json   # All workloads (Education FERPA)
   dlp-only.json         # DLP-focused
   ediscovery-retention.json # eDiscovery + retention
   _schema.json          # Config validation schema
