@@ -61,7 +61,7 @@ function Connect-LabServices {
     Connect-IPPSSession -CommandName * -WarningAction SilentlyContinue
 
     Write-Verbose "Connecting to Microsoft Graph (tenant: $TenantId)..."
-    Connect-MgGraph -TenantId $TenantId -Scopes $graphScopes -NoWelcome
+    Connect-MgGraph -TenantId $TenantId -Scopes $graphScopes -NoWelcome -UseDeviceCode
 }
 
 function Disconnect-LabServices {

@@ -69,100 +69,76 @@ try {
 
     # Initialize manifest
     $manifest = @{}
+    $failedWorkloads = @()
+
+    # Helper: deploy a workload with error isolation
+    function Invoke-Workload {
+        param([string]$Name, [string]$Step, [string]$Description, [scriptblock]$Action)
+        Write-LabStep -StepName $Step -Description $Description
+        try {
+            $result = & $Action
+            if ($result) { $manifest[$Name] = $result }
+            Write-LabLog -Message "$Step deployment complete." -Level Success
+        }
+        catch {
+            Write-LabLog -Message "$Step FAILED: $_" -Level Error
+            $script:failedWorkloads += $Name
+        }
+    }
 
     # Deploy workloads in dependency order
-    # 1. Test Users
     if ($Config.workloads.testUsers.enabled) {
-        Write-LabStep -StepName 'TestUsers' -Description 'Deploying test users'
-        $result = Deploy-TestUsers -Config $Config -WhatIf:$WhatIfPreference
-        if ($result) { $manifest['testUsers'] = $result }
-        Write-LabLog -Message 'Test users deployment complete.' -Level Success
-    }
-    else {
-        Write-LabLog -Message 'testUsers workload is disabled, skipping.' -Level Info
-    }
+        Invoke-Workload -Name 'testUsers' -Step 'TestUsers' -Description 'Deploying test users' -Action {
+            Deploy-TestUsers -Config $Config -WhatIf:$WhatIfPreference
+        }
+    } else { Write-LabLog -Message 'testUsers workload is disabled, skipping.' -Level Info }
 
-    # 2. Sensitivity Labels
     if ($Config.workloads.sensitivityLabels.enabled) {
-        Write-LabStep -StepName 'SensitivityLabels' -Description 'Deploying sensitivity labels'
-        $result = Deploy-SensitivityLabels -Config $Config -WhatIf:$WhatIfPreference
-        if ($result) { $manifest['sensitivityLabels'] = $result }
-        Write-LabLog -Message 'Sensitivity labels deployment complete.' -Level Success
-    }
-    else {
-        Write-LabLog -Message 'sensitivityLabels workload is disabled, skipping.' -Level Info
-    }
+        Invoke-Workload -Name 'sensitivityLabels' -Step 'SensitivityLabels' -Description 'Deploying sensitivity labels' -Action {
+            Deploy-SensitivityLabels -Config $Config -WhatIf:$WhatIfPreference
+        }
+    } else { Write-LabLog -Message 'sensitivityLabels workload is disabled, skipping.' -Level Info }
 
-    # 3. DLP
     if ($Config.workloads.dlp.enabled) {
-        Write-LabStep -StepName 'DLP' -Description 'Deploying DLP policies'
-        $result = Deploy-DLP -Config $Config -WhatIf:$WhatIfPreference
-        if ($result) { $manifest['dlp'] = $result }
-        Write-LabLog -Message 'DLP deployment complete.' -Level Success
-    }
-    else {
-        Write-LabLog -Message 'dlp workload is disabled, skipping.' -Level Info
-    }
+        Invoke-Workload -Name 'dlp' -Step 'DLP' -Description 'Deploying DLP policies' -Action {
+            Deploy-DLP -Config $Config -WhatIf:$WhatIfPreference
+        }
+    } else { Write-LabLog -Message 'dlp workload is disabled, skipping.' -Level Info }
 
-    # 4. Retention
     if ($Config.workloads.retention.enabled) {
-        Write-LabStep -StepName 'Retention' -Description 'Deploying retention policies and labels'
-        $result = Deploy-Retention -Config $Config -WhatIf:$WhatIfPreference
-        if ($result) { $manifest['retention'] = $result }
-        Write-LabLog -Message 'Retention deployment complete.' -Level Success
-    }
-    else {
-        Write-LabLog -Message 'retention workload is disabled, skipping.' -Level Info
-    }
+        Invoke-Workload -Name 'retention' -Step 'Retention' -Description 'Deploying retention policies' -Action {
+            Deploy-Retention -Config $Config -WhatIf:$WhatIfPreference
+        }
+    } else { Write-LabLog -Message 'retention workload is disabled, skipping.' -Level Info }
 
-    # 5. eDiscovery
     if ($Config.workloads.eDiscovery.enabled) {
-        Write-LabStep -StepName 'EDiscovery' -Description 'Deploying eDiscovery cases'
-        $result = Deploy-EDiscovery -Config $Config -WhatIf:$WhatIfPreference
-        if ($result) { $manifest['eDiscovery'] = $result }
-        Write-LabLog -Message 'eDiscovery deployment complete.' -Level Success
-    }
-    else {
-        Write-LabLog -Message 'eDiscovery workload is disabled, skipping.' -Level Info
-    }
+        Invoke-Workload -Name 'eDiscovery' -Step 'EDiscovery' -Description 'Deploying eDiscovery cases' -Action {
+            Deploy-EDiscovery -Config $Config -WhatIf:$WhatIfPreference
+        }
+    } else { Write-LabLog -Message 'eDiscovery workload is disabled, skipping.' -Level Info }
 
-    # 6. Communication Compliance
     if ($Config.workloads.communicationCompliance.enabled) {
-        Write-LabStep -StepName 'CommunicationCompliance' -Description 'Deploying communication compliance policies'
-        $result = Deploy-CommunicationCompliance -Config $Config -WhatIf:$WhatIfPreference
-        if ($result) { $manifest['communicationCompliance'] = $result }
-        Write-LabLog -Message 'Communication compliance deployment complete.' -Level Success
-    }
-    else {
-        Write-LabLog -Message 'communicationCompliance workload is disabled, skipping.' -Level Info
-    }
+        Invoke-Workload -Name 'communicationCompliance' -Step 'CommunicationCompliance' -Description 'Deploying communication compliance policies' -Action {
+            Deploy-CommunicationCompliance -Config $Config -WhatIf:$WhatIfPreference
+        }
+    } else { Write-LabLog -Message 'communicationCompliance workload is disabled, skipping.' -Level Info }
 
-    # 7. Insider Risk
     if ($Config.workloads.insiderRisk.enabled) {
-        Write-LabStep -StepName 'InsiderRisk' -Description 'Deploying insider risk management policies'
-        $result = Deploy-InsiderRisk -Config $Config -WhatIf:$WhatIfPreference
-        if ($result) { $manifest['insiderRisk'] = $result }
-        Write-LabLog -Message 'Insider risk deployment complete.' -Level Success
-    }
-    else {
-        Write-LabLog -Message 'insiderRisk workload is disabled, skipping.' -Level Info
-    }
+        Invoke-Workload -Name 'insiderRisk' -Step 'InsiderRisk' -Description 'Deploying insider risk management policies' -Action {
+            Deploy-InsiderRisk -Config $Config -WhatIf:$WhatIfPreference
+        }
+    } else { Write-LabLog -Message 'insiderRisk workload is disabled, skipping.' -Level Info }
 
-    # 8. Test Data
     if ($Config.workloads.testData.enabled) {
-        Write-LabStep -StepName 'TestData' -Description 'Sending test data (emails, files)'
-        $result = Send-TestData -Config $Config -WhatIf:$WhatIfPreference
-        if ($result) { $manifest['testData'] = $result }
-        Write-LabLog -Message 'Test data deployment complete.' -Level Success
-    }
-    else {
-        Write-LabLog -Message 'testData workload is disabled, skipping.' -Level Info
-    }
+        Invoke-Workload -Name 'testData' -Step 'TestData' -Description 'Sending test data (emails, files)' -Action {
+            Send-TestData -Config $Config -WhatIf:$WhatIfPreference
+        }
+    } else { Write-LabLog -Message 'testData workload is disabled, skipping.' -Level Info }
 
     # Export manifest
     $manifestDir = Join-Path $PSScriptRoot 'manifests'
     if (-not (Test-Path $manifestDir)) {
-        New-Item -ItemType Directory -Path $manifestDir -Force | Out-Null
+        New-Item -ItemType Directory -Path $manifestDir -Force -WhatIf:$false | Out-Null
     }
     $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
     $manifestPath = Join-Path $manifestDir "$($Config.prefix)_${timestamp}.json"
@@ -174,7 +150,12 @@ try {
     Write-LabStep -StepName 'Summary' -Description 'Deployment complete'
     Write-LabLog -Message "Workloads deployed: $deployedCount" -Level Info
     Write-LabLog -Message "Manifest: $manifestPath" -Level Info
-    Write-LabLog -Message 'Deploy-Lab finished successfully.' -Level Success
+    if ($failedWorkloads.Count -gt 0) {
+        Write-LabLog -Message "FAILED workloads: $($failedWorkloads -join ', '). Re-run to retry." -Level Warning
+    }
+    else {
+        Write-LabLog -Message 'Deploy-Lab finished successfully.' -Level Success
+    }
 }
 catch {
     Write-LabLog -Message "Deploy-Lab failed: $_" -Level Error

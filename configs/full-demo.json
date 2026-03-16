@@ -185,7 +185,7 @@
       "enabled": true,
       "cases": [
         {
-          "name": "PVLab-Data-Breach-Investigation",
+          "name": "Data-Breach-Investigation",
           "description": "Investigation into potential data breach involving unauthorized access to confidential financial records and PII",
           "custodians": [
             "mchen@MngEnvMCAP648165.onmicrosoft.com",

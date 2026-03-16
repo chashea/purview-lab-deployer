@@ -24,25 +24,33 @@ function Deploy-SensitivityLabels {
     foreach ($label in $labelConfig.labels) {
         $parentName = "$($Config.prefix)-$($label.name)"
 
-        $parentExists = $false
+        $existingLabel = $null
         try {
-            Get-Label -Identity $parentName -ErrorAction Stop | Out-Null
-            $parentExists = $true
-            Write-LabLog "Label already exists: $parentName" -Level Info
+            $existingLabel = Get-Label -Identity $parentName -ErrorAction Stop
         }
         catch {
-            Write-LabLog "Label not found, will create: $parentName" -Level Info
+            # Label does not exist
         }
 
-        if (-not $parentExists) {
-            if ($PSCmdlet.ShouldProcess($parentName, 'Create sensitivity label')) {
+        if ($existingLabel -and $existingLabel.Mode -eq 'PendingDeletion') {
+            Write-LabLog "Label '$parentName' is in PendingDeletion state. Cannot modify. Wait for deletion to complete and re-run." -Level Error
+            throw "Label '$parentName' is in PendingDeletion state. Please wait and retry."
+        }
+
+        if ($existingLabel) {
+            Write-LabLog "Label already exists: $parentName (IsLabelGroup=$($existingLabel.IsLabelGroup))" -Level Info
+        }
+        else {
+            if ($PSCmdlet.ShouldProcess($parentName, 'Create sensitivity label group')) {
                 New-Label `
                     -Name $parentName `
                     -DisplayName $parentName `
                     -Tooltip $label.tooltip `
-                    -Comment "Created by purview-lab-deployer" | Out-Null
+                    -Comment "Created by purview-lab-deployer" `
+                    -IsLabelGroup `
+                    -ErrorAction Stop | Out-Null
 
-                Write-LabLog "Created label: $parentName" -Level Success
+                Write-LabLog "Created label group: $parentName" -Level Success
             }
         }
 
@@ -76,46 +84,55 @@ function Deploy-SensitivityLabels {
 
             if (-not $sublabelExists -and $null -ne $parentLabel) {
                 if ($PSCmdlet.ShouldProcess($sublabelIdentity, 'Create sensitivity sublabel')) {
-                    New-Label `
-                        -Name $sublabelIdentity `
-                        -DisplayName $sublabelDisplay `
-                        -ParentId $parentLabel.Guid `
-                        -Tooltip $sublabel.tooltip | Out-Null
+                    try {
+                        New-Label `
+                            -Name $sublabelIdentity `
+                            -DisplayName $sublabelDisplay `
+                            -ParentId $parentLabel.Guid `
+                            -Tooltip $sublabel.tooltip `
+                            -ContentType "File,Email" `
+                            -ErrorAction Stop | Out-Null
 
-                    Write-LabLog "Created sublabel: $sublabelIdentity" -Level Success
+                        Write-LabLog "Created sublabel: $sublabelIdentity" -Level Success
 
-                    # Apply encryption settings
-                    if ($sublabel.encryption) {
-                        Set-Label -Identity $sublabelIdentity `
-                            -EncryptionEnabled $true `
-                            -EncryptionProtectionType 'Template' | Out-Null
+                        # Apply encryption settings
+                        if ($sublabel.encryption) {
+                            Set-Label -Identity $sublabelIdentity `
+                                -EncryptionEnabled $true `
+                                -EncryptionProtectionType 'Template' `
+                                -ErrorAction Stop | Out-Null
 
-                        Write-LabLog "Enabled encryption on sublabel: $sublabelIdentity" -Level Success
+                            Write-LabLog "Enabled encryption on sublabel: $sublabelIdentity" -Level Success
+                        }
+
+                        # Apply content marking settings
+                        if ($sublabel.contentMarking) {
+                            $markingParams = @{
+                                Identity = $sublabelIdentity
+                            }
+
+                            if ($sublabel.contentMarking.headerText) {
+                                $markingParams['ApplyContentMarkingHeaderEnabled'] = $true
+                                $markingParams['ApplyContentMarkingHeaderText'] = $sublabel.contentMarking.headerText
+                                $markingParams['ApplyContentMarkingHeaderFontSize'] = 10
+                                $markingParams['ApplyContentMarkingHeaderFontColor'] = '#000000'
+                                $markingParams['ApplyContentMarkingHeaderAlignment'] = 'Center'
+                            }
+
+                            if ($sublabel.contentMarking.footerText) {
+                                $markingParams['ApplyContentMarkingFooterEnabled'] = $true
+                                $markingParams['ApplyContentMarkingFooterText'] = $sublabel.contentMarking.footerText
+                                $markingParams['ApplyContentMarkingFooterFontSize'] = 8
+                                $markingParams['ApplyContentMarkingFooterFontColor'] = '#000000'
+                            }
+
+                            Set-Label @markingParams -ErrorAction Stop | Out-Null
+                            Write-LabLog "Applied content marking on sublabel: $sublabelIdentity" -Level Success
+                        }
                     }
-
-                    # Apply content marking settings
-                    if ($sublabel.contentMarking) {
-                        $markingParams = @{
-                            Identity = $sublabelIdentity
-                        }
-
-                        if ($sublabel.contentMarking.headerText) {
-                            $markingParams['HeaderEnabled'] = $true
-                            $markingParams['HeaderText'] = $sublabel.contentMarking.headerText
-                            $markingParams['HeaderFontSize'] = 10
-                            $markingParams['HeaderFontColor'] = '#000000'
-                            $markingParams['HeaderAlignment'] = 'Center'
-                        }
-
-                        if ($sublabel.contentMarking.footerText) {
-                            $markingParams['FooterEnabled'] = $true
-                            $markingParams['FooterText'] = $sublabel.contentMarking.footerText
-                            $markingParams['FooterFontSize'] = 8
-                            $markingParams['FooterFontColor'] = '#000000'
-                        }
-
-                        Set-Label @markingParams | Out-Null
-                        Write-LabLog "Applied content marking on sublabel: $sublabelIdentity" -Level Success
+                    catch {
+                        Write-LabLog "Failed to create sublabel $sublabelIdentity`: $_" -Level Error
+                        throw
                     }
                 }
             }
