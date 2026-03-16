@@ -43,19 +43,21 @@ function Deploy-CommunicationCompliance {
                     Activities         = @('UploadText', 'DownloadText')
                     SensitiveTypeIds   = @('All')
                     IsIngestionEnabled = $true
-                    EnforcementPlanes  = @('Exchange', 'Teams')
+                    EnforcementPlanes  = @('CopilotExperiences')
                 } | ConvertTo-Json -Compress
 
                 $locationsArray = @(
                     @{
                         Workload       = 'Applications'
-                        Location       = 'All'
-                        LocationSource = 'Entra'
+                        Location       = '49baeafd-1a6b-4c58-be55-75ae6d1dff6a'
+                        LocationSource = 'PurviewConfig'
                         LocationType   = 'Group'
                         Inclusions     = @(
                             @{
                                 Type     = 'Tenant'
                                 Identity = 'All'
+                                DisplayName = 'All'
+                                Name     = 'All'
                             }
                         )
                     }
