@@ -45,7 +45,7 @@ function Deploy-CommunicationCompliance {
                     IsIngestionEnabled = $true
                 } | ConvertTo-Json -Compress
 
-                $locations = @(
+                $locationsArray = @(
                     @{
                         Workload       = 'Applications'
                         Location       = 'All'
@@ -58,7 +58,8 @@ function Deploy-CommunicationCompliance {
                             }
                         )
                     }
-                ) | ConvertTo-Json -Depth 4 -Compress
+                )
+                $locations = "[$($locationsArray | ConvertTo-Json -Depth 4 -Compress)]"
 
                 New-FeatureConfiguration `
                     -FeatureScenario KnowYourData `
