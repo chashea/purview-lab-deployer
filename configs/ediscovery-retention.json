@@ -1,0 +1,84 @@
+{
+  "labName": "eDiscovery & Retention Demo",
+  "prefix": "PVLab",
+  "domain": "MngEnvMCAP648165.onmicrosoft.com",
+  "workloads": {
+    "testUsers": {
+      "enabled": true,
+      "users": [
+        {
+          "displayName": "James Wilson",
+          "mailNickname": "pvlab.james",
+          "department": "Legal",
+          "jobTitle": "Legal Counsel",
+          "usageLocation": "US"
+        },
+        {
+          "displayName": "Emily Chen",
+          "mailNickname": "pvlab.emily",
+          "department": "Finance",
+          "jobTitle": "CFO",
+          "usageLocation": "US"
+        },
+        {
+          "displayName": "Robert Taylor",
+          "mailNickname": "pvlab.robert",
+          "department": "IT",
+          "jobTitle": "IT Manager",
+          "usageLocation": "US"
+        }
+      ],
+      "groups": []
+    },
+    "dlp": { "enabled": false },
+    "sensitivityLabels": { "enabled": false },
+    "retention": {
+      "enabled": true,
+      "policies": [
+        {
+          "name": "Financial Records Retention",
+          "retentionDays": 2555,
+          "action": "retainAndDelete",
+          "locations": ["Exchange", "SharePoint"]
+        },
+        {
+          "name": "Legal Hold Policy",
+          "retentionDays": 365,
+          "action": "retainOnly",
+          "locations": ["Exchange", "OneDrive"]
+        }
+      ]
+    },
+    "eDiscovery": {
+      "enabled": true,
+      "cases": [
+        {
+          "name": "Data-Breach-Investigation",
+          "description": "Investigation into potential data breach involving financial records",
+          "custodians": ["pvlab.emily@MngEnvMCAP648165.onmicrosoft.com", "pvlab.robert@MngEnvMCAP648165.onmicrosoft.com"],
+          "holdQuery": "confidential OR classified OR \"data breach\"",
+          "searchQuery": "breach OR incident OR unauthorized OR \"data loss\""
+        }
+      ]
+    },
+    "communicationCompliance": { "enabled": false },
+    "insiderRisk": { "enabled": false },
+    "testData": {
+      "enabled": true,
+      "emails": [
+        {
+          "from": "pvlab.robert",
+          "to": "pvlab.emily",
+          "subject": "Confidential: Security Incident Report",
+          "body": "Emily,\n\nWe detected unauthorized access to the financial database. This is classified information - please do not share outside legal.\n\nThe breach occurred on March 10th. We're still assessing the scope of data loss.\n\nRobert"
+        },
+        {
+          "from": "pvlab.emily",
+          "to": "pvlab.james",
+          "subject": "RE: Data Breach - Legal Review Required",
+          "body": "James,\n\nPlease review the incident report. We may need to issue breach notifications. This involves confidential customer data.\n\nEmily"
+        }
+      ]
+    }
+  }
+}

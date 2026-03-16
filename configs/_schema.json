@@ -1,0 +1,277 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "title": "Purview Lab Deployer Configuration",
+  "description": "Schema for Microsoft Purview lab deployment configurations",
+  "type": "object",
+  "required": ["labName", "prefix", "domain"],
+  "properties": {
+    "labName": {
+      "type": "string",
+      "description": "Display name for the lab deployment"
+    },
+    "prefix": {
+      "type": "string",
+      "description": "Prefix applied to all resource names"
+    },
+    "domain": {
+      "type": "string",
+      "description": "Tenant domain (e.g., contoso.onmicrosoft.com)"
+    },
+    "workloads": {
+      "type": "object",
+      "description": "Workload configurations to deploy",
+      "properties": {
+        "testUsers": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "users": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["displayName", "mailNickname", "department", "jobTitle", "usageLocation"],
+                "properties": {
+                  "displayName": { "type": "string" },
+                  "mailNickname": { "type": "string" },
+                  "department": { "type": "string" },
+                  "jobTitle": { "type": "string" },
+                  "usageLocation": { "type": "string", "minLength": 2, "maxLength": 2 }
+                }
+              }
+            },
+            "groups": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["displayName", "members"],
+                "properties": {
+                  "displayName": { "type": "string" },
+                  "members": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Array of mailNicknames"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "dlp": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "policies": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name", "locations", "rules"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "locations": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": ["Exchange", "SharePoint", "OneDrive", "Teams"]
+                    }
+                  },
+                  "rules": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["name", "sensitiveInfoTypes", "minCount"],
+                      "properties": {
+                        "name": { "type": "string" },
+                        "sensitiveInfoTypes": {
+                          "type": "array",
+                          "items": { "type": "string" }
+                        },
+                        "minCount": { "type": "integer", "minimum": 1 }
+                        }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "sensitivityLabels": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "labels": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name", "tooltip", "color"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "tooltip": { "type": "string" },
+                  "color": { "type": "string" },
+                  "sublabels": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["name", "tooltip"],
+                      "properties": {
+                        "name": { "type": "string" },
+                        "tooltip": { "type": "string" },
+                        "encryption": { "type": "boolean" },
+                        "contentMarking": {
+                          "type": "object",
+                          "properties": {
+                            "headerText": { "type": "string" },
+                            "footerText": { "type": "string" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "autoLabelPolicies": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name", "labelName", "sensitiveInfoTypes", "locations"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "labelName": { "type": "string" },
+                  "sensitiveInfoTypes": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  },
+                  "locations": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "retention": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "policies": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name", "retentionDays", "retentionAction", "locations"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "retentionDays": { "type": "integer", "minimum": 1 },
+                  "retentionAction": {
+                    "type": "string",
+                    "enum": ["retainAndDelete", "retainOnly"]
+                  },
+                  "locations": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "eDiscovery": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "cases": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name", "description"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "description": { "type": "string" },
+                  "custodians": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Array of UPNs"
+                  },
+                  "holdQuery": { "type": "string" },
+                  "searchQuery": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "communicationCompliance": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "policies": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name", "reviewers", "supervisedUsers", "direction", "condition"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "reviewers": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Array of UPNs"
+                  },
+                  "supervisedUsers": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Array of UPNs"
+                  },
+                  "direction": {
+                    "type": "string",
+                    "enum": ["Inbound", "Outbound", "Both"]
+                  },
+                  "condition": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "insiderRisk": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "policies": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name", "template"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "template": { "type": "string" },
+                  "priorityUserGroups": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Array of group display names"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "testData": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "emails": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["from", "to", "subject", "body"],
+                "properties": {
+                  "from": { "type": "string", "description": "Sender mailNickname" },
+                  "to": { "type": "string", "description": "Recipient mailNickname" },
+                  "subject": { "type": "string" },
+                  "body": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

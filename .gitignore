@@ -1,0 +1,21 @@
+# Deployment manifests (contain tenant-specific IDs)
+manifests/
+
+# Transcripts
+*.log
+
+# PowerShell
+*.psm1.bak
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Secrets
+*.pfx
+*.pem
+*.key
