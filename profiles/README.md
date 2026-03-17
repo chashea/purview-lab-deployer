@@ -9,14 +9,19 @@ This folder contains deployment capability profiles used by `Deploy-Lab.ps1` and
 
 These are selected by the `-Cloud` parameter (`commercial` or `gcc`).
 
-## Shadow AI profile
+## Shadow AI profiles
 
-- `shadow-ai/capabilities.json` - scenario-specific Shadow AI guidance profile
-- `shadow-ai/README.md` - Shadow AI deployment and validation guide
+- `commercial/shadow-ai/capabilities.json` - Shadow AI scenario profile for commercial
+- `commercial/shadow-ai/README.md` - Shadow AI deployment guide (commercial)
+- `gcc/shadow-ai/capabilities.json` - Shadow AI scenario profile for GCC
+- `gcc/shadow-ai/README.md` - Shadow AI deployment guide (GCC)
 
-The Shadow AI profile is documentation/scenario metadata and does not replace cloud routing.
-Use Shadow AI deployment with:
+Shadow AI profiles are documentation/scenario metadata and do not replace cloud routing.
 
 ```powershell
+# Commercial
 ./Deploy-Lab.ps1 -ConfigPath configs/commercial/shadow-ai-demo.json -TenantId <tenant-guid> -Cloud commercial
+
+# GCC
+./Deploy-Lab.ps1 -ConfigPath configs/gcc/shadow-ai-demo.json -TenantId <tenant-guid> -Cloud gcc
 ```
