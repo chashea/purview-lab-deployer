@@ -3,6 +3,7 @@
 ## Project Overview
 Automated Microsoft Purview demo lab deployment via PowerShell 7+.
 Config-driven, modular by workload, deploy + teardown symmetry.
+Separate Shadow AI deployment track with independent prefix and lifecycle.
 
 ## Stack
 - PowerShell 7+ (pwsh)
@@ -19,20 +20,29 @@ Config-driven, modular by workload, deploy + teardown symmetry.
 - Idempotent: check existence before creating
 - `-WhatIf` support on all deploy/remove functions
 - Lint with PSScriptAnalyzer — zero warnings required
+- Config files live under `configs/commercial/` and `configs/gcc/` (no root-level configs)
+- Helper scripts live under `scripts/`
+- Shadow AI uses prefix `PVShadowAI`, baseline uses `PVLab`
 
 ## Running
 ```powershell
-# Deploy
-./Deploy-Lab.ps1 -ConfigPath configs/commercial/full-demo.json
+# Full demo (commercial)
+./Deploy-Lab.ps1 -ConfigPath configs/commercial/full-demo.json -Cloud commercial
+
+# Shadow AI (commercial)
+./Deploy-Lab.ps1 -ConfigPath configs/commercial/shadow-ai-demo.json -Cloud commercial
 
 # Dry run
 ./Deploy-Lab.ps1 -ConfigPath configs/commercial/full-demo.json -WhatIf
 
 # Teardown
-./Remove-Lab.ps1 -ConfigPath configs/commercial/full-demo.json
+./Remove-Lab.ps1 -ConfigPath configs/commercial/full-demo.json -Cloud commercial
+
+# GCC label publication
+./scripts/Publish-Labels-GCC.ps1 -ConfigPath configs/gcc/full-demo.json -TenantId <tenant-guid>
 ```
 
 ## Testing
 ```powershell
-Invoke-ScriptAnalyzer -Path . -Recurse -Severity Warning
+Invoke-ScriptAnalyzer -Path . -Recurse -Severity Warning -ExcludeRule PSAvoidUsingWriteHost,PSUseSingularNouns
 ```

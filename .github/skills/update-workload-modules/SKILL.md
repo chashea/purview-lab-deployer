@@ -24,11 +24,15 @@ Use this skill for workload feature work in `modules/*.psm1` and related config/
 4. Update cloud capability metadata:
    - `profiles/commercial/capabilities.json`
    - `profiles/gcc/capabilities.json`
+   - Shadow AI scenario profiles: `profiles/<cloud>/shadow-ai/capabilities.json`
    - Use statuses: `available`, `limited`, `delayed`, `unavailable`
 
 5. If workload config shape changes, update cloud-scoped config files under:
    - `configs/commercial/*.json`
    - `configs/gcc/*.json`
+   - Shadow AI config: `configs/commercial/shadow-ai-demo.json`
+
+6. Helper scripts go in `scripts/` (not the repo root).
 
 ## Validation checklist
 

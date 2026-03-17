@@ -2,7 +2,7 @@
 
 ## Build, test, and lint commands
 
-- This repository does not have a compile/build step and does not currently include a Pester test suite.
+- No compile/build step. No Pester test suite.
 - CI validation is PowerShell linting via `PSScriptAnalyzer` (`.github/workflows/validate.yml`).
 
 ```powershell
@@ -12,15 +12,46 @@ Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
 # Full lint (matches CI behavior/rules)
 Invoke-ScriptAnalyzer -Path . -Recurse -Severity Warning -ExcludeRule PSAvoidUsingWriteHost,PSUseSingularNouns
 
-# Single-file lint (use this instead of "single test")
+# Single-file lint
 Invoke-ScriptAnalyzer -Path ./Deploy-Lab.ps1 -Severity Warning -ExcludeRule PSAvoidUsingWriteHost,PSUseSingularNouns
 ```
 
-Optional smoke checks for orchestration logic without connecting to cloud services:
+Optional smoke checks without connecting to cloud services:
 
 ```powershell
 ./Deploy-Lab.ps1 -ConfigPath configs/commercial/full-demo.json -Cloud commercial -SkipAuth -WhatIf
 ./Remove-Lab.ps1 -ConfigPath configs/commercial/full-demo.json -Cloud commercial -SkipAuth -WhatIf
+```
+
+## Repository layout
+
+```
+root/
+├── Deploy-Lab.ps1, Remove-Lab.ps1       # Main orchestrators
+├── Deploy-Lab-Interactive.ps1            # Interactive deploy wrapper
+├── Remove-Lab-Interactive.ps1            # Interactive remove wrapper
+├── configs/
+│   ├── _schema.json                      # Canonical JSON schema
+│   ├── commercial/                       # Commercial tenant configs
+│   │   ├── full-demo.json, shadow-ai-demo.json, dlp-only.json, ...
+│   │   └── README.md
+│   └── gcc/                              # GCC tenant configs
+│       ├── full-demo.json, dlp-only.json, ...
+│       └── README.md
+├── modules/                              # Workload modules (*.psm1)
+├── profiles/
+│   ├── commercial/
+│   │   ├── capabilities.json             # Commercial workload capabilities
+│   │   └── shadow-ai/                    # Shadow AI scenario profile + guide
+│   ├── gcc/
+│   │   ├── capabilities.json             # GCC workload capabilities
+│   │   └── shadow-ai/                    # Shadow AI scenario profile + guide
+│   └── README.md
+├── scripts/
+│   └── Publish-Labels-GCC.ps1            # GCC label publication helper
+├── manifests/                            # Deploy manifests (gitignored)
+├── logs/                                 # Transcripts (gitignored)
+└── tasks/                                # Dev-internal tracking
 ```
 
 ## High-level architecture
@@ -31,7 +62,9 @@ Optional smoke checks for orchestration logic without connecting to cloud servic
   - resolves cloud via `Resolve-LabCloud` (`commercial`/`gcc`)
   - loads capability metadata from `profiles/<cloud>/capabilities.json`
   - blocks deploy when enabled workloads are marked `unavailable`
+  - runs DLP preflight checks for enforcement config compatibility
   - runs workloads in dependency order and exports a manifest to `manifests/<cloud>/<prefix>_<timestamp>.json`
+  - runs post-deploy DLP validation
 
 - `Remove-Lab.ps1` is the teardown orchestrator:
   - same config/cloud/profile resolution path
@@ -39,14 +72,24 @@ Optional smoke checks for orchestration logic without connecting to cloud servic
   - without manifest, falls back to config + prefix-based removal
   - removes in reverse dependency order; `TestData` is intentionally a no-op for removal
 
-- Interactive wrappers (`Deploy-Lab-Interactive.ps1`, `Remove-Lab-Interactive.ps1`) collect cloud/tenant/config input and call the non-interactive orchestrators.
+- Interactive wrappers collect cloud/tenant/config input and call the non-interactive orchestrators.
+
+- `scripts/Publish-Labels-GCC.ps1`: standalone GCC label publication helper (not called by orchestrators).
 
 - Core shared infrastructure:
   - `modules/Prerequisites.psm1`: prerequisites, auth, config, cloud profile, workload compatibility, manifest I/O
   - `modules/Logging.psm1`: transcript-backed structured logging into `logs/`
   - workload modules (`DLP`, `SensitivityLabels`, `Retention`, `EDiscovery`, `CommunicationCompliance`, `InsiderRisk`, `TestUsers`, `TestData`)
 
-## Key conventions in this codebase
+## Deployment tracks
+
+- **Full demo** (baseline): `configs/<cloud>/full-demo.json` — all workloads, prefix `PVLab`
+- **Shadow AI** (separate): `configs/commercial/shadow-ai-demo.json` — AI-focused DLP/labels/retention/eDiscovery/IRM, prefix `PVShadowAI`
+- **Scenario configs**: `dlp-only.json`, `education-demo.json`, `eu-gdpr-demo.json`, etc.
+
+Shadow AI is intentionally separated from baseline full-demo. Different prefix, different config, independent deploy/remove lifecycle.
+
+## Key conventions
 
 - Workload module contract:
   - each workload module exposes paired `Deploy-<Workload>` and `Remove-<Workload>` functions
@@ -54,9 +97,10 @@ Optional smoke checks for orchestration logic without connecting to cloud servic
   - remove receives `-Config`, `-Manifest` (when relevant), and `-WhatIf`
 
 - Config and cloud conventions:
-  - config files are cloud-scoped under `configs/commercial` and `configs/gcc`
+  - config files are cloud-scoped under `configs/commercial/` and `configs/gcc/`
+  - no root-level config files (removed during reorg)
   - cloud can come from `-Cloud`, config `cloud`, or defaults to `commercial`
-  - `PURVIEW_TENANT_ID` and `PURVIEW_CLOUD` are first-class runtime inputs used by orchestrators/wrappers
+  - `PURVIEW_TENANT_ID` and `PURVIEW_CLOUD` are first-class runtime inputs
 
 - Naming/teardown strategy:
   - resources are consistently prefix-based (`{config.prefix}-...`) to support fallback cleanup
@@ -65,3 +109,8 @@ Optional smoke checks for orchestration logic without connecting to cloud servic
 - Compatibility gating:
   - workload support status (`available`, `limited`, `delayed`, `unavailable`) is data-driven from capability profiles
   - deploy treats `unavailable` as a blocker; remove treats it as warning context
+
+- DLP enforcement config:
+  - optional `policyMode`, `enforcement`, `appliesToGroups`, and `labels` fields in config
+  - `modules/DLP.psm1` dynamically detects supported cmdlet parameters at runtime
+  - unsupported enforcement params degrade gracefully to audit with warnings

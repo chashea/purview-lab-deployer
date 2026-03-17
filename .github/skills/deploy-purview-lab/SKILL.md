@@ -1,6 +1,6 @@
 ---
 name: deploy-purview-lab
-description: Deploy or dry-run the Purview demo lab using repository scripts, cloud profiles, and workload compatibility checks. Use for deploy requests, config-driven setup, and WhatIf validation.
+description: Deploy or dry-run the Purview demo lab using repository scripts, cloud profiles, and workload compatibility checks. Covers full-demo and Shadow AI deployment tracks.
 ---
 
 Use this skill when the task is to deploy lab resources, validate a config, or troubleshoot deploy flow.
@@ -8,8 +8,9 @@ Use this skill when the task is to deploy lab resources, validate a config, or t
 ## Procedure
 
 1. Pick cloud/config explicitly.
-   - Commercial default config: `configs/commercial/full-demo.json`
-   - GCC default config: `configs/gcc/full-demo.json`
+   - Commercial full demo: `configs/commercial/full-demo.json`
+   - GCC full demo: `configs/gcc/full-demo.json`
+   - Commercial Shadow AI: `configs/commercial/shadow-ai-demo.json`
    - Resolve cloud using `-Cloud` first, then config `cloud`, then default (`commercial`).
 
 2. Run dry-run first when making changes:
@@ -24,15 +25,23 @@ Use this skill when the task is to deploy lab resources, validate a config, or t
    ./Deploy-Lab.ps1 -ConfigPath configs/commercial/full-demo.json -Cloud commercial -TenantId $env:PURVIEW_TENANT_ID
    ```
 
-4. Expect deploy order to remain:
+4. Shadow AI deploy (separate from baseline):
+   ```powershell
+   ./Deploy-Lab.ps1 -ConfigPath configs/commercial/shadow-ai-demo.json -TenantId <tenant-guid> -Cloud commercial
+   ```
+   Shadow AI uses prefix `PVShadowAI` and is fully independent from baseline `PVLab`.
+
+5. Expect deploy order to remain:
    `testUsers -> sensitivityLabels -> dlp -> retention -> eDiscovery -> communicationCompliance -> insiderRisk -> testData`
 
-5. Validate outputs after successful deploy:
+6. Validate outputs after successful deploy:
    - Manifest file under `manifests/<cloud>/<prefix>_<timestamp>.json`
    - Log transcript under `logs/`
+   - DLP post-deploy validation runs automatically
 
 ## Repository-specific guardrails
 
 - Do not bypass capability gating from `profiles/<cloud>/capabilities.json`; deploy must block workloads marked `unavailable`.
 - Keep `SupportsShouldProcess` / `-WhatIf` behavior intact.
 - Preserve module import pattern from `Deploy-Lab.ps1` (`modules/*.psm1`).
+- Shadow AI and full-demo must remain separate tracks — different config, prefix, and lifecycle.
