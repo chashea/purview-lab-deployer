@@ -593,17 +593,32 @@ function Remove-DLP {
         }
 
         if ($PSCmdlet.ShouldProcess($ruleName, 'Remove DLP rule')) {
-            try {
-                Remove-DlpComplianceRule -Identity $ruleName -Confirm:$false -ErrorAction Stop
-                Write-LabLog -Message "Removed DLP rule: $ruleName" -Level Success
-            }
-            catch {
-                if (Test-LabDlpNotFoundException -Exception $_.Exception -EntityType Rule) {
-                    Write-LabLog -Message "DLP rule not found during delete, skipping: $ruleName" -Level Warning
-                    continue
+            $retryCount = 0
+            $maxRetries = 2
+            $deleted = $false
+            while (-not $deleted -and $retryCount -le $maxRetries) {
+                try {
+                    Remove-DlpComplianceRule -Identity $ruleName -Confirm:$false -ErrorAction Stop
+                    Write-LabLog -Message "Removed DLP rule: $ruleName" -Level Success
+                    $deleted = $true
                 }
+                catch {
+                    if (Test-LabDlpNotFoundException -Exception $_.Exception -EntityType Rule) {
+                        Write-LabLog -Message "DLP rule not found during delete, skipping: $ruleName" -Level Warning
+                        $deleted = $true
+                        continue
+                    }
 
-                throw
+                    if ($retryCount -lt $maxRetries -and $_.Exception.Message -match 'server side error|try again after some time') {
+                        $retryCount++
+                        Write-LabLog -Message "Transient error removing DLP rule '$ruleName', retry $retryCount of $maxRetries in 10s..." -Level Warning
+                        Start-Sleep -Seconds 10
+                    }
+                    else {
+                        Write-LabLog -Message "Failed to remove DLP rule '$ruleName' after retries: $($_.Exception.Message)" -Level Warning
+                        $deleted = $true
+                    }
+                }
             }
         }
     }
@@ -623,17 +638,32 @@ function Remove-DLP {
         }
 
         if ($PSCmdlet.ShouldProcess($policyName, 'Remove DLP policy')) {
-            try {
-                Remove-DlpCompliancePolicy -Identity $policyName -Confirm:$false -ErrorAction Stop
-                Write-LabLog -Message "Removed DLP policy: $policyName" -Level Success
-            }
-            catch {
-                if (Test-LabDlpNotFoundException -Exception $_.Exception -EntityType Policy) {
-                    Write-LabLog -Message "DLP policy not found during delete, skipping: $policyName" -Level Warning
-                    continue
+            $retryCount = 0
+            $maxRetries = 2
+            $deleted = $false
+            while (-not $deleted -and $retryCount -le $maxRetries) {
+                try {
+                    Remove-DlpCompliancePolicy -Identity $policyName -Confirm:$false -ErrorAction Stop
+                    Write-LabLog -Message "Removed DLP policy: $policyName" -Level Success
+                    $deleted = $true
                 }
+                catch {
+                    if (Test-LabDlpNotFoundException -Exception $_.Exception -EntityType Policy) {
+                        Write-LabLog -Message "DLP policy not found during delete, skipping: $policyName" -Level Warning
+                        $deleted = $true
+                        continue
+                    }
 
-                throw
+                    if ($retryCount -lt $maxRetries -and $_.Exception.Message -match 'server side error|try again after some time') {
+                        $retryCount++
+                        Write-LabLog -Message "Transient error removing DLP policy '$policyName', retry $retryCount of $maxRetries in 10s..." -Level Warning
+                        Start-Sleep -Seconds 10
+                    }
+                    else {
+                        Write-LabLog -Message "Failed to remove DLP policy '$policyName' after retries: $($_.Exception.Message)" -Level Warning
+                        $deleted = $true
+                    }
+                }
             }
         }
     }
