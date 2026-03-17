@@ -12,6 +12,7 @@ These are selected by the `-Cloud` parameter (`commercial` or `gcc`).
 ## Shadow AI profile
 
 - `shadow-ai/capabilities.json` - scenario-specific Shadow AI guidance profile
+- `shadow-ai/README.md` - Shadow AI deployment and validation guide
 
 The Shadow AI profile is documentation/scenario metadata and does not replace cloud routing.
 Use Shadow AI deployment with:

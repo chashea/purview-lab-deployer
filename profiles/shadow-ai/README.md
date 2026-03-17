@@ -4,7 +4,7 @@ This folder documents the dedicated Shadow AI deployment track.
 
 ## Config and scope
 
-- Config file: `../configs/commercial/shadow-ai-demo.json`
+- Config file: `../../configs/commercial/shadow-ai-demo.json`
 - Prefix boundary: `PVShadowAI`
 - Cloud: commercial
 - Purpose: deploy and remove Shadow AI controls independently from baseline `full-demo`.

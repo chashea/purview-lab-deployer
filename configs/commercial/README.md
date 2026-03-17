@@ -29,7 +29,7 @@ Shadow AI is intentionally separate from `full-demo.json`.
 ./Remove-Lab.ps1 -ConfigPath configs/commercial/shadow-ai-demo.json -TenantId <tenant-guid> -Cloud commercial -Confirm:$false
 ```
 
-More details: `../../shadow-ai/README.md`
+More details: `../../profiles/shadow-ai/README.md`
 
 ## Teardown examples
 
