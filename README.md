@@ -7,6 +7,7 @@ Automated Microsoft Purview lab deployment using PowerShell 7+, config files, an
 - Commercial guide: `configs/commercial/README.md`
 - GCC guide: `configs/gcc/README.md`
 - Shadow AI guide: `shadow-ai/README.md`
+- Profiles guide: `profiles/README.md`
 
 ## Shared prerequisites
 
