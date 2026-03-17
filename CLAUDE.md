@@ -23,13 +23,13 @@ Config-driven, modular by workload, deploy + teardown symmetry.
 ## Running
 ```powershell
 # Deploy
-./Deploy-Lab.ps1 -ConfigPath configs/full-demo.json
+./Deploy-Lab.ps1 -ConfigPath configs/commercial/full-demo.json
 
 # Dry run
-./Deploy-Lab.ps1 -ConfigPath configs/full-demo.json -WhatIf
+./Deploy-Lab.ps1 -ConfigPath configs/commercial/full-demo.json -WhatIf
 
 # Teardown
-./Remove-Lab.ps1 -ConfigPath configs/full-demo.json
+./Remove-Lab.ps1 -ConfigPath configs/commercial/full-demo.json
 ```
 
 ## Testing

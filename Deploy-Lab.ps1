@@ -23,10 +23,10 @@
     Cloud profile to use (`commercial` or `gcc`). If omitted, uses config value.
 
 .EXAMPLE
-    ./Deploy-Lab.ps1 -ConfigPath configs/full-demo.json
+    ./Deploy-Lab.ps1 -ConfigPath configs/commercial/full-demo.json
 
 .EXAMPLE
-    ./Deploy-Lab.ps1 -ConfigPath configs/full-demo.json -WhatIf
+    ./Deploy-Lab.ps1 -ConfigPath configs/commercial/full-demo.json -WhatIf
 #>
 
 [CmdletBinding(SupportsShouldProcess)]

@@ -28,13 +28,13 @@
     Cloud profile to use (`commercial` or `gcc`). If omitted, uses config value.
 
 .EXAMPLE
-    ./Remove-Lab.ps1 -ConfigPath configs/full-demo.json
+    ./Remove-Lab.ps1 -ConfigPath configs/commercial/full-demo.json
 
 .EXAMPLE
-    ./Remove-Lab.ps1 -ConfigPath configs/full-demo.json -ManifestPath manifests/lab_20260316-100000.json
+    ./Remove-Lab.ps1 -ConfigPath configs/commercial/full-demo.json -ManifestPath manifests/lab_20260316-100000.json
 
 .EXAMPLE
-    ./Remove-Lab.ps1 -ConfigPath configs/full-demo.json -Confirm:$false
+    ./Remove-Lab.ps1 -ConfigPath configs/commercial/full-demo.json -Confirm:$false
 #>
 
 [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]

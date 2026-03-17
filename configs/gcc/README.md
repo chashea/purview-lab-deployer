@@ -22,7 +22,7 @@ This folder contains Microsoft Purview lab configs for GCC tenants.
 ## GCC label publication helper
 
 ```powershell
-./Publish-Labels-GCC.ps1 -ConfigPath configs/gcc/full-demo.json -TenantId <tenant-guid>
+./scripts/Publish-Labels-GCC.ps1 -ConfigPath configs/gcc/full-demo.json -TenantId <tenant-guid>
 ```
 
 ## Teardown examples
