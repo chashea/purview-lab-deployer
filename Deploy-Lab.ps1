@@ -15,6 +15,13 @@
 .PARAMETER SkipAuth
     Skip connecting to Exchange Online and Microsoft Graph (for testing).
 
+.PARAMETER TenantId
+    Microsoft Entra tenant ID. Defaults to environment variable PURVIEW_TENANT_ID.
+    Required unless -SkipAuth is specified.
+
+.PARAMETER Cloud
+    Cloud profile to use (`commercial` or `gcc`). If omitted, uses config value.
+
 .EXAMPLE
     ./Deploy-Lab.ps1 -ConfigPath configs/full-demo.json
 
@@ -29,7 +36,14 @@ param(
     [string]$ConfigPath,
 
     [Parameter()]
-    [switch]$SkipAuth
+    [switch]$SkipAuth,
+
+    [Parameter()]
+    [string]$TenantId = $env:PURVIEW_TENANT_ID,
+
+    [Parameter()]
+    [ValidateSet('commercial', 'gcc')]
+    [string]$Cloud = $env:PURVIEW_CLOUD
 )
 
 $ErrorActionPreference = 'Stop'
@@ -47,7 +61,22 @@ try {
     # Load configuration
     Write-LabStep -StepName 'Config' -Description 'Loading lab configuration'
     $Config = Import-LabConfig -ConfigPath $ConfigPath
-    Write-LabLog -Message "Lab: $($Config.labName) | Prefix: $($Config.prefix) | Domain: $($Config.domain)" -Level Info
+    $resolvedCloud = Resolve-LabCloud -Cloud $Cloud -Config $Config
+    $capabilityProfile = Import-LabCloudProfile -Cloud $resolvedCloud -RepositoryRoot $PSScriptRoot
+
+    Write-LabLog -Message "Lab: $($Config.labName) | Prefix: $($Config.prefix) | Domain: $($Config.domain) | Cloud: $resolvedCloud" -Level Info
+
+    # Validate workload compatibility for selected cloud
+    $compatibility = Test-LabWorkloadCompatibility -Config $Config -CapabilityProfile $capabilityProfile -Operation Deploy
+    foreach ($warning in $compatibility.warnings) {
+        Write-LabLog -Message $warning -Level Warning
+    }
+    if ($compatibility.blockers.Count -gt 0) {
+        foreach ($blocker in $compatibility.blockers) {
+            Write-LabLog -Message $blocker -Level Error
+        }
+        throw "Configuration contains workloads unavailable for cloud '$resolvedCloud'."
+    }
 
     # Test prerequisites
     Write-LabStep -StepName 'Prerequisites' -Description 'Validating prerequisites'
@@ -59,17 +88,229 @@ try {
 
     # Connect to services
     if (-not $SkipAuth) {
+        if ([string]::IsNullOrWhiteSpace($TenantId)) {
+            throw 'TenantId is required when authentication is enabled. Use -TenantId or set PURVIEW_TENANT_ID.'
+        }
+
         Write-LabStep -StepName 'Auth' -Description 'Connecting to cloud services'
-        Connect-LabServices -TenantId 'f1b92d41-6d54-4102-9dd9-4208451314df'
+        Connect-LabServices -TenantId $TenantId
         Write-LabLog -Message 'Connected to Exchange Online and Microsoft Graph.' -Level Success
+
+        $resolvedDomain = Resolve-LabTenantDomain -ConfiguredDomain $Config.domain
+        if (-not [string]::Equals($resolvedDomain, [string]$Config.domain, [System.StringComparison]::OrdinalIgnoreCase)) {
+            Write-LabLog -Message "Configured domain '$($Config.domain)' is not verified in this tenant. Using '$resolvedDomain'." -Level Warning
+            $Config.domain = $resolvedDomain
+        }
     }
     else {
         Write-LabLog -Message 'Skipping authentication (-SkipAuth).' -Level Warning
     }
 
+    function Get-LabStringArray {
+        param(
+            [Parameter()]
+            [object]$Value
+        )
+
+        if ($null -eq $Value) {
+            return [string[]]@()
+        }
+
+        return [string[]]@(
+            @($Value) |
+                ForEach-Object { [string]$_ } |
+                Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+                ForEach-Object { $_.Trim() } |
+                Sort-Object -Unique
+        )
+    }
+
+    function Get-LabSupportedParameterName {
+        param(
+            [Parameter(Mandatory)]
+            [System.Management.Automation.CommandInfo[]]$Commands,
+
+            [Parameter(Mandatory)]
+            [string[]]$CandidateNames
+        )
+
+        foreach ($command in @($Commands)) {
+            if (-not $command) {
+                continue
+            }
+
+            foreach ($candidate in $CandidateNames) {
+                if ($command.Parameters.ContainsKey($candidate)) {
+                    return [PSCustomObject]@{
+                        commandName = $command.Name
+                        parameter   = $candidate
+                    }
+                }
+            }
+        }
+
+        return $null
+    }
+
+    function Get-LabObjectProperty {
+        param(
+            [Parameter(Mandatory)]
+            [object]$Object,
+
+            [Parameter(Mandatory)]
+            [string[]]$CandidateNames
+        )
+
+        foreach ($candidate in $CandidateNames) {
+            if ($Object.PSObject.Properties.Name -contains $candidate) {
+                return [PSCustomObject]@{
+                    found = $true
+                    name  = $candidate
+                    value = $Object.$candidate
+                }
+            }
+        }
+
+        return [PSCustomObject]@{
+            found = $false
+            name  = $null
+            value = $null
+        }
+    }
+
+    function Get-LabDlpConfiguredLabels {
+        param(
+            [Parameter(Mandatory)]
+            [PSCustomObject]$Policy,
+
+            [Parameter(Mandatory)]
+            [PSCustomObject]$Rule
+        )
+
+        $labels = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+        foreach ($label in (Get-LabStringArray -Value $Policy.labels)) {
+            $null = $labels.Add($label)
+        }
+        foreach ($label in (Get-LabStringArray -Value $Rule.labels)) {
+            $null = $labels.Add($label)
+        }
+
+        return [string[]]@($labels | Sort-Object -Unique)
+    }
+
+    if (-not $SkipAuth -and $Config.workloads.dlp.enabled) {
+        Write-LabStep -StepName 'DLPPreflight' -Description 'Validating DLP enforcement configuration'
+
+        $dlpPreflightBlockers = [System.Collections.Generic.List[string]]::new()
+        $dlpPreflightWarnings = [System.Collections.Generic.List[string]]::new()
+        $newPolicyCommand = Get-Command -Name New-DlpCompliancePolicy -ErrorAction SilentlyContinue
+        $setPolicyCommand = Get-Command -Name Set-DlpCompliancePolicy -ErrorAction SilentlyContinue
+        $newRuleCommand = Get-Command -Name New-DlpComplianceRule -ErrorAction SilentlyContinue
+        $setRuleCommand = Get-Command -Name Set-DlpComplianceRule -ErrorAction SilentlyContinue
+        $policyCommands = @($newPolicyCommand, $setPolicyCommand) | Where-Object { $_ }
+        $ruleCommands = @($newRuleCommand, $setRuleCommand) | Where-Object { $_ }
+
+        if ($policyCommands.Count -eq 0) {
+            $dlpPreflightBlockers.Add('New/Set-DlpCompliancePolicy cmdlets are unavailable.')
+        }
+        if ($ruleCommands.Count -eq 0) {
+            $dlpPreflightBlockers.Add('New/Set-DlpComplianceRule cmdlets are unavailable.')
+        }
+
+        foreach ($policy in @($Config.workloads.dlp.policies)) {
+            $policyName = "$($Config.prefix)-$($policy.name)"
+
+            $appliesToGroups = Get-LabStringArray -Value $policy.appliesToGroups
+            if ($appliesToGroups.Count -gt 0) {
+                $scopeSupport = Get-LabSupportedParameterName -Commands $policyCommands -CandidateNames @('ExchangeSenderMemberOf', 'ExchangeSenderMemberOfGroups', 'UserScope')
+                if (-not $scopeSupport) {
+                    $dlpPreflightWarnings.Add("Policy '$policyName' uses appliesToGroups, but no supported policy scope parameter exists on Set/New-DlpCompliancePolicy. Group scoping will be ignored.")
+                }
+            }
+
+            $excludeGroups = Get-LabStringArray -Value $policy.excludeGroups
+            if ($excludeGroups.Count -gt 0) {
+                $excludeSupport = Get-LabSupportedParameterName -Commands $policyCommands -CandidateNames @('ExceptIfUserMemberOf', 'ExchangeSenderMemberOfException', 'ExcludedUsers')
+                if (-not $excludeSupport) {
+                    $dlpPreflightWarnings.Add("Policy '$policyName' uses excludeGroups, but no supported exclusion parameter exists. Exclusions will be ignored.")
+                }
+            }
+
+            foreach ($rule in @($policy.rules)) {
+                $ruleName = "$($Config.prefix)-$($rule.name)"
+                $configuredLabels = Get-LabDlpConfiguredLabels -Policy $policy -Rule $rule
+                if ($configuredLabels.Count -gt 0) {
+                    $labelSupport = Get-LabSupportedParameterName -Commands $ruleCommands -CandidateNames @('SensitivityLabels', 'SensitivityLabel', 'Labels')
+                    if (-not $labelSupport) {
+                        $dlpPreflightWarnings.Add("Rule '$ruleName' uses label conditions, but Set/New-DlpComplianceRule has no supported label parameter. Label conditions will be ignored.")
+                    }
+                }
+
+                $enforcement = if (($rule.PSObject.Properties.Name -contains 'enforcement') -and $null -ne $rule.enforcement) { $rule.enforcement } else { $null }
+                if (-not $enforcement) {
+                    continue
+                }
+
+                $action = if (($enforcement.PSObject.Properties.Name -contains 'action') -and -not [string]::IsNullOrWhiteSpace([string]$enforcement.action)) {
+                    ([string]$enforcement.action).Trim()
+                }
+                else {
+                    $null
+                }
+
+                if ($action) {
+                    $actionSupport = Get-LabSupportedParameterName -Commands $ruleCommands -CandidateNames @('BlockAccess', 'Mode', 'EnforcementMode', 'Action')
+                    if (-not $actionSupport) {
+                        $dlpPreflightWarnings.Add("Rule '$ruleName' requests enforcement action '$action', but no supported action parameter exists on Set/New-DlpComplianceRule. Baseline rule creation will continue.")
+                    }
+
+                    if ($action -eq 'allowWithJustification') {
+                        $overrideSupport = Get-LabSupportedParameterName -Commands $ruleCommands -CandidateNames @('AllowOverrideWithJustification', 'AllowOverride', 'UserCanOverride')
+                        if (-not $overrideSupport) {
+                            $dlpPreflightWarnings.Add("Rule '$ruleName' requests allowWithJustification, but no override parameter exists on Set/New-DlpComplianceRule. Rule will fall back to audit behavior.")
+                        }
+                    }
+                }
+
+                if (($enforcement.PSObject.Properties.Name -contains 'userNotification') -and $null -ne $enforcement.userNotification -and [bool]$enforcement.userNotification.enabled) {
+                    $notifySupport = Get-LabSupportedParameterName -Commands $ruleCommands -CandidateNames @('NotifyUser', 'UserNotificationEnabled')
+                    if (-not $notifySupport) {
+                        $dlpPreflightWarnings.Add("Rule '$ruleName' requests user notifications, but no supported notify parameter exists.")
+                    }
+                }
+
+                if (($enforcement.PSObject.Properties.Name -contains 'alert') -and $null -ne $enforcement.alert -and [bool]$enforcement.alert.enabled) {
+                    $alertSupport = Get-LabSupportedParameterName -Commands $ruleCommands -CandidateNames @('GenerateAlert', 'AlertEnabled')
+                    if (-not $alertSupport) {
+                        $dlpPreflightWarnings.Add("Rule '$ruleName' requests alerts, but no supported alert parameter exists.")
+                    }
+                }
+
+                if (($enforcement.PSObject.Properties.Name -contains 'incidentReport') -and $null -ne $enforcement.incidentReport -and [bool]$enforcement.incidentReport.enabled) {
+                    $incidentSupport = Get-LabSupportedParameterName -Commands $ruleCommands -CandidateNames @('IncidentReportEnabled', 'GenerateIncidentReport')
+                    if (-not $incidentSupport) {
+                        $dlpPreflightWarnings.Add("Rule '$ruleName' requests incident reports, but no supported incident-report parameter exists.")
+                    }
+                }
+            }
+        }
+
+        foreach ($warning in @($dlpPreflightWarnings | Sort-Object -Unique)) {
+            Write-LabLog -Message $warning -Level Warning
+        }
+
+        if ($dlpPreflightBlockers.Count -gt 0) {
+            $blockerSummary = (@($dlpPreflightBlockers | Sort-Object -Unique) -join '; ')
+            throw "DLP enforcement preflight failed: $blockerSummary"
+        }
+
+        Write-LabLog -Message 'DLP enforcement preflight passed.' -Level Success
+    }
+
     # Initialize manifest
     $manifest = @{}
     $failedWorkloads = @()
+    $deployedWorkloads = @()
 
     # Helper: deploy a workload with error isolation
     function Invoke-Workload {
@@ -78,12 +319,49 @@ try {
         try {
             $result = & $Action
             if ($result) { $manifest[$Name] = $result }
+            $script:deployedWorkloads += $Name
             Write-LabLog -Message "$Step deployment complete." -Level Success
         }
         catch {
             Write-LabLog -Message "$Step FAILED: $_" -Level Error
             $script:failedWorkloads += $Name
         }
+    }
+
+    function Test-DeployedEntityExists {
+        param(
+            [Parameter(Mandatory)]
+            [string]$EntityType,
+
+            [Parameter(Mandatory)]
+            [string]$EntityName,
+
+            [Parameter(Mandatory)]
+            [scriptblock]$CheckAction
+        )
+
+        $maxAttempts = 6
+
+        for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+            try {
+                if (& $CheckAction $EntityName) {
+                    return $true
+                }
+            }
+            catch {
+                if ($attempt -eq $maxAttempts) {
+                    throw "Validation check failed for $EntityType '$EntityName': $($_.Exception.Message)"
+                }
+
+                Write-LabLog -Message "Validation check error for $EntityType '$EntityName' (attempt $attempt/$maxAttempts): $($_.Exception.Message)" -Level Warning
+            }
+
+            if ($attempt -lt $maxAttempts) {
+                Start-Sleep -Seconds 5
+            }
+        }
+
+        return $false
     }
 
     # Deploy workloads in dependency order
@@ -135,25 +413,316 @@ try {
         }
     } else { Write-LabLog -Message 'testData workload is disabled, skipping.' -Level Info }
 
-    # Export manifest
-    $manifestDir = Join-Path $PSScriptRoot 'manifests'
-    if (-not (Test-Path $manifestDir)) {
-        New-Item -ItemType Directory -Path $manifestDir -Force -WhatIf:$false | Out-Null
+    # Export manifest (skip in WhatIf)
+    $manifestPath = $null
+    if (-not $WhatIfPreference) {
+        $manifestDir = Join-Path (Join-Path $PSScriptRoot 'manifests') $resolvedCloud
+        if (-not (Test-Path $manifestDir)) {
+            New-Item -ItemType Directory -Path $manifestDir -Force | Out-Null
+        }
+        $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+        $manifestPath = Join-Path $manifestDir "$($Config.prefix)_${timestamp}.json"
+        Export-LabManifest -ManifestData ([PSCustomObject]$manifest) -OutputPath $manifestPath
+        Write-LabLog -Message "Manifest exported to $manifestPath" -Level Success
     }
-    $timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
-    $manifestPath = Join-Path $manifestDir "$($Config.prefix)_${timestamp}.json"
-    Export-LabManifest -ManifestData ([PSCustomObject]$manifest) -OutputPath $manifestPath
-    Write-LabLog -Message "Manifest exported to $manifestPath" -Level Success
+    else {
+        Write-LabLog -Message 'WhatIf mode is active. Skipping manifest export.' -Level Info
+    }
+
+    if (-not $WhatIfPreference -and -not $SkipAuth) {
+        Write-LabStep -StepName 'Validation' -Description 'Validating deployed objects'
+        $validationFailures = [System.Collections.Generic.List[string]]::new()
+        $validationWarnings = [System.Collections.Generic.List[string]]::new()
+
+        if ($manifest.ContainsKey('testUsers') -and $manifest.testUsers -and $manifest.testUsers.groups) {
+            foreach ($groupName in @($manifest.testUsers.groups)) {
+                $targetGroupName = [string]$groupName
+                if ([string]::IsNullOrWhiteSpace($targetGroupName)) {
+                    continue
+                }
+
+                $groupExists = Test-DeployedEntityExists -EntityType 'Group' -EntityName $targetGroupName -CheckAction {
+                    param($name)
+                    $escapedName = $name.Replace("'", "''")
+                    $group = Get-MgGroup -Filter "displayName eq '$escapedName'" -ErrorAction Stop | Select-Object -First 1
+                    return [bool]$group
+                }
+
+                if (-not $groupExists) {
+                    $validationFailures.Add("Group '$targetGroupName'")
+                }
+            }
+        }
+
+        if ($manifest.ContainsKey('dlp') -and $manifest.dlp -and $manifest.dlp.policies) {
+            foreach ($policyName in @($manifest.dlp.policies)) {
+                $targetPolicyName = [string]$policyName
+                if ([string]::IsNullOrWhiteSpace($targetPolicyName)) {
+                    continue
+                }
+
+                $policyExists = Test-DeployedEntityExists -EntityType 'DLP policy' -EntityName $targetPolicyName -CheckAction {
+                    param($name)
+                    $policy = Get-DlpCompliancePolicy -Identity $name -ErrorAction Stop
+                    return [bool]$policy
+                }
+
+                if (-not $policyExists) {
+                    $validationFailures.Add("DLP policy '$targetPolicyName'")
+                }
+            }
+        }
+
+        if ($Config.workloads.dlp.enabled -and $Config.workloads.dlp.policies) {
+            foreach ($policy in @($Config.workloads.dlp.policies)) {
+                $targetPolicyName = "$($Config.prefix)-$($policy.name)"
+                foreach ($rule in @($policy.rules)) {
+                    $targetRuleName = "$($Config.prefix)-$($rule.name)"
+
+                    $ruleExists = Test-DeployedEntityExists -EntityType 'DLP rule' -EntityName $targetRuleName -CheckAction {
+                        param($name)
+                        $ruleObject = Get-DlpComplianceRule -Identity $name -ErrorAction Stop
+                        return [bool]$ruleObject
+                    }
+
+                    if (-not $ruleExists) {
+                        $validationFailures.Add("DLP rule '$targetRuleName'")
+                        continue
+                    }
+
+                    $ruleObject = Get-DlpComplianceRule -Identity $targetRuleName -ErrorAction Stop
+                    $configuredLabels = Get-LabDlpConfiguredLabels -Policy $policy -Rule $rule
+                    if ($configuredLabels.Count -gt 0) {
+                        $labelsProp = Get-LabObjectProperty -Object $ruleObject -CandidateNames @('SensitivityLabels', 'SensitivityLabel', 'Labels')
+                        if ($labelsProp.found) {
+                            $actualLabels = Get-LabStringArray -Value $labelsProp.value
+                            foreach ($expectedLabel in $configuredLabels) {
+                                if ($expectedLabel -notin $actualLabels) {
+                                    $validationFailures.Add("DLP rule '$targetRuleName' missing expected label condition '$expectedLabel'")
+                                }
+                            }
+                        }
+                        else {
+                            $validationWarnings.Add("DLP rule '$targetRuleName' configured labels could not be validated because no label property was returned by Get-DlpComplianceRule.")
+                        }
+                    }
+
+                    $enforcement = if (($rule.PSObject.Properties.Name -contains 'enforcement') -and $null -ne $rule.enforcement) { $rule.enforcement } else { $null }
+                    if (-not $enforcement) {
+                        continue
+                    }
+
+                    $action = if (($enforcement.PSObject.Properties.Name -contains 'action') -and -not [string]::IsNullOrWhiteSpace([string]$enforcement.action)) {
+                        ([string]$enforcement.action).Trim()
+                    }
+                    else {
+                        $null
+                    }
+
+                    if ($action) {
+                        $blockProp = Get-LabObjectProperty -Object $ruleObject -CandidateNames @('BlockAccess')
+                        if ($blockProp.found) {
+                            $isBlocked = [bool]$blockProp.value
+                            if ($action -eq 'block' -and -not $isBlocked) {
+                                $validationFailures.Add("DLP rule '$targetRuleName' expected block action but BlockAccess is not enabled.")
+                            }
+                            if ($action -eq 'auditOnly' -and $isBlocked) {
+                                $validationFailures.Add("DLP rule '$targetRuleName' expected auditOnly action but BlockAccess is enabled.")
+                            }
+                        }
+                        else {
+                            $modeProp = Get-LabObjectProperty -Object $ruleObject -CandidateNames @('Mode', 'EnforcementMode', 'Action')
+                            if ($modeProp.found) {
+                                $modeValue = [string]$modeProp.value
+                                if ($action -eq 'block' -and $modeValue -notmatch 'Enforce|Block') {
+                                    $validationFailures.Add("DLP rule '$targetRuleName' expected block action but $($modeProp.name)='$modeValue'.")
+                                }
+                                if ($action -eq 'auditOnly' -and $modeValue -match 'Enforce|Block') {
+                                    $validationFailures.Add("DLP rule '$targetRuleName' expected auditOnly action but $($modeProp.name)='$modeValue'.")
+                                }
+                            }
+                            else {
+                                $validationWarnings.Add("DLP rule '$targetRuleName' action '$action' could not be validated due to missing BlockAccess/Mode property.")
+                            }
+                        }
+                    }
+
+                    if ($action -eq 'allowWithJustification') {
+                        $overrideProp = Get-LabObjectProperty -Object $ruleObject -CandidateNames @('AllowOverrideWithJustification', 'AllowOverride', 'UserCanOverride')
+                        if ($overrideProp.found) {
+                            if (-not [bool]$overrideProp.value) {
+                                $validationFailures.Add("DLP rule '$targetRuleName' expected user override for justification but '$($overrideProp.name)' is disabled.")
+                            }
+                        }
+                        else {
+                            $validationWarnings.Add("DLP rule '$targetRuleName' allowWithJustification could not be validated due to missing override property.")
+                        }
+                    }
+
+                    if (($enforcement.PSObject.Properties.Name -contains 'userNotification') -and $null -ne $enforcement.userNotification -and [bool]$enforcement.userNotification.enabled) {
+                        $notifyProp = Get-LabObjectProperty -Object $ruleObject -CandidateNames @('NotifyUser', 'UserNotificationEnabled')
+                        if ($notifyProp.found -and -not [bool]$notifyProp.value) {
+                            $validationFailures.Add("DLP rule '$targetRuleName' expected user notification enabled but '$($notifyProp.name)' is disabled.")
+                        }
+                    }
+
+                    if (($enforcement.PSObject.Properties.Name -contains 'alert') -and $null -ne $enforcement.alert -and [bool]$enforcement.alert.enabled) {
+                        $alertProp = Get-LabObjectProperty -Object $ruleObject -CandidateNames @('GenerateAlert', 'AlertEnabled')
+                        if ($alertProp.found -and -not [bool]$alertProp.value) {
+                            $validationFailures.Add("DLP rule '$targetRuleName' expected alert generation enabled but '$($alertProp.name)' is disabled.")
+                        }
+                    }
+                }
+            }
+        }
+
+        if ($manifest.ContainsKey('retention') -and $manifest.retention -and $manifest.retention.policies) {
+            foreach ($manifestPolicy in @($manifest.retention.policies)) {
+                $targetPolicyName = $null
+                if ($manifestPolicy -is [string]) {
+                    $targetPolicyName = [string]$manifestPolicy
+                }
+                elseif ($manifestPolicy.name) {
+                    $targetPolicyName = [string]$manifestPolicy.name
+                }
+
+                if ([string]::IsNullOrWhiteSpace($targetPolicyName)) {
+                    continue
+                }
+
+                $policyExists = Test-DeployedEntityExists -EntityType 'Retention policy' -EntityName $targetPolicyName -CheckAction {
+                    param($name)
+                    $policy = Get-RetentionCompliancePolicy -Identity $name -ErrorAction Stop
+                    return [bool]$policy
+                }
+
+                if (-not $policyExists) {
+                    $validationFailures.Add("Retention policy '$targetPolicyName'")
+                }
+            }
+        }
+
+        if ($manifest.ContainsKey('eDiscovery') -and $manifest.eDiscovery -and $manifest.eDiscovery.cases) {
+            foreach ($manifestCase in @($manifest.eDiscovery.cases)) {
+                $targetCaseName = [string]$manifestCase.caseName
+                if ([string]::IsNullOrWhiteSpace($targetCaseName)) {
+                    continue
+                }
+
+                $caseExists = Test-DeployedEntityExists -EntityType 'eDiscovery case' -EntityName $targetCaseName -CheckAction {
+                    param($name)
+                    $case = Get-ComplianceCase -Identity $name -ErrorAction Stop
+                    return [bool]$case
+                }
+
+                if (-not $caseExists) {
+                    $validationFailures.Add("eDiscovery case '$targetCaseName'")
+                }
+            }
+        }
+
+        if ($manifest.ContainsKey('communicationCompliance') -and $manifest.communicationCompliance -and $manifest.communicationCompliance.policies) {
+            foreach ($manifestPolicy in @($manifest.communicationCompliance.policies)) {
+                $targetPolicyName = $null
+                if ($manifestPolicy -is [string]) {
+                    $targetPolicyName = [string]$manifestPolicy
+                }
+                elseif ($manifestPolicy.policyName) {
+                    $targetPolicyName = [string]$manifestPolicy.policyName
+                }
+                elseif ($manifestPolicy.name) {
+                    $targetPolicyName = [string]$manifestPolicy.name
+                }
+
+                if ([string]::IsNullOrWhiteSpace($targetPolicyName)) {
+                    continue
+                }
+
+                $policyExists = Test-DeployedEntityExists -EntityType 'DSPM for AI policy' -EntityName $targetPolicyName -CheckAction {
+                    param($name)
+                    $policy = Get-FeatureConfiguration -FeatureScenario KnowYourData -ErrorAction Stop |
+                        Where-Object { $_.Name -eq $name } |
+                        Select-Object -First 1
+                    return [bool]$policy
+                }
+
+                if (-not $policyExists) {
+                    $validationFailures.Add("DSPM for AI policy '$targetPolicyName'")
+                }
+            }
+        }
+
+        if ($manifest.ContainsKey('insiderRisk') -and $manifest.insiderRisk -and $manifest.insiderRisk.policies) {
+            foreach ($manifestPolicy in @($manifest.insiderRisk.policies)) {
+                $targetPolicyName = $null
+                if ($manifestPolicy -is [string]) {
+                    $targetPolicyName = [string]$manifestPolicy
+                }
+                elseif ($manifestPolicy.name) {
+                    $targetPolicyName = [string]$manifestPolicy.name
+                }
+
+                if ([string]::IsNullOrWhiteSpace($targetPolicyName)) {
+                    continue
+                }
+
+                $policyExists = Test-DeployedEntityExists -EntityType 'Insider Risk policy' -EntityName $targetPolicyName -CheckAction {
+                    param($name)
+                    $policy = Get-InsiderRiskPolicy -ErrorAction Stop |
+                        Where-Object { $_.Name -eq $name } |
+                        Select-Object -First 1
+                    return [bool]$policy
+                }
+
+                if (-not $policyExists) {
+                    $validationFailures.Add("Insider Risk policy '$targetPolicyName'")
+                }
+            }
+        }
+
+        if ($validationFailures.Count -gt 0) {
+            $failureSummary = ($validationFailures | Sort-Object -Unique) -join ', '
+            throw "Post-deploy validation failed. Missing or inaccessible objects: $failureSummary"
+        }
+
+        foreach ($validationWarning in @($validationWarnings | Sort-Object -Unique)) {
+            Write-LabLog -Message $validationWarning -Level Warning
+        }
+
+        Write-LabLog -Message 'Post-deploy validation passed for groups/policies/cases/rules in deployed workloads.' -Level Success
+    }
+    elseif ($WhatIfPreference) {
+        Write-LabLog -Message 'Skipping post-deploy validation in WhatIf mode.' -Level Info
+    }
+    elseif ($SkipAuth) {
+        Write-LabLog -Message 'Skipping post-deploy validation because authentication is disabled (-SkipAuth).' -Level Warning
+    }
 
     # Summary
+    $configuredWorkloads = @($Config.workloads.PSObject.Properties.Name)
+    $disabledWorkloads = @(
+        $configuredWorkloads | Where-Object { -not [bool]$Config.workloads.$_.enabled }
+    )
+    $successfulWorkloads = @($deployedWorkloads | Sort-Object -Unique)
+    $errorSkippedWorkloads = @($failedWorkloads | Sort-Object -Unique)
+
     $deployedCount = $manifest.Keys.Count
     Write-LabStep -StepName 'Summary' -Description 'Deployment complete'
     Write-LabLog -Message "Workloads deployed: $deployedCount" -Level Info
-    Write-LabLog -Message "Manifest: $manifestPath" -Level Info
-    if ($failedWorkloads.Count -gt 0) {
-        Write-LabLog -Message "FAILED workloads: $($failedWorkloads -join ', '). Re-run to retry." -Level Warning
+    if ($successfulWorkloads.Count -gt 0) {
+        Write-LabLog -Message "Workloads deployed successfully: $($successfulWorkloads -join ', ')" -Level Info
     }
-    else {
+    if ($manifestPath) {
+        Write-LabLog -Message "Manifest: $manifestPath" -Level Info
+    }
+    if ($errorSkippedWorkloads.Count -gt 0) {
+        Write-LabLog -Message "Workloads skipped due to error: $($errorSkippedWorkloads -join ', ')" -Level Warning
+        Write-LabLog -Message "Re-run to retry failed workloads." -Level Warning
+    }
+    if ($disabledWorkloads.Count -gt 0) {
+        Write-LabLog -Message "Workloads skipped by config: $($disabledWorkloads -join ', ')" -Level Info
+    }
+    if ($errorSkippedWorkloads.Count -eq 0) {
         Write-LabLog -Message 'Deploy-Lab finished successfully.' -Level Success
     }
 }

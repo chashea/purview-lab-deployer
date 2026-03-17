@@ -16,48 +16,112 @@ function Send-TestData {
 
     # Send all emails from the signed-in admin account to avoid permission issues
     $context = Get-MgContext
+    if (-not $context -or [string]::IsNullOrWhiteSpace($context.Account)) {
+        throw 'Microsoft Graph context is not available for Send-TestData.'
+    }
     $adminUpn = $context.Account
+    $tenantId = [string]$context.TenantId
+    $scopes = @($context.Scopes)
+
+    $userPrincipalNameLookup = @{}
+    $missingIdentities = [System.Collections.Generic.List[string]]::new()
+
+    foreach ($email in $Config.workloads.testData.emails) {
+        foreach ($identity in @($email.from, $email.to)) {
+            if ([string]::IsNullOrWhiteSpace([string]$identity)) {
+                continue
+            }
+
+            if ($userPrincipalNameLookup.ContainsKey($identity)) {
+                continue
+            }
+
+            $resolvedUser = Get-LabUserByIdentity -Identity $identity -DefaultDomain $Config.domain
+            if ($resolvedUser -and -not [string]::IsNullOrWhiteSpace([string]$resolvedUser.UserPrincipalName)) {
+                $userPrincipalNameLookup[$identity] = [string]$resolvedUser.UserPrincipalName
+            }
+            else {
+                $missingIdentities.Add([string]$identity)
+            }
+        }
+    }
+
+    if ($missingIdentities.Count -gt 0) {
+        $missingSummary = (($missingIdentities | Sort-Object -Unique) -join ', ')
+        throw "TestData references users that were not found in Microsoft Graph: $missingSummary"
+    }
 
     $sentEmails = [System.Collections.Generic.List[hashtable]]::new()
 
     foreach ($email in $Config.workloads.testData.emails) {
-        $fromUpn = "$($email.from)@$($Config.domain)"
-        $toUpn = "$($email.to)@$($Config.domain)"
+        $fromUpn = [string]$userPrincipalNameLookup[[string]$email.from]
+        $toUpn = [string]$userPrincipalNameLookup[[string]$email.to]
 
         if ($PSCmdlet.ShouldProcess("Send email to $toUpn (on behalf of $fromUpn)`: $($email.subject)")) {
-            try {
-                $body = @{
-                    message = @{
-                        subject      = $email.subject
-                        body         = @{
-                            contentType = 'Text'
-                            content     = "From: $fromUpn`n`n$($email.body)"
-                        }
-                        toRecipients = @(
-                            @{
-                                emailAddress = @{
-                                    address = $toUpn
-                                }
-                            }
-                        )
+            $body = @{
+                message = @{
+                    subject      = $email.subject
+                    body         = @{
+                        contentType = 'Text'
+                        content     = "From: $fromUpn`n`n$($email.body)"
                     }
-                    saveToSentItems = $true
+                    toRecipients = @(
+                        @{
+                            emailAddress = @{
+                                address = $toUpn
+                            }
+                        }
+                    )
                 }
-
-                Invoke-MgGraphRequest -Method POST `
-                    -Uri "/v1.0/users/$adminUpn/sendMail" `
-                    -Body $body
-
-                Write-LabLog -Message "Sent email from $fromUpn to $toUpn`: $($email.subject)" -Level Success
-
-                $sentEmails.Add(@{
-                    from    = $fromUpn
-                    to      = $toUpn
-                    subject = $email.subject
-                })
+                saveToSentItems = $true
             }
-            catch {
-                Write-LabLog -Message "Failed to send email from $fromUpn to $toUpn`: $($_.Exception.Message)" -Level Warning
+
+            $sent = $false
+            for ($attempt = 1; $attempt -le 2; $attempt++) {
+                try {
+                    if (Get-Command -Name Send-MgUserMail -ErrorAction SilentlyContinue) {
+                        Send-MgUserMail -UserId $adminUpn -BodyParameter $body -ErrorAction Stop
+                    }
+                    else {
+                        Invoke-MgGraphRequest -Method POST `
+                            -Uri "/v1.0/users/$adminUpn/sendMail" `
+                            -Body $body `
+                            -ErrorAction Stop
+                    }
+
+                    Write-LabLog -Message "Sent email from $fromUpn to $toUpn`: $($email.subject)" -Level Success
+                    $sentEmails.Add(@{
+                        from    = $fromUpn
+                        to      = $toUpn
+                        subject = $email.subject
+                    })
+                    $sent = $true
+                    break
+                }
+                catch {
+                    $message = $_.Exception.Message
+                    if ($attempt -eq 1 -and $message -match 'DeviceCodeCredential authentication failed') {
+                        Write-LabLog -Message "Graph auth failed while sending test data. Reconnecting and retrying once..." -Level Warning
+                        Disconnect-MgGraph -ErrorAction SilentlyContinue
+                        Connect-MgGraph -TenantId $tenantId -Scopes $scopes -NoWelcome -ErrorAction Stop
+                        $context = Get-MgContext
+                        if (-not $context -or [string]::IsNullOrWhiteSpace($context.Account)) {
+                            throw 'Microsoft Graph reconnection did not produce a usable context during test data send.'
+                        }
+                        $adminUpn = $context.Account
+                        continue
+                    }
+
+                    Write-LabLog -Message "Failed to send email from $fromUpn to $toUpn`: $message" -Level Warning
+                    if ($message -match 'DeviceCodeCredential authentication failed') {
+                        throw "Graph authentication failed during test data send after retry: $message"
+                    }
+                    break
+                }
+            }
+
+            if (-not $sent) {
+                Write-LabLog -Message "Skipping test email after failure: $($email.subject)" -Level Warning
             }
 
             Start-Sleep -Seconds 2

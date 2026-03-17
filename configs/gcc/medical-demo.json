@@ -67,15 +67,26 @@
       "groups": [
         {
           "displayName": "PVMed-Clinical-Staff",
-          "members": ["spatel", "knakamura", "jwhitfield", "ayusuf"]
+          "members": [
+            "spatel",
+            "knakamura",
+            "jwhitfield",
+            "ayusuf"
+          ]
         },
         {
           "displayName": "PVMed-Compliance-Team",
-          "members": ["ldrummond", "evasquez"]
+          "members": [
+            "ldrummond",
+            "evasquez"
+          ]
         },
         {
           "displayName": "PVMed-Leadership",
-          "members": ["spatel", "rfeng"]
+          "members": [
+            "spatel",
+            "rfeng"
+          ]
         }
       ]
     },
@@ -84,64 +95,96 @@
       "policies": [
         {
           "name": "HIPAA PHI Protection",
-          "locations": ["Exchange", "SharePoint", "OneDrive"],
+          "locations": [
+            "Exchange",
+            "SharePoint",
+            "OneDrive"
+          ],
           "rules": [
             {
               "name": "Detect DEA Numbers",
-              "sensitiveInfoTypes": ["Drug Enforcement Agency (DEA) Number"],
+              "sensitiveInfoTypes": [
+                "Drug Enforcement Agency (DEA) Number"
+              ],
               "minCount": 1
             },
             {
               "name": "Detect Health Insurance Claim Numbers",
-              "sensitiveInfoTypes": ["U.S. Health Insurance Claim Number (HICN)"],
+              "sensitiveInfoTypes": [
+                "U.S. Health Insurance Claim Number (HICN)"
+              ],
               "minCount": 1
             }
           ]
         },
         {
           "name": "Patient Data Protection",
-          "locations": ["Exchange", "SharePoint", "Teams"],
+          "locations": [
+            "Exchange",
+            "SharePoint",
+            "Teams"
+          ],
           "rules": [
             {
               "name": "Detect SSNs in Medical Context",
-              "sensitiveInfoTypes": ["U.S. Social Security Number (SSN)"],
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)"
+              ],
               "minCount": 1
             },
             {
               "name": "Detect Medical Terms with PII",
-              "sensitiveInfoTypes": ["All Medical Terms And Conditions"],
+              "sensitiveInfoTypes": [
+                "All Medical Terms And Conditions"
+              ],
               "minCount": 1
             }
           ]
         },
         {
           "name": "Clinical Staff Escalation Protection",
-          "locations": ["Exchange", "SharePoint", "Teams"],
+          "locations": [
+            "Exchange",
+            "SharePoint",
+            "Teams"
+          ],
           "rules": [
             {
               "name": "Detect DEA in Clinical Escalations",
-              "sensitiveInfoTypes": ["Drug Enforcement Agency (DEA) Number"],
+              "sensitiveInfoTypes": [
+                "Drug Enforcement Agency (DEA) Number"
+              ],
               "minCount": 1
             },
             {
               "name": "Detect HICN in Clinical Escalations",
-              "sensitiveInfoTypes": ["U.S. Health Insurance Claim Number (HICN)"],
+              "sensitiveInfoTypes": [
+                "U.S. Health Insurance Claim Number (HICN)"
+              ],
               "minCount": 1
             }
           ]
         },
         {
           "name": "HR Medical Leave Data Protection",
-          "locations": ["Exchange", "SharePoint", "OneDrive"],
+          "locations": [
+            "Exchange",
+            "SharePoint",
+            "OneDrive"
+          ],
           "rules": [
             {
               "name": "Detect SSNs in Leave Documentation",
-              "sensitiveInfoTypes": ["U.S. Social Security Number (SSN)"],
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)"
+              ],
               "minCount": 1
             },
             {
               "name": "Detect Medical Terms in Leave Documentation",
-              "sensitiveInfoTypes": ["All Medical Terms And Conditions"],
+              "sensitiveInfoTypes": [
+                "All Medical Terms And Conditions"
+              ],
               "minCount": 1
             }
           ]
@@ -158,7 +201,7 @@
           "sublabels": [
             {
               "name": "Internal Clinical",
-              "tooltip": "PHI for internal clinical use — no encryption applied",
+              "tooltip": "PHI for internal clinical use \u2014 no encryption applied",
               "encryption": false,
               "contentMarking": {
                 "footerText": "Classification: PHI - Internal Clinical Use Only"
@@ -166,7 +209,7 @@
             },
             {
               "name": "Restricted",
-              "tooltip": "Encrypted PHI — restricted to authorized care team members",
+              "tooltip": "Encrypted PHI \u2014 restricted to authorized care team members",
               "encryption": true,
               "contentMarking": {
                 "headerText": "PROTECTED HEALTH INFORMATION - Restricted",
@@ -204,8 +247,13 @@
         {
           "name": "Auto-label DEA Numbers as PHI Internal Clinical",
           "labelName": "PHI\\Internal Clinical",
-          "sensitiveInfoTypes": ["Drug Enforcement Agency (DEA) Number"],
-          "locations": ["Exchange", "SharePoint"]
+          "sensitiveInfoTypes": [
+            "Drug Enforcement Agency (DEA) Number"
+          ],
+          "locations": [
+            "Exchange",
+            "SharePoint"
+          ]
         }
       ]
     },
@@ -216,13 +264,19 @@
           "name": "Medical Records Retention",
           "retentionDays": 2555,
           "retentionAction": "retainAndDelete",
-          "locations": ["Exchange", "SharePoint"]
+          "locations": [
+            "Exchange",
+            "SharePoint"
+          ]
         },
         {
           "name": "Patient Correspondence Hold",
           "retentionDays": 1095,
           "retentionAction": "retainOnly",
-          "locations": ["Exchange", "OneDrive"]
+          "locations": [
+            "Exchange",
+            "OneDrive"
+          ]
         }
       ]
     },
@@ -268,7 +322,9 @@
         {
           "name": "Departing Clinical Staff Data Theft",
           "template": "Data theft by departing users",
-          "priorityUserGroups": ["PVMed-Clinical-Staff"]
+          "priorityUserGroups": [
+            "PVMed-Clinical-Staff"
+          ]
         }
       ]
     },
@@ -291,13 +347,13 @@
           "from": "spatel",
           "to": "rfeng",
           "subject": "Clinical Trial Data Transfer",
-          "body": "Robert, we need to transfer the Phase II clinical trial dataset to the research partner at Metro University. The dataset includes 847 patient records with identifiers — names, DOBs, and treatment outcomes. IRB protocol #CT-2026-0142 covers this transfer but we need a signed BAA from Metro before proceeding. Can you coordinate with legal on the data sharing agreement?"
+          "body": "Robert, we need to transfer the Phase II clinical trial dataset to the research partner at Metro University. The dataset includes 847 patient records with identifiers \u2014 names, DOBs, and treatment outcomes. IRB protocol #CT-2026-0142 covers this transfer but we need a signed BAA from Metro before proceeding. Can you coordinate with legal on the data sharing agreement?"
         },
         {
           "from": "ldrummond",
           "to": "spatel",
           "subject": "HIPAA Audit Finding - Potential PHI Exposure",
-          "body": "Dr. Patel, during our quarterly HIPAA audit we identified unauthorized access to the EHR system. Between March 1-8, an account accessed 312 patient records outside normal workflow patterns. The access originated from the radiology department terminal. This constitutes a potential breach under HIPAA §164.402. We need to initiate the breach investigation protocol and assess whether patient notification is required under the 60-day rule. Please schedule a meeting with the incident response team this week."
+          "body": "Dr. Patel, during our quarterly HIPAA audit we identified unauthorized access to the EHR system. Between March 1-8, an account accessed 312 patient records outside normal workflow patterns. The access originated from the radiology department terminal. This constitutes a potential breach under HIPAA \u00a7164.402. We need to initiate the breach investigation protocol and assess whether patient notification is required under the 60-day rule. Please schedule a meeting with the incident response team this week."
         },
         {
           "from": "ayusuf",
@@ -313,5 +369,6 @@
         }
       ]
     }
-  }
+  },
+  "cloud": "gcc"
 }

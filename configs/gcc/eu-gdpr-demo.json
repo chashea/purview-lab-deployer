@@ -1,0 +1,294 @@
+{
+  "$schema": "./_schema.json",
+  "labName": "EU GDPR Compliance Demo",
+  "prefix": "PVEU",
+  "domain": "MngEnvMCAP648165.onmicrosoft.com",
+  "workloads": {
+    "testUsers": {
+      "enabled": true,
+      "users": [
+        {
+          "displayName": "Katarina Lindstr\u00f6m",
+          "mailNickname": "klindstrom",
+          "department": "Legal",
+          "jobTitle": "Data Protection Officer",
+          "usageLocation": "US"
+        },
+        {
+          "displayName": "Pierre Dubois",
+          "mailNickname": "pdubois",
+          "department": "Engineering",
+          "jobTitle": "Software Engineering Lead",
+          "usageLocation": "US"
+        },
+        {
+          "displayName": "Sofia Marchetti",
+          "mailNickname": "smarchetti",
+          "department": "Marketing",
+          "jobTitle": "Marketing Director",
+          "usageLocation": "US"
+        },
+        {
+          "displayName": "Hans Becker",
+          "mailNickname": "hbecker",
+          "department": "HR",
+          "jobTitle": "HR Manager",
+          "usageLocation": "US"
+        },
+        {
+          "displayName": "Ana Rodrigues",
+          "mailNickname": "arodrigues",
+          "department": "Customer Support",
+          "jobTitle": "Customer Success Manager",
+          "usageLocation": "US"
+        },
+        {
+          "displayName": "Thomas Eriksen",
+          "mailNickname": "teriksen",
+          "department": "Executive",
+          "jobTitle": "Chief Privacy Officer",
+          "usageLocation": "US"
+        }
+      ],
+      "groups": [
+        {
+          "displayName": "PVEU-Engineering",
+          "members": [
+            "pdubois",
+            "smarchetti"
+          ]
+        },
+        {
+          "displayName": "PVEU-Privacy-Team",
+          "members": [
+            "klindstrom",
+            "teriksen"
+          ]
+        },
+        {
+          "displayName": "PVEU-People-Ops",
+          "members": [
+            "hbecker",
+            "arodrigues"
+          ]
+        }
+      ]
+    },
+    "dlp": {
+      "enabled": true,
+      "policies": [
+        {
+          "name": "EU Personal Data Protection",
+          "locations": [
+            "Exchange",
+            "SharePoint",
+            "OneDrive"
+          ],
+          "rules": [
+            {
+              "name": "Detect EU Debit Card Numbers",
+              "sensitiveInfoTypes": [
+                "EU Debit Card Number"
+              ],
+              "minCount": 1
+            },
+            {
+              "name": "Detect EU National ID Numbers",
+              "sensitiveInfoTypes": [
+                "EU National Identification Number"
+              ],
+              "minCount": 1
+            }
+          ]
+        },
+        {
+          "name": "Cross-Border Data Transfer",
+          "locations": [
+            "Exchange",
+            "SharePoint",
+            "Teams"
+          ],
+          "rules": [
+            {
+              "name": "Detect EU Passport Numbers",
+              "sensitiveInfoTypes": [
+                "EU Passport Number"
+              ],
+              "minCount": 1
+            },
+            {
+              "name": "Detect EU Tax Identification Numbers",
+              "sensitiveInfoTypes": [
+                "EU Tax Identification Number (TIN)"
+              ],
+              "minCount": 1
+            }
+          ]
+        }
+      ]
+    },
+    "sensitivityLabels": {
+      "enabled": true,
+      "labels": [
+        {
+          "name": "GDPR Personal Data",
+          "tooltip": "Data subject to EU General Data Protection Regulation",
+          "color": "#0078D4",
+          "sublabels": [
+            {
+              "name": "Standard",
+              "tooltip": "Personal data processed under standard GDPR provisions",
+              "encryption": false,
+              "contentMarking": {
+                "footerText": "GDPR: Contains personal data \u2014 process lawfully per Art. 6"
+              }
+            },
+            {
+              "name": "Special Category",
+              "tooltip": "Special category data requiring explicit consent or legal basis under Art. 9",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "GDPR SPECIAL CATEGORY DATA \u2014 Art. 9",
+                "footerText": "Explicit consent or legal basis required for processing"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cross-Border",
+          "tooltip": "Data involving cross-border transfers outside the EU/EEA",
+          "color": "#D13438",
+          "sublabels": [
+            {
+              "name": "EU Adequate",
+              "tooltip": "Approved for transfer to countries with EU adequacy decisions",
+              "encryption": false,
+              "contentMarking": {
+                "footerText": "Approved for transfer to EU adequacy-listed countries"
+              }
+            },
+            {
+              "name": "Restricted Transfer",
+              "tooltip": "Encrypted \u2014 requires Standard Contractual Clauses for transfer",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "RESTRICTED \u2014 Requires Standard Contractual Clauses",
+                "footerText": "Do not transfer outside EU/EEA without DPO approval"
+              }
+            }
+          ]
+        }
+      ],
+      "autoLabelPolicies": [
+        {
+          "name": "Auto-label EU National ID as GDPR Personal Data Standard",
+          "labelName": "GDPR Personal Data\\Standard",
+          "sensitiveInfoTypes": [
+            "EU National Identification Number"
+          ],
+          "locations": [
+            "Exchange",
+            "SharePoint"
+          ]
+        }
+      ]
+    },
+    "retention": {
+      "enabled": true,
+      "policies": [
+        {
+          "name": "GDPR Data Retention",
+          "retentionDays": 1825,
+          "retentionAction": "retainAndDelete",
+          "locations": [
+            "Exchange",
+            "SharePoint"
+          ]
+        },
+        {
+          "name": "Customer Data Minimization",
+          "retentionDays": 730,
+          "retentionAction": "retainAndDelete",
+          "locations": [
+            "Exchange",
+            "OneDrive"
+          ]
+        }
+      ]
+    },
+    "eDiscovery": {
+      "enabled": true,
+      "cases": [
+        {
+          "name": "DSAR-Cross-Border-Transfer",
+          "description": "Data subject access request involving cross-border transfer of EU personal data to third-party processor",
+          "custodians": [
+            "klindstrom@MngEnvMCAP648165.onmicrosoft.com",
+            "arodrigues@MngEnvMCAP648165.onmicrosoft.com"
+          ],
+          "holdQuery": "\"personal data\" OR \"data subject\" OR GDPR",
+          "searchQuery": "\"data transfer\" OR \"third party\" OR \"processor agreement\""
+        }
+      ]
+    },
+    "communicationCompliance": {
+      "enabled": true,
+      "policies": [
+        {
+          "name": "EU Data Handling Monitoring",
+          "reviewers": [
+            "klindstrom@MngEnvMCAP648165.onmicrosoft.com"
+          ],
+          "supervisedUsers": [
+            "pdubois@MngEnvMCAP648165.onmicrosoft.com",
+            "smarchetti@MngEnvMCAP648165.onmicrosoft.com"
+          ],
+          "direction": "Both",
+          "condition": "offensive language"
+        }
+      ]
+    },
+    "insiderRisk": {
+      "enabled": true,
+      "policies": [
+        {
+          "name": "Data Leaks",
+          "template": "Data leaks",
+          "priorityUserGroups": [
+            "PVEU-Engineering"
+          ]
+        }
+      ]
+    },
+    "testData": {
+      "enabled": true,
+      "emails": [
+        {
+          "from": "smarchetti",
+          "to": "pdubois",
+          "subject": "Customer Analytics Dataset",
+          "body": "Pierre, I need to share the Q1 customer analytics dataset with our US marketing partner. The file includes EU passport numbers (e.g., FR7839201) for identity verification alongside marketing segmentation data. This qualifies as a cross-border transfer under GDPR \u2014 can you confirm our technical safeguards are in place before I initiate the transfer?"
+        },
+        {
+          "from": "hbecker",
+          "to": "klindstrom",
+          "subject": "Employee Onboarding Records",
+          "body": "Katarina, attached are the onboarding documents for our new Berlin office hires. Records include EU national identification numbers (DE-1234567890) and tax identification numbers (DE 123456789) along with employment contract details. Please confirm these are filed in the GDPR-compliant HR system with appropriate access controls."
+        },
+        {
+          "from": "arodrigues",
+          "to": "teriksen",
+          "subject": "DSAR Request - Customer Maria Silva",
+          "body": "Thomas, we received a data subject access request from customer Maria Silva under Art. 15 right of access. She is requesting all personal data we hold, including transaction history and support tickets. Her account contains PII including national ID and payment details. We have 30 days to respond \u2014 I've started compiling the data export. Can you review before we send?"
+        },
+        {
+          "from": "klindstrom",
+          "to": "smarchetti",
+          "subject": "DPO Finding - Unlawful Data Processing",
+          "body": "Sofia, during my quarterly review I identified a gap in our Art. 6 lawful basis for processing marketing consent data. The current opt-in flow does not meet GDPR granularity requirements \u2014 bundled consent is not freely given. We need to remediate before our next supervisory authority audit. If we cannot demonstrate lawful basis, we may need to notify the DPA. Please pause the current campaign and schedule a meeting with legal this week."
+        }
+      ]
+    }
+  },
+  "cloud": "gcc"
+}

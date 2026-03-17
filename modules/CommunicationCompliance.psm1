@@ -107,12 +107,31 @@ function Remove-CommunicationCompliance {
         [PSCustomObject]$Manifest  # Reserved for manifest-based removal
     )
 
-    $null = $Manifest  # Manifest-based removal not yet implemented
+    $targetPolicyNames = @()
 
-    $policies = $Config.workloads.communicationCompliance.policies
+    if ($Manifest) {
+        foreach ($manifestPolicy in @($Manifest.policies)) {
+            if ($manifestPolicy -is [string]) {
+                $targetPolicyNames += [string]$manifestPolicy
+            }
+            elseif ($manifestPolicy.policyName) {
+                $targetPolicyNames += [string]$manifestPolicy.policyName
+            }
+            elseif ($manifestPolicy.name) {
+                $targetPolicyNames += [string]$manifestPolicy.name
+            }
+        }
+    }
 
-    foreach ($policy in $policies) {
-        $name = "$($Config.prefix)-$($policy.name)"
+    if ($targetPolicyNames.Count -eq 0) {
+        foreach ($policy in $Config.workloads.communicationCompliance.policies) {
+            $targetPolicyNames += "$($Config.prefix)-$($policy.name)"
+        }
+    }
+
+    $targetPolicyNames = @($targetPolicyNames | Sort-Object -Unique)
+
+    foreach ($name in $targetPolicyNames) {
 
         Write-LabLog -Message "Removing DSPM for AI collection policy: $name" -Level Info
 

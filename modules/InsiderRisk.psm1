@@ -26,6 +26,10 @@ function Deploy-InsiderRisk {
 
     foreach ($policy in $Config.workloads.insiderRisk.policies) {
         $name = "$($Config.prefix)-$($policy.name)"
+        $priorityUserGroups = @()
+        if ($policy.PSObject.Properties['priorityUserGroups'] -and $policy.priorityUserGroups) {
+            $priorityUserGroups = @($policy.priorityUserGroups | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) } | ForEach-Object { [string]$_ })
+        }
 
         # Map config template to InsiderRiskScenario value
         $scenario = if ($script:TemplateToScenario.ContainsKey($policy.template)) {
@@ -41,10 +45,14 @@ function Deploy-InsiderRisk {
 
             if ($existing) {
                 Write-LabLog -Message "Insider Risk policy already exists: $name" -Level Info
+                if ($priorityUserGroups.Count -gt 0) {
+                    Write-LabLog -Message "Configured priority user groups for ${name}: $($priorityUserGroups -join ', ')" -Level Info
+                }
                 $createdPolicies.Add(@{
-                    name     = $name
-                    scenario = $scenario
-                    status   = 'existing'
+                    name               = $name
+                    scenario           = $scenario
+                    priorityUserGroups = $priorityUserGroups
+                    status             = 'existing'
                 })
                 continue
             }
@@ -56,10 +64,14 @@ function Deploy-InsiderRisk {
                     -ErrorAction Stop
 
                 Write-LabLog -Message "Created Insider Risk policy: $name (scenario: $scenario)" -Level Success
+                if ($priorityUserGroups.Count -gt 0) {
+                    Write-LabLog -Message "Configured priority user groups for ${name}: $($priorityUserGroups -join ', ')" -Level Info
+                }
                 $createdPolicies.Add(@{
-                    name     = $name
-                    scenario = $scenario
-                    status   = 'created'
+                    name               = $name
+                    scenario           = $scenario
+                    priorityUserGroups = $priorityUserGroups
+                    status             = 'created'
                 })
             }
         }
@@ -83,10 +95,28 @@ function Remove-InsiderRisk {
         [PSCustomObject]$Manifest  # Reserved for manifest-based removal
     )
 
-    $null = $Manifest  # Manifest-based removal not yet implemented
+    $targetPolicyNames = @()
 
-    foreach ($policy in $Config.workloads.insiderRisk.policies) {
-        $name = "$($Config.prefix)-$($policy.name)"
+    if ($Manifest) {
+        foreach ($manifestPolicy in @($Manifest.policies)) {
+            if ($manifestPolicy -is [string]) {
+                $targetPolicyNames += [string]$manifestPolicy
+            }
+            elseif ($manifestPolicy.name) {
+                $targetPolicyNames += [string]$manifestPolicy.name
+            }
+        }
+    }
+
+    if ($targetPolicyNames.Count -eq 0) {
+        foreach ($policy in $Config.workloads.insiderRisk.policies) {
+            $targetPolicyNames += "$($Config.prefix)-$($policy.name)"
+        }
+    }
+
+    $targetPolicyNames = @($targetPolicyNames | Sort-Object -Unique)
+
+    foreach ($name in $targetPolicyNames) {
 
         try {
             $existing = Get-InsiderRiskPolicy -ErrorAction SilentlyContinue |

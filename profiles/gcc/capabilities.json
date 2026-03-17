@@ -1,0 +1,42 @@
+{
+  "cloud": "gcc",
+  "skuBaseline": "Microsoft 365 G5 (GCC)",
+  "notes": [
+    "GCC profile for US Government Community Cloud (not GCC High/DoD).",
+    "GCC uses worldwide endpoints for Graph and portal, but feature rollout can differ from commercial."
+  ],
+  "workloads": {
+    "testUsers": {
+      "status": "available",
+      "note": "Graph user and group automation available in GCC."
+    },
+    "sensitivityLabels": {
+      "status": "available",
+      "note": "Core sensitivity labeling and auto-labeling capabilities are available."
+    },
+    "dlp": {
+      "status": "available",
+      "note": "Core Purview DLP capabilities are available."
+    },
+    "retention": {
+      "status": "available",
+      "note": "Retention and lifecycle management capabilities are available."
+    },
+    "eDiscovery": {
+      "status": "available",
+      "note": "Core eDiscovery workflows are available."
+    },
+    "communicationCompliance": {
+      "status": "limited",
+      "note": "Feature parity and release cadence may differ in GCC; validate DSPM/advanced workflows in tenant before production runs."
+    },
+    "insiderRisk": {
+      "status": "limited",
+      "note": "Insider Risk capabilities are available but may differ by rollout stage in GCC."
+    },
+    "testData": {
+      "status": "available",
+      "note": "Graph sendMail test seeding available in GCC."
+    }
+  }
+}

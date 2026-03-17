@@ -1,0 +1,113 @@
+{
+  "labName": "DLP Demo",
+  "prefix": "PVLab",
+  "domain": "MngEnvMCAP648165.onmicrosoft.com",
+  "workloads": {
+    "testUsers": {
+      "enabled": true,
+      "users": [
+        {
+          "displayName": "Sarah Mitchell",
+          "mailNickname": "pvlab.sarah",
+          "department": "Finance",
+          "jobTitle": "Financial Analyst",
+          "usageLocation": "US"
+        },
+        {
+          "displayName": "David Park",
+          "mailNickname": "pvlab.david",
+          "department": "HR",
+          "jobTitle": "HR Specialist",
+          "usageLocation": "US"
+        }
+      ],
+      "groups": []
+    },
+    "dlp": {
+      "enabled": true,
+      "policies": [
+        {
+          "name": "US PII Protection",
+          "locations": [
+            "Exchange",
+            "SharePoint",
+            "OneDrive"
+          ],
+          "rules": [
+            {
+              "name": "Detect SSN",
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)"
+              ],
+              "minCount": 1
+            },
+            {
+              "name": "Detect Credit Cards",
+              "sensitiveInfoTypes": [
+                "Credit Card Number"
+              ],
+              "minCount": 1
+            }
+          ]
+        },
+        {
+          "name": "Financial Data Protection",
+          "locations": [
+            "Exchange",
+            "SharePoint",
+            "Teams"
+          ],
+          "rules": [
+            {
+              "name": "Detect Bank Accounts",
+              "sensitiveInfoTypes": [
+                "U.S. Bank Account Number"
+              ],
+              "minCount": 1
+            },
+            {
+              "name": "Detect Credit Cards",
+              "sensitiveInfoTypes": [
+                "Credit Card Number"
+              ],
+              "minCount": 1
+            }
+          ]
+        }
+      ]
+    },
+    "sensitivityLabels": {
+      "enabled": false
+    },
+    "retention": {
+      "enabled": false
+    },
+    "eDiscovery": {
+      "enabled": false
+    },
+    "communicationCompliance": {
+      "enabled": false
+    },
+    "insiderRisk": {
+      "enabled": false
+    },
+    "testData": {
+      "enabled": true,
+      "emails": [
+        {
+          "from": "pvlab.sarah",
+          "to": "pvlab.david",
+          "subject": "Q4 Financial Report - Contains PII",
+          "body": "Hi David,\n\nPlease review the attached report. Employee SSN for reference: 123-45-6789.\n\nRegards,\nSarah"
+        },
+        {
+          "from": "pvlab.david",
+          "to": "pvlab.sarah",
+          "subject": "Benefits Enrollment Update",
+          "body": "Sarah,\n\nHere are the payment details:\nCredit Card: 4111-1111-1111-1111\nBank Account: 123456789012\n\nThanks,\nDavid"
+        }
+      ]
+    }
+  },
+  "cloud": "commercial"
+}

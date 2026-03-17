@@ -86,25 +86,65 @@ function Remove-Retention {
         [PSCustomObject]$Manifest  # Reserved for manifest-based removal
     )
 
-    $null = $Manifest  # Manifest-based removal not yet implemented
+    $targetPolicies = @()
 
-    $retentionConfig = $Config.workloads.retention
-
-    foreach ($policy in $retentionConfig.policies) {
-        $policyName = "$($Config.prefix)-$($policy.name)"
-
-        # Remove rules first
-        try {
-            $rules = Get-RetentionComplianceRule -Policy $policyName -ErrorAction Stop
-            foreach ($rule in $rules) {
-                if ($PSCmdlet.ShouldProcess($rule.Name, 'Remove retention compliance rule')) {
-                    Remove-RetentionComplianceRule -Identity $rule.Name -Confirm:$false -ErrorAction Stop
-                    Write-LabLog "Removed retention rule: $($rule.Name)" -Level Success
+    if ($Manifest) {
+        foreach ($manifestPolicy in @($Manifest.policies)) {
+            if ($manifestPolicy -is [string]) {
+                $targetPolicies += [PSCustomObject]@{
+                    name     = [string]$manifestPolicy
+                    ruleName = "$manifestPolicy-rule"
+                }
+            }
+            elseif ($manifestPolicy.name) {
+                $targetPolicies += [PSCustomObject]@{
+                    name     = [string]$manifestPolicy.name
+                    ruleName = [string]$manifestPolicy.ruleName
                 }
             }
         }
-        catch {
-            Write-LabLog "Retention rules not found or already removed for policy: $policyName" -Level Info
+    }
+
+    if ($targetPolicies.Count -eq 0) {
+        foreach ($policy in $Config.workloads.retention.policies) {
+            $policyName = "$($Config.prefix)-$($policy.name)"
+            $targetPolicies += [PSCustomObject]@{
+                name     = $policyName
+                ruleName = "$policyName-rule"
+            }
+        }
+    }
+
+    foreach ($policy in $targetPolicies) {
+        $policyName = $policy.name
+        $ruleName = $policy.ruleName
+
+        # Remove rules first
+        if (-not [string]::IsNullOrWhiteSpace($ruleName)) {
+            try {
+                Get-RetentionComplianceRule -Identity $ruleName -ErrorAction Stop | Out-Null
+                if ($PSCmdlet.ShouldProcess($ruleName, 'Remove retention compliance rule')) {
+                    Remove-RetentionComplianceRule -Identity $ruleName -Confirm:$false -ErrorAction Stop
+                    Write-LabLog "Removed retention rule: $ruleName" -Level Success
+                }
+            }
+            catch {
+                Write-LabLog "Retention rule not found or already removed: $ruleName" -Level Info
+            }
+        }
+        else {
+            try {
+                $rules = Get-RetentionComplianceRule -Policy $policyName -ErrorAction Stop
+                foreach ($rule in $rules) {
+                    if ($PSCmdlet.ShouldProcess($rule.Name, 'Remove retention compliance rule')) {
+                        Remove-RetentionComplianceRule -Identity $rule.Name -Confirm:$false -ErrorAction Stop
+                        Write-LabLog "Removed retention rule: $($rule.Name)" -Level Success
+                    }
+                }
+            }
+            catch {
+                Write-LabLog "Retention rules not found or already removed for policy: $policyName" -Level Info
+            }
         }
 
         # Remove policy

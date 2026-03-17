@@ -1,0 +1,42 @@
+{
+  "cloud": "commercial",
+  "skuBaseline": "Microsoft 365 E5",
+  "notes": [
+    "Commercial baseline profile.",
+    "Use this profile for enterprise commercial tenants."
+  ],
+  "workloads": {
+    "testUsers": {
+      "status": "available",
+      "note": "Graph user and group automation available."
+    },
+    "sensitivityLabels": {
+      "status": "available",
+      "note": "Sensitivity labels and auto-labeling supported."
+    },
+    "dlp": {
+      "status": "available",
+      "note": "Purview DLP policy and rule automation supported."
+    },
+    "retention": {
+      "status": "available",
+      "note": "Retention policy and rule automation supported."
+    },
+    "eDiscovery": {
+      "status": "available",
+      "note": "Case, hold, and search automation supported."
+    },
+    "communicationCompliance": {
+      "status": "available",
+      "note": "Communication Compliance / DSPM for AI commands expected in commercial tenants."
+    },
+    "insiderRisk": {
+      "status": "available",
+      "note": "Insider risk policy automation expected in commercial tenants."
+    },
+    "testData": {
+      "status": "available",
+      "note": "Graph sendMail test seeding available."
+    }
+  }
+}

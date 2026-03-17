@@ -20,8 +20,56 @@ function Deploy-EDiscovery {
         $name = "$($Config.prefix)-$($case.name)"
         $holdName = "$name-Hold"
         $searchName = "$name-Search"
+        $resolvedCustodians = [System.Collections.Generic.List[string]]::new()
+        $missingCustodians = [System.Collections.Generic.List[string]]::new()
 
         Write-LabLog -Message "Processing eDiscovery case: $name" -Level Info
+
+        foreach ($custodianIdentity in $case.custodians) {
+            $resolvedUser = Get-LabUserByIdentity -Identity $custodianIdentity -DefaultDomain $Config.domain
+            if ($resolvedUser -and -not [string]::IsNullOrWhiteSpace([string]$resolvedUser.UserPrincipalName)) {
+                $resolvedCustodians.Add([string]$resolvedUser.UserPrincipalName)
+            }
+            else {
+                $missingCustodians.Add([string]$custodianIdentity)
+            }
+        }
+
+        if ($missingCustodians.Count -gt 0) {
+            $missingSummary = (($missingCustodians | Sort-Object -Unique) -join ', ')
+            throw "eDiscovery case '$name' references custodians that were not found in Microsoft Graph: $missingSummary"
+        }
+
+        $resolvedCustodianAddresses = @($resolvedCustodians | Sort-Object -Unique)
+        $exchangeReadyCustodians = [System.Collections.Generic.List[string]]::new()
+        $nonExchangeCustodians = [System.Collections.Generic.List[string]]::new()
+
+        foreach ($upn in $resolvedCustodianAddresses) {
+            $recipient = $null
+            try {
+                $recipient = Get-Recipient -Identity $upn -ErrorAction Stop
+            }
+            catch {
+                $recipient = $null
+            }
+
+            if ($recipient) {
+                $exchangeReadyCustodians.Add($upn)
+            }
+            else {
+                $nonExchangeCustodians.Add($upn)
+            }
+        }
+
+        if ($nonExchangeCustodians.Count -gt 0) {
+            $nonExchangeSummary = (($nonExchangeCustodians | Sort-Object -Unique) -join ', ')
+            Write-LabLog -Message "Skipping non-mailbox custodians for eDiscovery case '$name': $nonExchangeSummary" -Level Warning
+        }
+
+        $targetCustodians = @($exchangeReadyCustodians | Sort-Object -Unique)
+        if ($targetCustodians.Count -eq 0) {
+            Write-LabLog -Message "No mailbox-enabled custodians are available for eDiscovery case '$name'. Case will be created without hold/search locations." -Level Warning
+        }
 
         # --- Case ---
         $existing = $null
@@ -35,7 +83,7 @@ function Deploy-EDiscovery {
         if (-not $existing) {
             if ($PSCmdlet.ShouldProcess($name, 'New-ComplianceCase')) {
                 Write-LabLog -Message "Creating compliance case: $name" -Level Info
-                New-ComplianceCase -Name $name -Description $case.description | Out-Null
+                New-ComplianceCase -Name $name -Description $case.description -ErrorAction Stop | Out-Null
             }
         }
         else {
@@ -43,14 +91,16 @@ function Deploy-EDiscovery {
         }
 
         # --- Custodians as case members ---
-        foreach ($upn in $case.custodians) {
-            if ($PSCmdlet.ShouldProcess("$upn -> $name", 'Add-ComplianceCaseMember')) {
-                Write-LabLog -Message "Adding case member: $upn to $name" -Level Info
-                try {
-                    Add-ComplianceCaseMember -Case $name -Member $upn -ErrorAction SilentlyContinue
-                }
-                catch {
-                    Write-LabLog -Message "Could not add member $upn to case $name`: $_" -Level Warning
+        if ($targetCustodians.Count -gt 0) {
+            foreach ($upn in $targetCustodians) {
+                if ($PSCmdlet.ShouldProcess("$upn -> $name", 'Add-ComplianceCaseMember')) {
+                    Write-LabLog -Message "Adding case member: $upn to $name" -Level Info
+                    try {
+                        Add-ComplianceCaseMember -Case $name -Member $upn -ErrorAction Stop -WarningAction SilentlyContinue
+                    }
+                    catch {
+                        Write-LabLog -Message "Could not add member $upn to case $name`: $($_.Exception.Message)" -Level Warning
+                    }
                 }
             }
         }
@@ -65,14 +115,24 @@ function Deploy-EDiscovery {
         }
 
         if (-not $existingHold) {
-            if ($PSCmdlet.ShouldProcess($holdName, 'New-CaseHoldPolicy')) {
-                Write-LabLog -Message "Creating case hold policy: $holdName" -Level Info
-                New-CaseHoldPolicy -Name $holdName -Case $name -ExchangeLocation $case.custodians | Out-Null
+            if ($targetCustodians.Count -gt 0) {
+                if ($PSCmdlet.ShouldProcess($holdName, 'New-CaseHoldPolicy')) {
+                    try {
+                        Write-LabLog -Message "Creating case hold policy: $holdName" -Level Info
+                        New-CaseHoldPolicy -Name $holdName -Case $name -ExchangeLocation $targetCustodians -ErrorAction Stop | Out-Null
 
-                # Hold rule
-                $holdRuleName = "$holdName-Rule"
-                Write-LabLog -Message "Creating case hold rule: $holdRuleName" -Level Info
-                New-CaseHoldRule -Name $holdRuleName -Policy $holdName -ContentMatchQuery $case.holdQuery | Out-Null
+                        # Hold rule
+                        $holdRuleName = "$holdName-Rule"
+                        Write-LabLog -Message "Creating case hold rule: $holdRuleName" -Level Info
+                        New-CaseHoldRule -Name $holdRuleName -Policy $holdName -ContentMatchQuery $case.holdQuery -ErrorAction Stop | Out-Null
+                    }
+                    catch {
+                        Write-LabLog -Message "Could not create hold artifacts for case $name`: $($_.Exception.Message)" -Level Warning
+                    }
+                }
+            }
+            else {
+                Write-LabLog -Message "Skipping hold creation for case $name because no mailbox-enabled custodians were resolved." -Level Warning
             }
         }
         else {
@@ -89,9 +149,19 @@ function Deploy-EDiscovery {
         }
 
         if (-not $existingSearch) {
-            if ($PSCmdlet.ShouldProcess($searchName, 'New-ComplianceSearch')) {
-                Write-LabLog -Message "Creating compliance search: $searchName" -Level Info
-                New-ComplianceSearch -Name $searchName -Case $name -ExchangeLocation $case.custodians -ContentMatchQuery $case.searchQuery | Out-Null
+            if ($targetCustodians.Count -gt 0) {
+                if ($PSCmdlet.ShouldProcess($searchName, 'New-ComplianceSearch')) {
+                    try {
+                        Write-LabLog -Message "Creating compliance search: $searchName" -Level Info
+                        New-ComplianceSearch -Name $searchName -Case $name -ExchangeLocation $targetCustodians -ContentMatchQuery $case.searchQuery -ErrorAction Stop | Out-Null
+                    }
+                    catch {
+                        Write-LabLog -Message "Could not create compliance search $searchName`: $($_.Exception.Message)" -Level Warning
+                    }
+                }
+            }
+            else {
+                Write-LabLog -Message "Skipping compliance search creation for case $name because no mailbox-enabled custodians were resolved." -Level Warning
             }
         }
         else {
@@ -103,7 +173,7 @@ function Deploy-EDiscovery {
             holdName   = $holdName
             holdRule   = "$holdName-Rule"
             searchName = $searchName
-            custodians = $case.custodians
+            custodians = $targetCustodians
         })
     }
 
@@ -122,17 +192,42 @@ function Remove-EDiscovery {
         [PSCustomObject]$Manifest  # Reserved for manifest-based removal
     )
 
-    $null = $Manifest  # Manifest-based removal not yet implemented
+    $targetCases = @()
 
-    $cases = $Config.workloads.eDiscovery.cases
+    if ($Manifest) {
+        foreach ($manifestCase in @($Manifest.cases)) {
+            if ($manifestCase.caseName) {
+                $targetCases += [PSCustomObject]@{
+                    caseName   = [string]$manifestCase.caseName
+                    holdName   = [string]$manifestCase.holdName
+                    holdRule   = [string]$manifestCase.holdRule
+                    searchName = [string]$manifestCase.searchName
+                }
+            }
+        }
+    }
+
+    if ($targetCases.Count -eq 0) {
+        foreach ($case in $Config.workloads.eDiscovery.cases) {
+            $name = "$($Config.prefix)-$($case.name)"
+            $holdName = "$name-Hold"
+            $targetCases += [PSCustomObject]@{
+                caseName   = $name
+                holdName   = $holdName
+                holdRule   = "$holdName-Rule"
+                searchName = "$name-Search"
+            }
+        }
+    }
+
     # Process in reverse order for clean teardown
-    [array]::Reverse($cases)
+    [array]::Reverse($targetCases)
 
-    foreach ($case in $cases) {
-        $name = "$($Config.prefix)-$($case.name)"
-        $holdName = "$name-Hold"
-        $holdRuleName = "$holdName-Rule"
-        $searchName = "$name-Search"
+    foreach ($case in $targetCases) {
+        $name = $case.caseName
+        $holdName = $case.holdName
+        $holdRuleName = $case.holdRule
+        $searchName = $case.searchName
 
         Write-LabLog -Message "Removing eDiscovery resources for case: $name" -Level Info
 

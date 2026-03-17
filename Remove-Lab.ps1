@@ -20,6 +20,13 @@
 .PARAMETER SkipAuth
     Skip connecting to Exchange Online and Microsoft Graph (for testing).
 
+.PARAMETER TenantId
+    Microsoft Entra tenant ID. Defaults to environment variable PURVIEW_TENANT_ID.
+    Required unless -SkipAuth is specified.
+
+.PARAMETER Cloud
+    Cloud profile to use (`commercial` or `gcc`). If omitted, uses config value.
+
 .EXAMPLE
     ./Remove-Lab.ps1 -ConfigPath configs/full-demo.json
 
@@ -41,7 +48,14 @@ param(
     [string]$ManifestPath,
 
     [Parameter()]
-    [switch]$SkipAuth
+    [switch]$SkipAuth,
+
+    [Parameter()]
+    [string]$TenantId = $env:PURVIEW_TENANT_ID,
+
+    [Parameter()]
+    [ValidateSet('commercial', 'gcc')]
+    [string]$Cloud = $env:PURVIEW_CLOUD
 )
 
 $ErrorActionPreference = 'Stop'
@@ -59,7 +73,15 @@ try {
     # Load configuration
     Write-LabStep -StepName 'Config' -Description 'Loading lab configuration'
     $Config = Import-LabConfig -ConfigPath $ConfigPath
-    Write-LabLog -Message "Lab: $($Config.labName) | Prefix: $($Config.prefix) | Domain: $($Config.domain)" -Level Info
+    $resolvedCloud = Resolve-LabCloud -Cloud $Cloud -Config $Config
+    $capabilityProfile = Import-LabCloudProfile -Cloud $resolvedCloud -RepositoryRoot $PSScriptRoot
+    Write-LabLog -Message "Lab: $($Config.labName) | Prefix: $($Config.prefix) | Domain: $($Config.domain) | Cloud: $resolvedCloud" -Level Info
+
+    # Warn on cloud capability differences for teardown context
+    $compatibility = Test-LabWorkloadCompatibility -Config $Config -CapabilityProfile $capabilityProfile -Operation Remove
+    foreach ($warning in $compatibility.warnings) {
+        Write-LabLog -Message $warning -Level Warning
+    }
 
     # Load manifest if provided
     $Manifest = $null
@@ -69,7 +91,21 @@ try {
         Write-LabLog -Message 'Manifest loaded. Using manifest for precise removal.' -Level Info
     }
     else {
-        Write-LabLog -Message 'No manifest provided. Falling back to config + prefix-based removal.' -Level Warning
+        $defaultManifestDir = Join-Path (Join-Path $PSScriptRoot 'manifests') $resolvedCloud
+        Write-LabLog -Message "No manifest provided. Falling back to config + prefix-based removal. Cloud manifest folder: $defaultManifestDir" -Level Warning
+    }
+
+    function Get-WorkloadManifest {
+        param(
+            [Parameter(Mandatory)]
+            [string]$WorkloadName
+        )
+
+        if ($Manifest -and $Manifest.data -and $Manifest.data.PSObject.Properties[$WorkloadName]) {
+            return $Manifest.data.$WorkloadName
+        }
+
+        return $null
     }
 
     # Test prerequisites
@@ -82,9 +118,19 @@ try {
 
     # Connect to services
     if (-not $SkipAuth) {
+        if ([string]::IsNullOrWhiteSpace($TenantId)) {
+            throw 'TenantId is required when authentication is enabled. Use -TenantId or set PURVIEW_TENANT_ID.'
+        }
+
         Write-LabStep -StepName 'Auth' -Description 'Connecting to cloud services'
-        Connect-LabServices -TenantId 'f1b92d41-6d54-4102-9dd9-4208451314df'
+        Connect-LabServices -TenantId $TenantId
         Write-LabLog -Message 'Connected to Exchange Online and Microsoft Graph.' -Level Success
+
+        $resolvedDomain = Resolve-LabTenantDomain -ConfiguredDomain $Config.domain
+        if (-not [string]::Equals($resolvedDomain, [string]$Config.domain, [System.StringComparison]::OrdinalIgnoreCase)) {
+            Write-LabLog -Message "Configured domain '$($Config.domain)' is not verified in this tenant. Using '$resolvedDomain' for teardown lookups." -Level Warning
+            $Config.domain = $resolvedDomain
+        }
     }
     else {
         Write-LabLog -Message 'Skipping authentication (-SkipAuth).' -Level Warning
@@ -99,7 +145,7 @@ try {
     # 1. Insider Risk
     if ($Config.workloads.insiderRisk.enabled) {
         Write-LabStep -StepName 'InsiderRisk' -Description 'Removing insider risk management policies'
-        Remove-InsiderRisk -Config $Config -Manifest $Manifest -WhatIf:$WhatIfPreference
+        Remove-InsiderRisk -Config $Config -Manifest (Get-WorkloadManifest -WorkloadName 'insiderRisk') -WhatIf:$WhatIfPreference
         Write-LabLog -Message 'Insider risk removal complete.' -Level Success
     }
     else {
@@ -109,7 +155,7 @@ try {
     # 2. Communication Compliance
     if ($Config.workloads.communicationCompliance.enabled) {
         Write-LabStep -StepName 'CommunicationCompliance' -Description 'Removing communication compliance policies'
-        Remove-CommunicationCompliance -Config $Config -Manifest $Manifest -WhatIf:$WhatIfPreference
+        Remove-CommunicationCompliance -Config $Config -Manifest (Get-WorkloadManifest -WorkloadName 'communicationCompliance') -WhatIf:$WhatIfPreference
         Write-LabLog -Message 'Communication compliance removal complete.' -Level Success
     }
     else {
@@ -119,7 +165,7 @@ try {
     # 3. eDiscovery
     if ($Config.workloads.eDiscovery.enabled) {
         Write-LabStep -StepName 'EDiscovery' -Description 'Removing eDiscovery cases'
-        Remove-EDiscovery -Config $Config -Manifest $Manifest -WhatIf:$WhatIfPreference
+        Remove-EDiscovery -Config $Config -Manifest (Get-WorkloadManifest -WorkloadName 'eDiscovery') -WhatIf:$WhatIfPreference
         Write-LabLog -Message 'eDiscovery removal complete.' -Level Success
     }
     else {
@@ -129,7 +175,7 @@ try {
     # 4. Retention
     if ($Config.workloads.retention.enabled) {
         Write-LabStep -StepName 'Retention' -Description 'Removing retention policies and labels'
-        Remove-Retention -Config $Config -Manifest $Manifest -WhatIf:$WhatIfPreference
+        Remove-Retention -Config $Config -Manifest (Get-WorkloadManifest -WorkloadName 'retention') -WhatIf:$WhatIfPreference
         Write-LabLog -Message 'Retention removal complete.' -Level Success
     }
     else {
@@ -139,7 +185,7 @@ try {
     # 5. DLP
     if ($Config.workloads.dlp.enabled) {
         Write-LabStep -StepName 'DLP' -Description 'Removing DLP policies'
-        Remove-DLP -Config $Config -Manifest $Manifest -WhatIf:$WhatIfPreference
+        Remove-DLP -Config $Config -Manifest (Get-WorkloadManifest -WorkloadName 'dlp') -WhatIf:$WhatIfPreference
         Write-LabLog -Message 'DLP removal complete.' -Level Success
     }
     else {
@@ -149,7 +195,7 @@ try {
     # 6. Sensitivity Labels
     if ($Config.workloads.sensitivityLabels.enabled) {
         Write-LabStep -StepName 'SensitivityLabels' -Description 'Removing sensitivity labels'
-        Remove-SensitivityLabels -Config $Config -Manifest $Manifest -WhatIf:$WhatIfPreference
+        Remove-SensitivityLabels -Config $Config -Manifest (Get-WorkloadManifest -WorkloadName 'sensitivityLabels') -WhatIf:$WhatIfPreference
         Write-LabLog -Message 'Sensitivity labels removal complete.' -Level Success
     }
     else {
@@ -159,7 +205,7 @@ try {
     # 7. Test Users
     if ($Config.workloads.testUsers.enabled) {
         Write-LabStep -StepName 'TestUsers' -Description 'Removing test users'
-        Remove-TestUsers -Config $Config -Manifest $Manifest -WhatIf:$WhatIfPreference
+        Remove-TestUsers -Config $Config -Manifest (Get-WorkloadManifest -WorkloadName 'testUsers') -WhatIf:$WhatIfPreference
         Write-LabLog -Message 'Test users removal complete.' -Level Success
     }
     else {

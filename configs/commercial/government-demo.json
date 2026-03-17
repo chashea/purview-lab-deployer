@@ -1,0 +1,295 @@
+{
+  "$schema": "./_schema.json",
+  "labName": "Government CUI Compliance Demo",
+  "prefix": "PVGov",
+  "domain": "MngEnvMCAP648165.onmicrosoft.com",
+  "workloads": {
+    "testUsers": {
+      "enabled": true,
+      "users": [
+        {
+          "displayName": "Col. Diana Mercer",
+          "mailNickname": "dmercer",
+          "department": "Operations",
+          "jobTitle": "Director of Operations",
+          "usageLocation": "US"
+        },
+        {
+          "displayName": "Brian Calloway",
+          "mailNickname": "bcalloway",
+          "department": "Intelligence",
+          "jobTitle": "Intelligence Analyst",
+          "usageLocation": "US"
+        },
+        {
+          "displayName": "Priya Sharma",
+          "mailNickname": "psharma",
+          "department": "Contracting",
+          "jobTitle": "Contracting Officer",
+          "usageLocation": "US"
+        },
+        {
+          "displayName": "Lt. Marcus Grant",
+          "mailNickname": "mgrant",
+          "department": "Cybersecurity",
+          "jobTitle": "ISSO (Info Systems Security Officer)",
+          "usageLocation": "US"
+        },
+        {
+          "displayName": "Catherine Wells",
+          "mailNickname": "cwells",
+          "department": "Legal",
+          "jobTitle": "General Counsel",
+          "usageLocation": "US"
+        },
+        {
+          "displayName": "Derek Huang",
+          "mailNickname": "dhuang",
+          "department": "Administration",
+          "jobTitle": "Agency Administrator",
+          "usageLocation": "US"
+        }
+      ],
+      "groups": [
+        {
+          "displayName": "PVGov-Operations",
+          "members": [
+            "dmercer",
+            "bcalloway",
+            "mgrant"
+          ]
+        },
+        {
+          "displayName": "PVGov-Oversight",
+          "members": [
+            "cwells",
+            "psharma"
+          ]
+        },
+        {
+          "displayName": "PVGov-Leadership",
+          "members": [
+            "dmercer",
+            "dhuang"
+          ]
+        }
+      ]
+    },
+    "dlp": {
+      "enabled": true,
+      "policies": [
+        {
+          "name": "CUI Protection",
+          "locations": [
+            "Exchange",
+            "SharePoint",
+            "OneDrive"
+          ],
+          "rules": [
+            {
+              "name": "Detect US Passport Numbers",
+              "sensitiveInfoTypes": [
+                "U.S. Passport Number"
+              ],
+              "minCount": 1
+            },
+            {
+              "name": "Detect Social Security Numbers",
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)"
+              ],
+              "minCount": 1
+            }
+          ]
+        },
+        {
+          "name": "Export Controlled Data",
+          "locations": [
+            "Exchange",
+            "SharePoint",
+            "Teams"
+          ],
+          "rules": [
+            {
+              "name": "Detect ITIN Numbers",
+              "sensitiveInfoTypes": [
+                "U.S. Individual Taxpayer Identification Number (ITIN)"
+              ],
+              "minCount": 1
+            },
+            {
+              "name": "Detect Bank Account Numbers",
+              "sensitiveInfoTypes": [
+                "U.S. Bank Account Number"
+              ],
+              "minCount": 1
+            }
+          ]
+        }
+      ]
+    },
+    "sensitivityLabels": {
+      "enabled": true,
+      "labels": [
+        {
+          "name": "CUI",
+          "tooltip": "Controlled Unclassified Information per 32 CFR Part 2002",
+          "color": "#D13438",
+          "sublabels": [
+            {
+              "name": "Basic",
+              "tooltip": "CUI Basic \u2014 standard handling requirements",
+              "encryption": false,
+              "contentMarking": {
+                "footerText": "CUI \u2014 Handle in accordance with 32 CFR Part 2002"
+              }
+            },
+            {
+              "name": "Specified",
+              "tooltip": "CUI Specified \u2014 export controlled, additional handling required",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "CUI//SP-EXPT \u2014 Export Controlled",
+                "footerText": "Dissemination restricted per ITAR/EAR \u2014 authorized personnel only"
+              }
+            }
+          ]
+        },
+        {
+          "name": "FOUO",
+          "tooltip": "For Official Use Only \u2014 not for public release",
+          "color": "#0078D4",
+          "sublabels": [
+            {
+              "name": "Standard",
+              "tooltip": "FOUO Standard \u2014 official use only",
+              "encryption": false,
+              "contentMarking": {
+                "footerText": "FOR OFFICIAL USE ONLY \u2014 Not for public release"
+              }
+            },
+            {
+              "name": "Law Enforcement Sensitive",
+              "tooltip": "FOUO/LES \u2014 restricted to law enforcement personnel",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "FOUO//LES",
+                "footerText": "Distribution limited to law enforcement personnel with need-to-know"
+              }
+            }
+          ]
+        }
+      ],
+      "autoLabelPolicies": [
+        {
+          "name": "Auto-label US Passport as CUI Basic",
+          "labelName": "CUI\\Basic",
+          "sensitiveInfoTypes": [
+            "U.S. Passport Number"
+          ],
+          "locations": [
+            "Exchange",
+            "SharePoint"
+          ]
+        }
+      ]
+    },
+    "retention": {
+      "enabled": true,
+      "policies": [
+        {
+          "name": "Federal Records Retention",
+          "retentionDays": 2555,
+          "retentionAction": "retainAndDelete",
+          "locations": [
+            "Exchange",
+            "SharePoint"
+          ]
+        },
+        {
+          "name": "Classified Material Hold",
+          "retentionDays": 3650,
+          "retentionAction": "retainOnly",
+          "locations": [
+            "Exchange",
+            "OneDrive"
+          ]
+        }
+      ]
+    },
+    "eDiscovery": {
+      "enabled": true,
+      "cases": [
+        {
+          "name": "Classified-Document-Leak-Investigation",
+          "description": "Investigation into unauthorized disclosure of CUI and export-controlled technical data",
+          "custodians": [
+            "bcalloway@MngEnvMCAP648165.onmicrosoft.com",
+            "mgrant@MngEnvMCAP648165.onmicrosoft.com"
+          ],
+          "holdQuery": "CUI OR classified OR \"export controlled\" OR ITAR",
+          "searchQuery": "\"unauthorized disclosure\" OR leak OR \"spillage\" OR \"data exfiltration\""
+        }
+      ]
+    },
+    "communicationCompliance": {
+      "enabled": true,
+      "policies": [
+        {
+          "name": "Sensitive Communications Monitoring",
+          "reviewers": [
+            "cwells@MngEnvMCAP648165.onmicrosoft.com"
+          ],
+          "supervisedUsers": [
+            "bcalloway@MngEnvMCAP648165.onmicrosoft.com",
+            "psharma@MngEnvMCAP648165.onmicrosoft.com"
+          ],
+          "direction": "Both",
+          "condition": "offensive language"
+        }
+      ]
+    },
+    "insiderRisk": {
+      "enabled": true,
+      "policies": [
+        {
+          "name": "Departing Personnel Data Theft",
+          "template": "Data theft by departing users",
+          "priorityUserGroups": [
+            "PVGov-Operations"
+          ]
+        }
+      ]
+    },
+    "testData": {
+      "enabled": true,
+      "emails": [
+        {
+          "from": "bcalloway",
+          "to": "dmercer",
+          "subject": "Intelligence Assessment - Operation Sentinel",
+          "body": "Col. Mercer, the intelligence assessment for Operation Sentinel is complete. Key subjects include foreign nationals with passport numbers 512847963 and 648201573. This document contains CUI markings and references classified source material. The assessment identifies three persons of interest with ties to the target network. Please review in the SCIF and confirm receipt."
+        },
+        {
+          "from": "psharma",
+          "to": "cwells",
+          "subject": "Defense Contractor Vetting",
+          "body": "Catherine, I'm processing the security clearance paperwork for Meridian Defense Systems. The primary contact's SSN is 478-62-1935 and ITIN is 912-78-4521. Their facility clearance is pending adjudication. We need to verify their CAGE code and confirm DFARS 252.204-7012 compliance before awarding the subcontract. Can legal review the DD Form 254 by end of week?"
+        },
+        {
+          "from": "mgrant",
+          "to": "dhuang",
+          "subject": "Cybersecurity Incident - Unauthorized CUI Access",
+          "body": "Derek, we detected a spillage incident at 0347 hours. An uncleared contractor accessed a SharePoint library containing CUI//SP-EXPT documents from an unapproved endpoint. This violates NIST 800-171 controls AC-2 and AC-3. I've isolated the account and initiated forensic imaging. We have 72 hours to report to the agency CISO per our incident response plan. Recommend convening the IRT at 0900 tomorrow."
+        },
+        {
+          "from": "dmercer",
+          "to": "bcalloway",
+          "subject": "ITAR Technical Data Transfer Review",
+          "body": "Brian, the State Department license application for the technical data transfer to our allied partner is under review. The package includes export-controlled specifications for the sensor array subsystem. The foreign government end-user has submitted their required certifications but we need to verify the end-use statement aligns with our DSP-5 application. Do not transmit any ITAR-controlled data until we receive the signed license from DDTC."
+        }
+      ]
+    }
+  },
+  "cloud": "commercial"
+}

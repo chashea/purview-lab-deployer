@@ -5,11 +5,350 @@
     DLP workload module for purview-lab-deployer.
 #>
 
-$script:LocationParamMap = @{
-    'Exchange'   = 'ExchangeLocation'
-    'SharePoint' = 'SharePointLocation'
-    'OneDrive'   = 'OneDriveLocation'
-    'Teams'      = 'TeamsLocation'
+$script:LocationParamCandidates = @{
+    'Exchange'   = @('ExchangeLocation')
+    'SharePoint' = @('SharePointLocation')
+    'OneDrive'   = @('OneDriveLocation')
+    'Teams'      = @('TeamsLocation')
+    'Devices'    = @('EndpointDlpLocation', 'DevicesLocation', 'DeviceLocation')
+    'Copilot'    = @('CopilotLocation')
+}
+
+function Get-LabSupportedParameterName {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter(Mandatory)]
+        [System.Management.Automation.CommandInfo]$CommandInfo,
+
+        [Parameter(Mandatory)]
+        [string[]]$CandidateNames
+    )
+
+    foreach ($candidate in $CandidateNames) {
+        if ($CommandInfo.Parameters.ContainsKey($candidate)) {
+            return $candidate
+        }
+    }
+
+    return $null
+}
+
+function Get-LabDlpLocationParameter {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Location,
+
+        [Parameter(Mandatory)]
+        [System.Management.Automation.CommandInfo]$CommandInfo
+    )
+
+    $candidates = @($script:LocationParamCandidates[$Location])
+    foreach ($candidate in $candidates) {
+        if ($CommandInfo.Parameters.ContainsKey($candidate)) {
+            return $candidate
+        }
+    }
+
+    return $null
+}
+
+function Get-LabDlpLocationParameters {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter(Mandatory)]
+        [string[]]$Locations,
+
+        [Parameter(Mandatory)]
+        [System.Management.Automation.CommandInfo]$CommandInfo,
+
+        [Parameter(Mandatory)]
+        [string]$PolicyName,
+
+        [switch]$PreferAddParameters
+    )
+
+    $locationParams = @{}
+    foreach ($location in @($Locations | Sort-Object -Unique)) {
+        $baseParam = Get-LabDlpLocationParameter -Location $location -CommandInfo $CommandInfo
+        if (-not $baseParam) {
+            Write-LabLog -Message "DLP location '$location' is not supported by cmdlet '$($CommandInfo.Name)' in this environment for policy '$PolicyName'. Skipping this location." -Level Warning
+            continue
+        }
+
+        $targetParam = $baseParam
+        $addParam = "Add$baseParam"
+        if ($PreferAddParameters -and $CommandInfo.Parameters.ContainsKey($addParam)) {
+            $targetParam = $addParam
+        }
+        elseif (-not $CommandInfo.Parameters.ContainsKey($baseParam) -and $CommandInfo.Parameters.ContainsKey($addParam)) {
+            $targetParam = $addParam
+        }
+
+        if (-not $CommandInfo.Parameters.ContainsKey($targetParam)) {
+            Write-LabLog -Message "DLP location parameter '$targetParam' was not available on cmdlet '$($CommandInfo.Name)' for policy '$PolicyName'." -Level Warning
+            continue
+        }
+
+        $locationParams[$targetParam] = 'All'
+    }
+
+    return $locationParams
+}
+
+function Get-LabPolicyScopeParameters {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter(Mandatory)]
+        [PSCustomObject]$Policy,
+
+        [Parameter(Mandatory)]
+        [System.Management.Automation.CommandInfo]$CommandInfo,
+
+        [Parameter(Mandatory)]
+        [string]$PolicyName
+    )
+
+    $optionalParams = @{}
+
+    $scopeMap = @(
+        @{
+            ConfigName = 'appliesToGroups'
+            Candidates = @('ExchangeSenderMemberOf', 'ExchangeSenderMemberOfGroups', 'UserScope')
+            Label      = 'appliesToGroups'
+        },
+        @{
+            ConfigName = 'excludeGroups'
+            Candidates = @('ExceptIfUserMemberOf', 'ExchangeSenderMemberOfException', 'ExcludedUsers')
+            Label      = 'excludeGroups'
+        }
+    )
+
+    foreach ($scope in $scopeMap) {
+        if (($Policy.PSObject.Properties.Name -notcontains $scope.ConfigName) -or $null -eq $Policy.$($scope.ConfigName)) {
+            continue
+        }
+
+        $configuredValues = [string[]]@($Policy.$($scope.ConfigName) | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) } | Sort-Object -Unique)
+        if ($configuredValues.Count -eq 0) {
+            continue
+        }
+
+        $parameterName = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames $scope.Candidates
+        if (-not $parameterName) {
+            Write-LabLog -Message "Policy '$PolicyName' config field '$($scope.Label)' is set but cmdlet '$($CommandInfo.Name)' does not expose a supported scope parameter." -Level Warning
+            continue
+        }
+
+        $optionalParams[$parameterName] = $configuredValues
+    }
+
+    return $optionalParams
+}
+
+function Get-LabDlpRuleOptionalParameters {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter(Mandatory)]
+        [PSCustomObject]$Policy,
+
+        [Parameter(Mandatory)]
+        [PSCustomObject]$Rule,
+
+        [Parameter(Mandatory)]
+        [System.Management.Automation.CommandInfo]$CommandInfo,
+
+        [Parameter(Mandatory)]
+        [string]$RuleName
+    )
+
+    $optionalParams = @{}
+
+    $labelSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    foreach ($labelValue in @($Policy.labels) + @($Rule.labels)) {
+        if (-not [string]::IsNullOrWhiteSpace([string]$labelValue)) {
+            $null = $labelSet.Add(([string]$labelValue).Trim())
+        }
+    }
+
+    $labels = [string[]]@($labelSet | Sort-Object -Unique)
+    if ($labels.Count -gt 0) {
+        $labelParameter = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('SensitivityLabels', 'SensitivityLabel', 'Labels')
+        if ($labelParameter) {
+            $optionalParams[$labelParameter] = $labels
+        }
+        else {
+            Write-LabLog -Message "Rule '$RuleName' includes label conditions, but '$($CommandInfo.Name)' has no supported label parameter." -Level Warning
+        }
+    }
+
+    $enforcement = if (($Rule.PSObject.Properties.Name -contains 'enforcement') -and $null -ne $Rule.enforcement) { $Rule.enforcement } else { $null }
+    if (-not $enforcement) {
+        return $optionalParams
+    }
+
+    $enforcementAction = if (($enforcement.PSObject.Properties.Name -contains 'action') -and -not [string]::IsNullOrWhiteSpace([string]$enforcement.action)) {
+        ([string]$enforcement.action).Trim()
+    }
+    else {
+        $null
+    }
+
+    if ($enforcementAction) {
+        $actionSwitchParameter = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('BlockAccess')
+        if ($actionSwitchParameter) {
+            switch ($enforcementAction) {
+                'block' {
+                    $optionalParams[$actionSwitchParameter] = $true
+                }
+                'auditOnly' {
+                    $optionalParams[$actionSwitchParameter] = $false
+                }
+                'allowWithJustification' {
+                    $optionalParams[$actionSwitchParameter] = $false
+                }
+            }
+        }
+        else {
+            $modeParameter = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('Mode', 'EnforcementMode', 'Action')
+            if ($modeParameter) {
+                $optionalParams[$modeParameter] = switch ($enforcementAction) {
+                    'block' { 'Enforce' }
+                    'auditOnly' { 'Audit' }
+                    'allowWithJustification' { 'Audit' }
+                    default { $null }
+                }
+            }
+        }
+
+        if ($enforcementAction -eq 'allowWithJustification') {
+            $overrideParameter = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('AllowOverrideWithJustification', 'AllowOverride', 'UserCanOverride')
+            if ($overrideParameter) {
+                $optionalParams[$overrideParameter] = $true
+                if ($actionSwitchParameter) {
+                    $optionalParams[$actionSwitchParameter] = $true
+                }
+            }
+            else {
+                Write-LabLog -Message "Rule '$RuleName' requested allow-with-justification, but '$($CommandInfo.Name)' does not expose an override parameter. Falling back to audit behavior." -Level Warning
+            }
+        }
+    }
+
+    if (($enforcement.PSObject.Properties.Name -contains 'userNotification') -and $null -ne $enforcement.userNotification) {
+        $notification = $enforcement.userNotification
+        if (($notification.PSObject.Properties.Name -contains 'enabled') -and [bool]$notification.enabled) {
+            $notifyParam = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('NotifyUser', 'UserNotificationEnabled')
+            if ($notifyParam) {
+                $optionalParams[$notifyParam] = $true
+            }
+            $message = if (($notification.PSObject.Properties.Name -contains 'message') -and -not [string]::IsNullOrWhiteSpace([string]$notification.message)) {
+                [string]$notification.message
+            }
+            else {
+                $null
+            }
+            if ($message) {
+                $messageParam = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('NotifyUserMessage', 'UserNotificationText', 'PolicyTipCustomText')
+                if ($messageParam) {
+                    $optionalParams[$messageParam] = $message
+                }
+                else {
+                    Write-LabLog -Message "Rule '$RuleName' requested user notification text, but '$($CommandInfo.Name)' has no supported message parameter." -Level Warning
+                }
+            }
+        }
+    }
+
+    if (($enforcement.PSObject.Properties.Name -contains 'alert') -and $null -ne $enforcement.alert) {
+        $alert = $enforcement.alert
+        if (($alert.PSObject.Properties.Name -contains 'enabled') -and [bool]$alert.enabled) {
+            $alertEnabledParam = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('GenerateAlert', 'AlertEnabled')
+            if ($alertEnabledParam) {
+                $optionalParams[$alertEnabledParam] = $true
+            }
+            $severity = if (($alert.PSObject.Properties.Name -contains 'severity') -and -not [string]::IsNullOrWhiteSpace([string]$alert.severity)) {
+                (([string]$alert.severity).Trim().Substring(0, 1).ToUpperInvariant() + ([string]$alert.severity).Trim().Substring(1).ToLowerInvariant())
+            }
+            else {
+                $null
+            }
+            if ($severity) {
+                $severityParam = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('Severity', 'AlertSeverity')
+                if ($severityParam) {
+                    $optionalParams[$severityParam] = $severity
+                }
+            }
+        }
+    }
+
+    if (($enforcement.PSObject.Properties.Name -contains 'incidentReport') -and $null -ne $enforcement.incidentReport) {
+        $incident = $enforcement.incidentReport
+        if (($incident.PSObject.Properties.Name -contains 'enabled') -and [bool]$incident.enabled) {
+            $incidentEnabledParam = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('IncidentReportEnabled', 'GenerateIncidentReport')
+            if ($incidentEnabledParam) {
+                $optionalParams[$incidentEnabledParam] = $true
+            }
+            $incidentSeverity = if (($incident.PSObject.Properties.Name -contains 'severity') -and -not [string]::IsNullOrWhiteSpace([string]$incident.severity)) {
+                (([string]$incident.severity).Trim().Substring(0, 1).ToUpperInvariant() + ([string]$incident.severity).Trim().Substring(1).ToLowerInvariant())
+            }
+            else {
+                $null
+            }
+            if ($incidentSeverity) {
+                $incidentSeverityParam = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('IncidentSeverity', 'IncidentReportSeverity')
+                if ($incidentSeverityParam) {
+                    $optionalParams[$incidentSeverityParam] = $incidentSeverity
+                }
+            }
+        }
+    }
+
+    return $optionalParams
+}
+
+function Test-LabDlpNotFoundException {
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param(
+        [Parameter(Mandatory)]
+        [System.Exception]$Exception,
+
+        [Parameter(Mandatory)]
+        [ValidateSet('Rule', 'Policy')]
+        [string]$EntityType
+    )
+
+    $current = $Exception
+    while ($current) {
+        $text = "$($current.GetType().FullName) $($current.Message)"
+        if ($EntityType -eq 'Rule' -and (
+                $text -match 'ErrorRuleNotFoundException' -or
+                $text -match 'There is no rule matching identity'
+            )) {
+            return $true
+        }
+
+        if ($EntityType -eq 'Policy' -and (
+                $text -match 'ErrorPolicyNotFoundException' -or
+                $text -match 'There is no policy matching identity'
+            )) {
+            return $true
+        }
+
+        if ($text -match 'ManagementObjectNotFoundException') {
+            return $true
+        }
+
+        $current = $current.InnerException
+    }
+
+    return $false
 }
 
 function Deploy-DLP {
@@ -22,9 +361,18 @@ function Deploy-DLP {
 
     $createdPolicies = [System.Collections.Generic.List[string]]::new()
     $createdRules = [System.Collections.Generic.List[string]]::new()
+    $newPolicyCommand = Get-Command -Name New-DlpCompliancePolicy -ErrorAction Stop
+    $setPolicyCommand = Get-Command -Name Set-DlpCompliancePolicy -ErrorAction SilentlyContinue
+    $newRuleCommand = Get-Command -Name New-DlpComplianceRule -ErrorAction Stop
+    $setRuleCommand = Get-Command -Name Set-DlpComplianceRule -ErrorAction SilentlyContinue
 
     foreach ($policy in $Config.workloads.dlp.policies) {
         $policyName = "$($Config.prefix)-$($policy.name)"
+        $createLocationParams = Get-LabDlpLocationParameters -Locations ([string[]]@($policy.locations)) -CommandInfo $newPolicyCommand -PolicyName $policyName
+        $createScopeParams = Get-LabPolicyScopeParameters -Policy $policy -CommandInfo $newPolicyCommand -PolicyName $policyName
+        if (($policy.PSObject.Properties.Name -contains 'policyMode') -and -not [string]::IsNullOrWhiteSpace([string]$policy.policyMode)) {
+            Write-LabLog -Message "DLP policy mode for '$policyName': $($policy.policyMode)" -Level Info
+        }
 
         # Check if policy exists
         $existing = $null
@@ -37,18 +385,68 @@ function Deploy-DLP {
 
         if ($existing) {
             Write-LabLog -Message "DLP policy already exists: $policyName" -Level Info
-        }
-        elseif ($PSCmdlet.ShouldProcess($policyName, 'Create DLP policy')) {
-            $locationParams = @{}
-            foreach ($loc in $policy.locations) {
-                $paramName = $script:LocationParamMap[$loc]
-                if ($paramName) {
-                    $locationParams[$paramName] = 'All'
+            if ($setPolicyCommand) {
+                $setLocationParams = Get-LabDlpLocationParameters -Locations ([string[]]@($policy.locations)) -CommandInfo $setPolicyCommand -PolicyName $policyName -PreferAddParameters
+                $setScopeParams = Get-LabPolicyScopeParameters -Policy $policy -CommandInfo $setPolicyCommand -PolicyName $policyName
+                $setParams = @{ Identity = $policyName; ErrorAction = 'Stop' }
+                foreach ($entry in $setLocationParams.GetEnumerator()) {
+                    $setParams[$entry.Key] = $entry.Value
+                }
+                foreach ($entry in $setScopeParams.GetEnumerator()) {
+                    $setParams[$entry.Key] = $entry.Value
+                }
+
+                if ($setParams.Count -gt 2) {
+                    if ($PSCmdlet.ShouldProcess($policyName, 'Update DLP policy locations')) {
+                        try {
+                            Set-DlpCompliancePolicy @setParams | Out-Null
+                            Write-LabLog -Message "Updated DLP policy locations: $policyName" -Level Success
+                        }
+                        catch {
+                            if ($setScopeParams.Count -gt 0 -and $setLocationParams.Count -gt 0) {
+                                Write-LabLog -Message "Policy update with optional scope parameters failed for $policyName. Retrying with location-only parameters." -Level Warning
+                                try {
+                                    Set-DlpCompliancePolicy -Identity $policyName @setLocationParams -ErrorAction Stop | Out-Null
+                                    Write-LabLog -Message "Updated DLP policy locations (without optional scope parameters): $policyName" -Level Success
+                                }
+                                catch {
+                                    Write-LabLog -Message "Could not update DLP policy for $policyName`: $($_.Exception.Message)" -Level Warning
+                                }
+                            }
+                            else {
+                                Write-LabLog -Message "Could not update DLP policy locations for $policyName`: $($_.Exception.Message)" -Level Warning
+                            }
+                        }
+                    }
                 }
             }
+        }
+        elseif ($PSCmdlet.ShouldProcess($policyName, 'Create DLP policy')) {
+            $newPolicyParams = @{
+                Name        = $policyName
+                ErrorAction = 'Stop'
+            }
+            foreach ($entry in $createLocationParams.GetEnumerator()) {
+                $newPolicyParams[$entry.Key] = $entry.Value
+            }
+            foreach ($entry in $createScopeParams.GetEnumerator()) {
+                $newPolicyParams[$entry.Key] = $entry.Value
+            }
 
-            New-DlpCompliancePolicy -Name $policyName @locationParams -ErrorAction Stop | Out-Null
-            Write-LabLog -Message "Created DLP policy: $policyName" -Level Success
+            try {
+                New-DlpCompliancePolicy @newPolicyParams | Out-Null
+                Write-LabLog -Message "Created DLP policy: $policyName" -Level Success
+            }
+            catch {
+                if ($createScopeParams.Count -gt 0) {
+                    Write-LabLog -Message "Policy creation with optional scope parameters failed for $policyName. Retrying with baseline location parameters." -Level Warning
+                    New-DlpCompliancePolicy -Name $policyName @createLocationParams -ErrorAction Stop | Out-Null
+                    Write-LabLog -Message "Created DLP policy (without optional scope parameters): $policyName" -Level Success
+                }
+                else {
+                    throw
+                }
+            }
         }
 
         $createdPolicies.Add($policyName)
@@ -67,6 +465,22 @@ function Deploy-DLP {
 
             if ($existingRule) {
                 Write-LabLog -Message "DLP rule already exists: $ruleName" -Level Info
+                $ruleUpdateParams = if ($setRuleCommand) {
+                    Get-LabDlpRuleOptionalParameters -Policy $policy -Rule $rule -CommandInfo $setRuleCommand -RuleName $ruleName
+                }
+                else {
+                    @{}
+                }
+
+                if ($setRuleCommand -and $ruleUpdateParams.Count -gt 0 -and $PSCmdlet.ShouldProcess($ruleName, 'Update DLP rule optional enforcement settings')) {
+                    try {
+                        Set-DlpComplianceRule -Identity $ruleName @ruleUpdateParams -ErrorAction Stop | Out-Null
+                        Write-LabLog -Message "Updated DLP rule optional settings: $ruleName" -Level Success
+                    }
+                    catch {
+                        Write-LabLog -Message "Could not update optional DLP rule settings for $ruleName`: $($_.Exception.Message)" -Level Warning
+                    }
+                }
                 $createdRules.Add($ruleName)
                 continue
             }
@@ -80,10 +494,33 @@ function Deploy-DLP {
                     }
                 }
 
-                New-DlpComplianceRule -Name $ruleName `
-                    -Policy $policyName `
-                    -ContentContainsSensitiveInformation $sitArray `
-                    -ErrorAction Stop | Out-Null
+                $baseRuleParams = @{
+                    Name                              = $ruleName
+                    Policy                            = $policyName
+                    ContentContainsSensitiveInformation = $sitArray
+                    ErrorAction                       = 'Stop'
+                }
+                $optionalRuleParams = Get-LabDlpRuleOptionalParameters -Policy $policy -Rule $rule -CommandInfo $newRuleCommand -RuleName $ruleName
+                $ruleParams = @{}
+                foreach ($entry in $baseRuleParams.GetEnumerator()) {
+                    $ruleParams[$entry.Key] = $entry.Value
+                }
+                foreach ($entry in $optionalRuleParams.GetEnumerator()) {
+                    $ruleParams[$entry.Key] = $entry.Value
+                }
+
+                try {
+                    New-DlpComplianceRule @ruleParams | Out-Null
+                }
+                catch {
+                    if ($optionalRuleParams.Count -gt 0) {
+                        Write-LabLog -Message "Rule creation with optional enforcement settings failed for $ruleName. Retrying with baseline settings only." -Level Warning
+                        New-DlpComplianceRule @baseRuleParams | Out-Null
+                    }
+                    else {
+                        throw
+                    }
+                }
                 Write-LabLog -Message "Created DLP rule: $ruleName" -Level Success
             }
 
@@ -107,35 +544,71 @@ function Remove-DLP {
         [PSCustomObject]$Manifest  # Reserved for manifest-based removal
     )
 
-    $null = $Manifest  # Manifest-based removal not yet implemented
+    $targetRules = @()
+    $targetPolicies = @()
 
-    # Remove rules first (rules depend on policies)
-    foreach ($policy in $Config.workloads.dlp.policies) {
-        $policyName = "$($Config.prefix)-$($policy.name)"
-
-        foreach ($rule in $policy.rules) {
-            $ruleName = "$($Config.prefix)-$($rule.name)"
-
-            $existing = $null
-            try {
-                $existing = Get-DlpComplianceRule -Identity $ruleName -ErrorAction Stop
-            }
-            catch {
-                $null = $_ # Rule does not exist
-            }
-
-            if (-not $existing) {
-                Write-LabLog -Message "DLP rule not found, skipping: $ruleName" -Level Warning
-                continue
-            }
-
-            if ($PSCmdlet.ShouldProcess($ruleName, 'Remove DLP rule')) {
-                Remove-DlpComplianceRule -Identity $ruleName -Confirm:$false
-                Write-LabLog -Message "Removed DLP rule: $ruleName" -Level Success
+    if ($Manifest) {
+        foreach ($ruleName in @($Manifest.rules)) {
+            if (-not [string]::IsNullOrWhiteSpace($ruleName)) {
+                $targetRules += [string]$ruleName
             }
         }
+        foreach ($policyName in @($Manifest.policies)) {
+            if (-not [string]::IsNullOrWhiteSpace($policyName)) {
+                $targetPolicies += [string]$policyName
+            }
+        }
+    }
 
-        # Remove policy
+    if ($targetRules.Count -eq 0) {
+        foreach ($policy in $Config.workloads.dlp.policies) {
+            foreach ($rule in $policy.rules) {
+                $targetRules += "$($Config.prefix)-$($rule.name)"
+            }
+        }
+    }
+
+    if ($targetPolicies.Count -eq 0) {
+        foreach ($policy in $Config.workloads.dlp.policies) {
+            $targetPolicies += "$($Config.prefix)-$($policy.name)"
+        }
+    }
+
+    $targetRules = @($targetRules | Sort-Object -Unique)
+    $targetPolicies = @($targetPolicies | Sort-Object -Unique)
+
+    # Remove rules first (rules depend on policies)
+    foreach ($ruleName in $targetRules) {
+        $existing = $null
+        try {
+            $existing = Get-DlpComplianceRule -Identity $ruleName -ErrorAction Stop
+        }
+        catch {
+            $null = $_ # Rule does not exist
+        }
+
+        if (-not $existing) {
+            Write-LabLog -Message "DLP rule not found, skipping: $ruleName" -Level Warning
+            continue
+        }
+
+        if ($PSCmdlet.ShouldProcess($ruleName, 'Remove DLP rule')) {
+            try {
+                Remove-DlpComplianceRule -Identity $ruleName -Confirm:$false -ErrorAction Stop
+                Write-LabLog -Message "Removed DLP rule: $ruleName" -Level Success
+            }
+            catch {
+                if (Test-LabDlpNotFoundException -Exception $_.Exception -EntityType Rule) {
+                    Write-LabLog -Message "DLP rule not found during delete, skipping: $ruleName" -Level Warning
+                    continue
+                }
+
+                throw
+            }
+        }
+    }
+
+    foreach ($policyName in $targetPolicies) {
         $existingPolicy = $null
         try {
             $existingPolicy = Get-DlpCompliancePolicy -Identity $policyName -ErrorAction Stop
@@ -150,8 +623,18 @@ function Remove-DLP {
         }
 
         if ($PSCmdlet.ShouldProcess($policyName, 'Remove DLP policy')) {
-            Remove-DlpCompliancePolicy -Identity $policyName -Confirm:$false
-            Write-LabLog -Message "Removed DLP policy: $policyName" -Level Success
+            try {
+                Remove-DlpCompliancePolicy -Identity $policyName -Confirm:$false -ErrorAction Stop
+                Write-LabLog -Message "Removed DLP policy: $policyName" -Level Success
+            }
+            catch {
+                if (Test-LabDlpNotFoundException -Exception $_.Exception -EntityType Policy) {
+                    Write-LabLog -Message "DLP policy not found during delete, skipping: $policyName" -Level Warning
+                    continue
+                }
+
+                throw
+            }
         }
     }
 }
