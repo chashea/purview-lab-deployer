@@ -5,11 +5,7 @@
     Interactive deployment entrypoint for purview-lab-deployer.
 
 .DESCRIPTION
-    Prompts for cloud profile and tenant ID, then invokes Deploy-Lab.ps1 with
-    the selected values. Designed for first-time or manual deployments.
-
-.PARAMETER ConfigPath
-    Optional path to config file. If omitted, defaults to configs/<cloud>/full-demo.json.
+    Prompts for cloud, profile, and tenant ID, then invokes Deploy-Lab.ps1.
 
 .PARAMETER WhatIf
     Passes WhatIf to Deploy-Lab.ps1.
@@ -21,9 +17,6 @@
 [CmdletBinding()]
 param(
     [Parameter()]
-    [string]$ConfigPath,
-
-    [Parameter()]
     [switch]$WhatIf,
 
     [Parameter()]
@@ -32,6 +25,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# Cloud selection
 $defaultCloud = if ([string]::IsNullOrWhiteSpace($env:PURVIEW_CLOUD)) { 'commercial' } else { $env:PURVIEW_CLOUD.ToLowerInvariant() }
 $allowedClouds = @('commercial', 'gcc')
 
@@ -50,6 +44,37 @@ do {
     }
 } while (-not $cloud)
 
+# Profile selection
+$profiles = @(
+    @{ Number = 1; Name = 'full-lab';  Description = 'Full demo lab' }
+    @{ Number = 2; Name = 'shadow-ai'; Description = 'Shadow AI demo' }
+)
+
+Write-Host ''
+Write-Host 'Available profiles:'
+foreach ($p in $profiles) {
+    Write-Host "  [$($p.Number)] $($p.Name) - $($p.Description)"
+}
+Write-Host ''
+
+do {
+    $profileInput = Read-Host 'Select profile [1/2] (default: 1)'
+    if ([string]::IsNullOrWhiteSpace($profileInput)) {
+        $selectedLabProfile = 'full-lab'
+    }
+    else {
+        $match = $profiles | Where-Object { $_.Number -eq [int]$profileInput -or $_.Name -eq $profileInput.Trim() }
+        if ($match) {
+            $selectedLabProfile = $match.Name
+        }
+        else {
+            Write-Warning "Invalid selection '$profileInput'."
+            $selectedLabProfile = $null
+        }
+    }
+} while (-not $selectedLabProfile)
+
+# Tenant ID
 $tenantId = $null
 if (-not $SkipAuth) {
     do {
@@ -75,25 +100,10 @@ if (-not $SkipAuth) {
     } while ([string]::IsNullOrWhiteSpace($tenantId))
 }
 
-if ([string]::IsNullOrWhiteSpace($ConfigPath)) {
-    $defaultConfigPath = Join-Path $PSScriptRoot "configs/$cloud/full-demo.json"
-    $configInput = Read-Host "Config path (default: $defaultConfigPath)"
-    if ([string]::IsNullOrWhiteSpace($configInput)) {
-        $ConfigPath = $defaultConfigPath
-    }
-    else {
-        $ConfigPath = $configInput.Trim()
-    }
-}
-
-if (-not (Test-Path -Path $ConfigPath -PathType Leaf)) {
-    throw "Config file not found: $ConfigPath"
-}
-
 $deployScriptPath = Join-Path $PSScriptRoot 'Deploy-Lab.ps1'
 $deployParams = @{
-    ConfigPath = $ConfigPath
-    Cloud      = $cloud
+    LabProfile = $selectedLabProfile
+    Cloud   = $cloud
 }
 
 if ($WhatIf) {
@@ -107,5 +117,5 @@ else {
     $deployParams['TenantId'] = $tenantId
 }
 
-Write-Host "Starting deploy with cloud='$cloud' config='$ConfigPath'..."
+Write-Host "Starting deploy with cloud='$cloud' profile='$selectedLabProfile'..."
 & $deployScriptPath @deployParams

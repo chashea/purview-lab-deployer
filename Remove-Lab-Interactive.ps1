@@ -5,11 +5,8 @@
     Interactive teardown entrypoint for purview-lab-deployer.
 
 .DESCRIPTION
-    Prompts for cloud profile, tenant ID, config path, and optional manifest
-    path, then invokes Remove-Lab.ps1 with the selected values.
-
-.PARAMETER ConfigPath
-    Optional path to config file. If omitted, defaults to configs/<cloud>/full-demo.json.
+    Prompts for cloud, profile, tenant ID, and optional manifest path,
+    then invokes Remove-Lab.ps1.
 
 .PARAMETER ManifestPath
     Optional manifest path. If omitted, Remove-Lab.ps1 falls back to config/prefix-based removal.
@@ -24,9 +21,6 @@
 [CmdletBinding()]
 param(
     [Parameter()]
-    [string]$ConfigPath,
-
-    [Parameter()]
     [string]$ManifestPath,
 
     [Parameter()]
@@ -38,6 +32,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# Cloud selection
 $defaultCloud = if ([string]::IsNullOrWhiteSpace($env:PURVIEW_CLOUD)) { 'commercial' } else { $env:PURVIEW_CLOUD.ToLowerInvariant() }
 $allowedClouds = @('commercial', 'gcc')
 
@@ -56,6 +51,37 @@ do {
     }
 } while (-not $cloud)
 
+# Profile selection
+$profiles = @(
+    @{ Number = 1; Name = 'full-lab';  Description = 'Full demo lab' }
+    @{ Number = 2; Name = 'shadow-ai'; Description = 'Shadow AI demo' }
+)
+
+Write-Host ''
+Write-Host 'Available profiles:'
+foreach ($p in $profiles) {
+    Write-Host "  [$($p.Number)] $($p.Name) - $($p.Description)"
+}
+Write-Host ''
+
+do {
+    $profileInput = Read-Host 'Select profile [1/2] (default: 1)'
+    if ([string]::IsNullOrWhiteSpace($profileInput)) {
+        $selectedLabProfile = 'full-lab'
+    }
+    else {
+        $match = $profiles | Where-Object { $_.Number -eq [int]$profileInput -or $_.Name -eq $profileInput.Trim() }
+        if ($match) {
+            $selectedLabProfile = $match.Name
+        }
+        else {
+            Write-Warning "Invalid selection '$profileInput'."
+            $selectedLabProfile = $null
+        }
+    }
+} while (-not $selectedLabProfile)
+
+# Tenant ID
 $tenantId = $null
 if (-not $SkipAuth) {
     do {
@@ -81,21 +107,7 @@ if (-not $SkipAuth) {
     } while ([string]::IsNullOrWhiteSpace($tenantId))
 }
 
-if ([string]::IsNullOrWhiteSpace($ConfigPath)) {
-    $defaultConfigPath = Join-Path $PSScriptRoot "configs/$cloud/full-demo.json"
-    $configInput = Read-Host "Config path (default: $defaultConfigPath)"
-    if ([string]::IsNullOrWhiteSpace($configInput)) {
-        $ConfigPath = $defaultConfigPath
-    }
-    else {
-        $ConfigPath = $configInput.Trim()
-    }
-}
-
-if (-not (Test-Path -Path $ConfigPath -PathType Leaf)) {
-    throw "Config file not found: $ConfigPath"
-}
-
+# Manifest (optional)
 if ([string]::IsNullOrWhiteSpace($ManifestPath)) {
     $defaultManifestDir = Join-Path $PSScriptRoot "manifests/$cloud"
     $manifestInput = Read-Host "Manifest path (optional, blank uses config/prefix fallback) [suggested dir: $defaultManifestDir]"
@@ -110,8 +122,8 @@ if (-not [string]::IsNullOrWhiteSpace($ManifestPath) -and -not (Test-Path -Path 
 
 $removeScriptPath = Join-Path $PSScriptRoot 'Remove-Lab.ps1'
 $removeParams = @{
-    ConfigPath = $ConfigPath
-    Cloud      = $cloud
+    LabProfile = $selectedLabProfile
+    Cloud   = $cloud
 }
 
 if ($WhatIf) {
@@ -129,5 +141,5 @@ if (-not [string]::IsNullOrWhiteSpace($ManifestPath)) {
     $removeParams['ManifestPath'] = $ManifestPath
 }
 
-Write-Host "Starting remove with cloud='$cloud' config='$ConfigPath'..."
+Write-Host "Starting remove with cloud='$cloud' profile='$selectedLabProfile'..."
 & $removeScriptPath @removeParams

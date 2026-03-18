@@ -10,7 +10,11 @@
     config + prefix-based removal.
 
 .PARAMETER ConfigPath
-    Path to the lab configuration JSON file.
+    Path to the lab configuration JSON file. Optional when -LabProfile is used.
+
+.PARAMETER LabProfile
+    Deployment profile name. Resolves to a config file under configs/<cloud>/.
+    Available profiles: full-lab, shadow-ai.
 
 .PARAMETER ManifestPath
     Optional path to a deployment manifest. When provided, uses manifest
@@ -28,20 +32,24 @@
     Cloud profile to use (`commercial` or `gcc`). If omitted, uses config value.
 
 .EXAMPLE
-    ./Remove-Lab.ps1 -ConfigPath configs/commercial/full-demo.json
+    ./Remove-Lab.ps1 -Cloud commercial -LabProfile full-lab
+
+.EXAMPLE
+    ./Remove-Lab.ps1 -Cloud commercial -LabProfile shadow-ai -Confirm:$false
 
 .EXAMPLE
     ./Remove-Lab.ps1 -ConfigPath configs/commercial/full-demo.json -ManifestPath manifests/lab_20260316-100000.json
-
-.EXAMPLE
-    ./Remove-Lab.ps1 -ConfigPath configs/commercial/full-demo.json -Confirm:$false
 #>
 
 [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
 param(
-    [Parameter(Mandatory)]
+    [Parameter()]
     [ValidateScript({ Test-Path $_ -PathType Leaf })]
     [string]$ConfigPath,
+
+    [Parameter()]
+    [ValidateSet('full-lab', 'shadow-ai')]
+    [string]$LabProfile,
 
     [Parameter()]
     [ValidateScript({ Test-Path $_ -PathType Leaf })]
@@ -59,6 +67,29 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+
+# Profile-to-config resolution
+$profileConfigMap = @{
+    'full-lab'  = 'full-demo.json'
+    'shadow-ai' = 'shadow-ai-demo.json'
+}
+
+if (-not [string]::IsNullOrWhiteSpace($LabProfile) -and -not [string]::IsNullOrWhiteSpace($ConfigPath)) {
+    throw 'Specify either -LabProfile or -ConfigPath, not both.'
+}
+
+if (-not [string]::IsNullOrWhiteSpace($LabProfile)) {
+    $resolvedCloud = if ([string]::IsNullOrWhiteSpace($Cloud)) { 'commercial' } else { $Cloud }
+    $configFileName = $profileConfigMap[$LabProfile]
+    $ConfigPath = Join-Path $PSScriptRoot "configs/$resolvedCloud/$configFileName"
+    if (-not (Test-Path $ConfigPath -PathType Leaf)) {
+        throw "Profile '$LabProfile' config not found for cloud '$resolvedCloud': $ConfigPath"
+    }
+}
+
+if ([string]::IsNullOrWhiteSpace($ConfigPath)) {
+    throw 'Either -LabProfile or -ConfigPath is required.'
+}
 
 # Import all modules
 foreach ($mod in (Get-ChildItem -Path (Join-Path $PSScriptRoot 'modules') -Filter '*.psm1')) {
