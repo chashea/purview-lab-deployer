@@ -118,4 +118,13 @@ else {
 }
 
 Write-Host "Starting deploy with cloud='$cloud' profile='$selectedLabProfile'..."
+
+# Test users mode — default to existing (use pre-existing Entra ID users)
+$createUsersInput = Read-Host 'Create new test users in Entra ID? [y/N] (default: N)'
+if ($createUsersInput -match '^[Yy]') {
+    $deployParams['TestUsersMode'] = 'create'
+} else {
+    $deployParams['TestUsersMode'] = 'existing'
+}
+
 & $deployScriptPath @deployParams

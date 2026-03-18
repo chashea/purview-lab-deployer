@@ -54,7 +54,11 @@ param(
 
     [Parameter()]
     [ValidateSet('commercial', 'gcc')]
-    [string]$Cloud = $env:PURVIEW_CLOUD
+    [string]$Cloud = $env:PURVIEW_CLOUD,
+
+    [Parameter()]
+    [ValidateSet('create', 'existing')]
+    [string]$TestUsersMode
 )
 
 $ErrorActionPreference = 'Stop'
@@ -97,6 +101,15 @@ try {
     $Config = Import-LabConfig -ConfigPath $ConfigPath
     $resolvedCloud = Resolve-LabCloud -Cloud $Cloud -Config $Config
     $capabilityProfile = Import-LabCloudProfile -Cloud $resolvedCloud -RepositoryRoot $PSScriptRoot
+
+    # Apply TestUsersMode override if specified
+    if (-not [string]::IsNullOrWhiteSpace($TestUsersMode) -and $Config.workloads.testUsers) {
+        if ($Config.workloads.testUsers.PSObject.Properties['mode']) {
+            $Config.workloads.testUsers.mode = $TestUsersMode
+        } else {
+            $Config.workloads.testUsers | Add-Member -NotePropertyName 'mode' -NotePropertyValue $TestUsersMode
+        }
+    }
 
     Write-LabLog -Message "Lab: $($Config.labName) | Prefix: $($Config.prefix) | Domain: $($Config.domain) | Cloud: $resolvedCloud" -Level Info
 

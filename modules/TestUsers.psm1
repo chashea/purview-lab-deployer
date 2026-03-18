@@ -21,94 +21,126 @@ function Deploy-TestUsers {
         throw 'Microsoft Graph context is not available for Deploy-TestUsers.'
     }
 
-    # --- Users ---
-    foreach ($user in $Config.workloads.testUsers.users) {
-        $upn = "$($user.mailNickname)@$($Config.domain)"
+    $mode = if ($Config.workloads.testUsers.PSObject.Properties['mode']) {
+        $Config.workloads.testUsers.mode
+    } else { 'create' }
 
-        $existing = Get-LabUserByIdentity -Identity $upn -DefaultDomain $Config.domain
-        if ($existing) {
-            $existingUpn = [string]$existing.UserPrincipalName
-            Write-LabLog -Message "User already exists: $existingUpn" -Level Info
-            $createdUpns.Add($existingUpn)
-            continue
+    if ($mode -eq 'existing') {
+        # --- Validate existing users ---
+        Write-LabLog -Message "TestUsers mode: existing — validating pre-existing Entra ID users" -Level Info
+        $missingUsers = [System.Collections.Generic.List[string]]::new()
+
+        foreach ($user in $Config.workloads.testUsers.users) {
+            $upn = $user.upn
+            if ([string]::IsNullOrWhiteSpace($upn)) {
+                throw "Each user entry must have a 'upn' property when testUsers.mode is 'existing'."
+            }
+
+            $existing = Get-LabUserByIdentity -Identity $upn -DefaultDomain $Config.domain
+            if ($existing) {
+                $resolvedUpn = [string]$existing.UserPrincipalName
+                Write-LabLog -Message "Validated existing user: $resolvedUpn" -Level Success
+                $createdUpns.Add($resolvedUpn)
+            }
+            else {
+                $missingUsers.Add($upn)
+            }
         }
 
-        if ($PSCmdlet.ShouldProcess($upn, 'Create user')) {
-            $password = "PVLab-$((New-Guid).ToString().Substring(0,8))!"
-            $passwordProfile = @{
-                ForceChangePasswordNextSignIn = $true
-                Password                     = $password
-            }
-
-            $params = @{
-                DisplayName       = $user.displayName
-                MailNickname      = $user.mailNickname
-                UserPrincipalName = $upn
-                Department        = $user.department
-                JobTitle          = $user.jobTitle
-                UsageLocation     = $user.usageLocation
-                AccountEnabled    = $true
-                PasswordProfile   = $passwordProfile
-            }
-
-            New-MgUser @params -ErrorAction Stop | Out-Null
-            $resolvedUser = $null
-            for ($attempt = 1; $attempt -le 6; $attempt++) {
-                $resolvedUser = Get-LabUserByIdentity -Identity $upn -DefaultDomain $Config.domain
-                if ($resolvedUser) {
-                    break
-                }
-
-                if ($attempt -lt 6) {
-                    Start-Sleep -Seconds 5
-                }
-            }
-
-            if (-not $resolvedUser) {
-                throw "Created user '$upn' could not be confirmed in Microsoft Graph."
-            }
-
-            $resolvedUpn = [string]$resolvedUser.UserPrincipalName
-            Write-LabLog -Message "Created user: $resolvedUpn" -Level Success
-            $createdUpns.Add($resolvedUpn)
-        }
-    }
-
-    # --- License assignment ---
-    $skus = Get-MgSubscribedSku -ErrorAction Stop
-    # Find SKUs with Exchange Online service plans by checking service plan names
-    $mailboxSku = $skus | Where-Object {
-        $_.PrepaidUnits.Enabled -gt $_.ConsumedUnits -and
-        ($_.ServicePlans | Where-Object {
-            $_.ServicePlanName -match 'EXCHANGE_S_' -and
-            $_.ProvisioningStatus -ne 'Disabled'
-        })
-    } | Sort-Object { $_.PrepaidUnits.Enabled - $_.ConsumedUnits } -Descending | Select-Object -First 1
-
-    if ($mailboxSku) {
-        Write-LabLog -Message "Auto-detected license SKU with Exchange mailbox: $($mailboxSku.SkuPartNumber) ($($mailboxSku.SkuId)) — $($mailboxSku.PrepaidUnits.Enabled - $mailboxSku.ConsumedUnits) available" -Level Info
-
-        foreach ($upn in $createdUpns) {
-            $userObj = Get-MgUser -Filter "userPrincipalName eq '$upn'" -Property Id,AssignedLicenses -ErrorAction SilentlyContinue
-            if (-not $userObj) { continue }
-
-            $alreadyLicensed = $userObj.AssignedLicenses | Where-Object { $_.SkuId -eq $mailboxSku.SkuId }
-            if ($alreadyLicensed) {
-                Write-LabLog -Message "License already assigned to $upn" -Level Info
-                continue
-            }
-
-            if ($PSCmdlet.ShouldProcess($upn, "Assign license $($mailboxSku.SkuPartNumber)")) {
-                Set-MgUserLicense -UserId $userObj.Id -AddLicenses @(@{ SkuId = $mailboxSku.SkuId }) -RemoveLicenses @() -ErrorAction Stop | Out-Null
-                Write-LabLog -Message "Assigned license $($mailboxSku.SkuPartNumber) to $upn" -Level Success
-            }
+        if ($missingUsers.Count -gt 0) {
+            $list = $missingUsers -join ', '
+            throw "The following users were not found in Entra ID (mode=existing): $list"
         }
     }
     else {
-        Write-LabLog -Message 'No SKU with Exchange Online mailbox service plan found. Users will not have mailboxes until licensed manually.' -Level Warning
+        # --- Create users ---
+        foreach ($user in $Config.workloads.testUsers.users) {
+            $upn = "$($user.mailNickname)@$($Config.domain)"
+
+            $existing = Get-LabUserByIdentity -Identity $upn -DefaultDomain $Config.domain
+            if ($existing) {
+                $existingUpn = [string]$existing.UserPrincipalName
+                Write-LabLog -Message "User already exists: $existingUpn" -Level Info
+                $createdUpns.Add($existingUpn)
+                continue
+            }
+
+            if ($PSCmdlet.ShouldProcess($upn, 'Create user')) {
+                $password = "PVLab-$((New-Guid).ToString().Substring(0,8))!"
+                $passwordProfile = @{
+                    ForceChangePasswordNextSignIn = $true
+                    Password                     = $password
+                }
+
+                $params = @{
+                    DisplayName       = $user.displayName
+                    MailNickname      = $user.mailNickname
+                    UserPrincipalName = $upn
+                    Department        = $user.department
+                    JobTitle          = $user.jobTitle
+                    UsageLocation     = $user.usageLocation
+                    AccountEnabled    = $true
+                    PasswordProfile   = $passwordProfile
+                }
+
+                New-MgUser @params -ErrorAction Stop | Out-Null
+                $resolvedUser = $null
+                for ($attempt = 1; $attempt -le 6; $attempt++) {
+                    $resolvedUser = Get-LabUserByIdentity -Identity $upn -DefaultDomain $Config.domain
+                    if ($resolvedUser) {
+                        break
+                    }
+
+                    if ($attempt -lt 6) {
+                        Start-Sleep -Seconds 5
+                    }
+                }
+
+                if (-not $resolvedUser) {
+                    throw "Created user '$upn' could not be confirmed in Microsoft Graph."
+                }
+
+                $resolvedUpn = [string]$resolvedUser.UserPrincipalName
+                Write-LabLog -Message "Created user: $resolvedUpn" -Level Success
+                $createdUpns.Add($resolvedUpn)
+            }
+        }
+
+        # --- License assignment (create mode only) ---
+        $skus = Get-MgSubscribedSku -ErrorAction Stop
+        $mailboxSku = $skus | Where-Object {
+            $_.PrepaidUnits.Enabled -gt $_.ConsumedUnits -and
+            ($_.ServicePlans | Where-Object {
+                $_.ServicePlanName -match 'EXCHANGE_S_' -and
+                $_.ProvisioningStatus -ne 'Disabled'
+            })
+        } | Sort-Object { $_.PrepaidUnits.Enabled - $_.ConsumedUnits } -Descending | Select-Object -First 1
+
+        if ($mailboxSku) {
+            Write-LabLog -Message "Auto-detected license SKU with Exchange mailbox: $($mailboxSku.SkuPartNumber) ($($mailboxSku.SkuId)) — $($mailboxSku.PrepaidUnits.Enabled - $mailboxSku.ConsumedUnits) available" -Level Info
+
+            foreach ($upn in $createdUpns) {
+                $userObj = Get-MgUser -Filter "userPrincipalName eq '$upn'" -Property Id,AssignedLicenses -ErrorAction SilentlyContinue
+                if (-not $userObj) { continue }
+
+                $alreadyLicensed = $userObj.AssignedLicenses | Where-Object { $_.SkuId -eq $mailboxSku.SkuId }
+                if ($alreadyLicensed) {
+                    Write-LabLog -Message "License already assigned to $upn" -Level Info
+                    continue
+                }
+
+                if ($PSCmdlet.ShouldProcess($upn, "Assign license $($mailboxSku.SkuPartNumber)")) {
+                    Set-MgUserLicense -UserId $userObj.Id -AddLicenses @(@{ SkuId = $mailboxSku.SkuId }) -RemoveLicenses @() -ErrorAction Stop | Out-Null
+                    Write-LabLog -Message "Assigned license $($mailboxSku.SkuPartNumber) to $upn" -Level Success
+                }
+            }
+        }
+        else {
+            Write-LabLog -Message 'No SKU with Exchange Online mailbox service plan found. Users will not have mailboxes until licensed manually.' -Level Warning
+        }
     }
 
-    # --- Groups ---
+    # --- Groups (both modes) ---
     foreach ($group in $Config.workloads.testUsers.groups) {
         $groupName = $group.displayName
         $mailNickname = $groupName -replace '[^a-zA-Z0-9-]', ''
@@ -129,7 +161,6 @@ function Deploy-TestUsers {
 
             Write-LabLog -Message "Created group: $groupName" -Level Success
 
-            # Add members
             foreach ($memberNickname in $group.members) {
                 $memberUser = Get-LabUserByIdentity -Identity $memberNickname -DefaultDomain $Config.domain
                 if ($memberUser) {
@@ -172,15 +203,21 @@ function Remove-TestUsers {
         throw 'Microsoft Graph context is not available for Remove-TestUsers.'
     }
 
+    $mode = if ($Config.workloads.testUsers.PSObject.Properties['mode']) {
+        $Config.workloads.testUsers.mode
+    } else { 'create' }
+
     if ($Manifest) {
         foreach ($groupName in @($Manifest.groups)) {
             if (-not [string]::IsNullOrWhiteSpace($groupName)) {
                 $targetGroups += [string]$groupName
             }
         }
-        foreach ($upn in @($Manifest.users)) {
-            if (-not [string]::IsNullOrWhiteSpace($upn)) {
-                $targetUsers += [string]$upn
+        if ($mode -eq 'create') {
+            foreach ($upn in @($Manifest.users)) {
+                if (-not [string]::IsNullOrWhiteSpace($upn)) {
+                    $targetUsers += [string]$upn
+                }
             }
         }
     }
@@ -191,7 +228,7 @@ function Remove-TestUsers {
         }
     }
 
-    if ($targetUsers.Count -eq 0) {
+    if ($mode -eq 'create' -and $targetUsers.Count -eq 0) {
         foreach ($user in $Config.workloads.testUsers.users) {
             $targetUsers += "$($user.mailNickname)@$($Config.domain)"
         }
@@ -215,7 +252,12 @@ function Remove-TestUsers {
         }
     }
 
-    # Remove users
+    if ($mode -eq 'existing') {
+        Write-LabLog -Message 'TestUsers mode is existing — skipping user deletion (users are not managed by this lab).' -Level Info
+        return
+    }
+
+    # Remove users (create mode only)
     foreach ($upn in $targetUsers) {
         $existing = Get-MgUser -Filter "userPrincipalName eq '$upn'" -ErrorAction Stop
         if (-not $existing) {

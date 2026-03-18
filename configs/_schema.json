@@ -39,36 +39,64 @@
             "enabled": {
               "type": "boolean"
             },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "create",
+                "existing"
+              ],
+              "default": "create",
+              "description": "User provisioning mode. 'create' provisions new users (default). 'existing' references pre-existing Entra ID users by UPN."
+            },
             "users": {
               "type": "array",
               "items": {
-                "type": "object",
-                "required": [
-                  "displayName",
-                  "mailNickname",
-                  "department",
-                  "jobTitle",
-                  "usageLocation"
-                ],
-                "properties": {
-                  "displayName": {
-                    "type": "string"
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "description": "User to create (mode=create)",
+                    "required": [
+                      "displayName",
+                      "mailNickname",
+                      "department",
+                      "jobTitle",
+                      "usageLocation"
+                    ],
+                    "properties": {
+                      "displayName": {
+                        "type": "string"
+                      },
+                      "mailNickname": {
+                        "type": "string"
+                      },
+                      "department": {
+                        "type": "string"
+                      },
+                      "jobTitle": {
+                        "type": "string"
+                      },
+                      "usageLocation": {
+                        "type": "string",
+                        "minLength": 2,
+                        "maxLength": 2
+                      }
+                    }
                   },
-                  "mailNickname": {
-                    "type": "string"
-                  },
-                  "department": {
-                    "type": "string"
-                  },
-                  "jobTitle": {
-                    "type": "string"
-                  },
-                  "usageLocation": {
-                    "type": "string",
-                    "minLength": 2,
-                    "maxLength": 2
+                  {
+                    "type": "object",
+                    "description": "Existing Entra ID user (mode=existing)",
+                    "required": [
+                      "upn"
+                    ],
+                    "properties": {
+                      "upn": {
+                        "type": "string",
+                        "description": "User principal name of an existing Entra ID user"
+                      }
+                    },
+                    "additionalProperties": false
                   }
-                }
+                ]
               }
             },
             "groups": {
@@ -88,7 +116,7 @@
                     "items": {
                       "type": "string"
                     },
-                    "description": "Array of mailNicknames"
+                    "description": "Array of mailNicknames (UPN local part before @)"
                   }
                 }
               }

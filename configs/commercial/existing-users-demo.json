@@ -1,0 +1,100 @@
+{
+  "$schema": "../_schema.json",
+  "labName": "Existing Users Demo",
+  "prefix": "PVLab",
+  "domain": "MngEnvMCAP648165.onmicrosoft.com",
+  "workloads": {
+    "testUsers": {
+      "enabled": true,
+      "mode": "existing",
+      "users": [
+        { "upn": "rtorres@MngEnvMCAP648165.onmicrosoft.com" },
+        { "upn": "mchen@MngEnvMCAP648165.onmicrosoft.com" },
+        { "upn": "nbrooks@MngEnvMCAP648165.onmicrosoft.com" },
+        { "upn": "dokafor@MngEnvMCAP648165.onmicrosoft.com" },
+        { "upn": "sreeves@MngEnvMCAP648165.onmicrosoft.com" },
+        { "upn": "jblake@MngEnvMCAP648165.onmicrosoft.com" }
+      ],
+      "groups": [
+        {
+          "displayName": "PVLab-Executives",
+          "members": ["jblake", "sreeves"]
+        },
+        {
+          "displayName": "PVLab-Finance-Team",
+          "members": ["mchen", "jblake"]
+        },
+        {
+          "displayName": "PVLab-Legal-Team",
+          "members": ["nbrooks", "rtorres"]
+        }
+      ]
+    },
+    "dlp": {
+      "enabled": true,
+      "policies": [
+        {
+          "name": "US PII Protection",
+          "locations": ["Exchange", "SharePoint", "OneDrive"],
+          "rules": [
+            {
+              "name": "Detect Social Security Numbers",
+              "sensitiveInfoTypes": ["U.S. Social Security Number (SSN)"],
+              "minCount": 1
+            }
+          ]
+        }
+      ]
+    },
+    "sensitivityLabels": {
+      "enabled": true,
+      "labels": [
+        {
+          "name": "Confidential",
+          "tooltip": "Data that requires protection and is intended for internal use only",
+          "color": "#0078D4",
+          "sublabels": [
+            {
+              "name": "All-Employees",
+              "tooltip": "Encrypted - accessible to all employees within the organization",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "CONFIDENTIAL - All Employees",
+                "footerText": "Do not share outside the organization"
+              }
+            }
+          ]
+        }
+      ],
+      "autoLabelPolicies": []
+    },
+    "retention": {
+      "enabled": false
+    },
+    "eDiscovery": {
+      "enabled": true,
+      "cases": [
+        {
+          "name": "Data-Breach-Investigation",
+          "description": "Investigation into potential data breach",
+          "custodians": [
+            "mchen@MngEnvMCAP648165.onmicrosoft.com",
+            "jblake@MngEnvMCAP648165.onmicrosoft.com"
+          ],
+          "holdQuery": "confidential OR classified",
+          "searchQuery": "breach OR incident"
+        }
+      ]
+    },
+    "communicationCompliance": {
+      "enabled": false
+    },
+    "insiderRisk": {
+      "enabled": false
+    },
+    "testData": {
+      "enabled": false
+    }
+  },
+  "cloud": "commercial"
+}
