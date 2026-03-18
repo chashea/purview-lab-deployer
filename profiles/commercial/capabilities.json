@@ -37,6 +37,10 @@
     "testData": {
       "status": "available",
       "note": "Graph sendMail test seeding available."
+    },
+    "appGovernance": {
+      "status": "available",
+      "note": "Cloud Discovery and session policies via MDCA REST API. OAuth app governance policies require manual portal setup."
     }
   }
 }

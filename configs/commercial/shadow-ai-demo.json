@@ -657,6 +657,39 @@
           "operations": ["FileUploaded", "FileSyncUploadedFull", "FileModifiedExtended"]
         }
       ]
+    },
+    "appGovernance": {
+      "enabled": true,
+      "aiApps": [
+        { "name": "ChatGPT", "tag": "unsanctioned" },
+        { "name": "Claude", "tag": "unsanctioned" },
+        { "name": "Google Gemini", "tag": "unsanctioned" },
+        { "name": "Perplexity", "tag": "unsanctioned" },
+        { "name": "Poe", "tag": "unsanctioned" },
+        { "name": "HuggingChat", "tag": "unsanctioned" }
+      ],
+      "discoveryPolicies": [
+        {
+          "name": "Generative AI Usage Alert",
+          "category": "Generative AI",
+          "thresholdMb": 100,
+          "governanceAction": "tag_unsanctioned"
+        }
+      ],
+      "sessionPolicies": [
+        {
+          "name": "Monitor AI Uploads",
+          "controlType": "monitor",
+          "contentInspection": true
+        }
+      ],
+      "manualSteps": [
+        {
+          "name": "OAuth App Governance Policy",
+          "portal": "Microsoft Defender for Cloud Apps > App Governance > Policies",
+          "instructions": "Create policy: condition = app requests Mail.Read, Files.ReadWrite.All, or Sites.ReadWrite.All AND app category contains Generative AI. Action = generate alert."
+        }
+      ]
     }
   },
   "cloud": "commercial"

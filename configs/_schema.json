@@ -580,6 +580,120 @@
               }
             }
           }
+        },
+        "appGovernance": {
+          "type": "object",
+          "description": "App Governance and Cloud Discovery configuration for AI app monitoring via MDCA REST API.",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "aiApps": {
+              "type": "array",
+              "description": "AI apps to tag as unsanctioned in the MDCA cloud app catalog.",
+              "items": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Display name of the AI app in the MDCA catalog."
+                  },
+                  "tag": {
+                    "type": "string",
+                    "enum": [
+                      "unsanctioned",
+                      "sanctioned",
+                      "monitored"
+                    ],
+                    "default": "unsanctioned",
+                    "description": "Tag to apply to the app."
+                  }
+                }
+              }
+            },
+            "discoveryPolicies": {
+              "type": "array",
+              "description": "Cloud Discovery alert policies.",
+              "items": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "category": {
+                    "type": "string",
+                    "description": "App category filter (e.g., Generative AI)."
+                  },
+                  "thresholdMb": {
+                    "type": "integer",
+                    "description": "Alert threshold in MB uploaded per day.",
+                    "minimum": 1
+                  },
+                  "governanceAction": {
+                    "type": "string",
+                    "enum": [
+                      "tag_unsanctioned",
+                      "alert_only"
+                    ],
+                    "default": "tag_unsanctioned"
+                  }
+                }
+              }
+            },
+            "sessionPolicies": {
+              "type": "array",
+              "description": "Session policies for real-time upload monitoring. Requires Conditional Access App Control.",
+              "items": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "controlType": {
+                    "type": "string",
+                    "enum": [
+                      "monitor",
+                      "blockUpload",
+                      "blockDownload"
+                    ],
+                    "default": "monitor"
+                  },
+                  "contentInspection": {
+                    "type": "boolean",
+                    "description": "Enable content inspection for sensitive info types.",
+                    "default": false
+                  }
+                }
+              }
+            },
+            "manualSteps": {
+              "type": "array",
+              "description": "Items that cannot be automated and require portal configuration.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "portal": {
+                    "type": "string"
+                  },
+                  "instructions": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
         }
       }
     }

@@ -172,6 +172,135 @@ function Get-LabUserByIdentity {
     return $null
 }
 
+function Get-MdcaPortalUrl {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter(Mandatory)]
+        [string]$Cloud,
+
+        [Parameter(Mandatory)]
+        [PSCustomObject]$Config
+    )
+
+    if ($Config.PSObject.Properties['mdcaPortalUrl'] -and -not [string]::IsNullOrWhiteSpace([string]$Config.mdcaPortalUrl)) {
+        return ([string]$Config.mdcaPortalUrl).TrimEnd('/')
+    }
+
+    $suffix = switch ($Cloud) {
+        'gcc'        { '.portal.cloudappsecurity.us' }
+        default      { '.portal.cloudappsecurity.com' }
+    }
+
+    $tenantName = ($Config.domain -split '\.')[0]
+    return "https://${tenantName}${suffix}"
+}
+
+function Connect-LabMdca {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter(Mandatory)]
+        [string]$PortalUrl,
+
+        [Parameter(Mandatory)]
+        [string]$TenantId
+    )
+
+    $tokenEndpoint = "https://login.microsoftonline.com/$TenantId/oauth2/v2.0/token"
+    $scope = "$PortalUrl/.default"
+
+    $graphContext = Get-MgContext
+    if (-not $graphContext -or [string]::IsNullOrWhiteSpace($graphContext.Account)) {
+        throw 'Microsoft Graph must be connected before MDCA. Call Connect-LabServices first.'
+    }
+
+    try {
+        $tokenResponse = Invoke-MgGraphRequest -Method POST -Uri $tokenEndpoint -Body @{
+            grant_type = 'client_credentials'
+            scope      = $scope
+        } -ErrorAction Stop
+
+        if ($tokenResponse.access_token) {
+            return $tokenResponse.access_token
+        }
+    }
+    catch {
+        Write-Verbose "OAuth token acquisition for MDCA failed: $($_.Exception.Message)"
+    }
+
+    if ($Config.PSObject.Properties['mdcaApiToken'] -and -not [string]::IsNullOrWhiteSpace([string]$Config.mdcaApiToken)) {
+        return [string]$Config.mdcaApiToken
+    }
+
+    throw "Unable to acquire MDCA API token. Provide mdcaApiToken in config or configure an Entra app registration with Cloud App Security permissions."
+}
+
+function Invoke-MdcaApi {
+    [CmdletBinding()]
+    [OutputType([PSCustomObject])]
+    param(
+        [Parameter(Mandatory)]
+        [string]$PortalUrl,
+
+        [Parameter(Mandatory)]
+        [string]$Token,
+
+        [Parameter(Mandatory)]
+        [string]$Endpoint,
+
+        [Parameter()]
+        [ValidateSet('GET', 'POST', 'PUT', 'DELETE')]
+        [string]$Method = 'GET',
+
+        [Parameter()]
+        [hashtable]$Body,
+
+        [Parameter()]
+        [int]$MaxRetries = 2
+    )
+
+    $uri = "$PortalUrl/api/v1/$($Endpoint.TrimStart('/'))"
+    $headers = @{ Authorization = "Token $Token" }
+
+    $attempt = 0
+    while ($attempt -le $MaxRetries) {
+        try {
+            $params = @{
+                Uri         = $uri
+                Method      = $Method
+                Headers     = $headers
+                ContentType = 'application/json'
+                ErrorAction = 'Stop'
+            }
+            if ($Body) {
+                $params['Body'] = ($Body | ConvertTo-Json -Depth 10)
+            }
+
+            return (Invoke-RestMethod @params)
+        }
+        catch {
+            $attempt++
+            $statusCode = $null
+            if ($_.Exception.Response) {
+                $statusCode = [int]$_.Exception.Response.StatusCode
+            }
+
+            if ($statusCode -eq 429 -and $attempt -le $MaxRetries) {
+                $retryAfter = 5 * $attempt
+                Write-Verbose "MDCA API rate limited. Retrying in ${retryAfter}s..."
+                Start-Sleep -Seconds $retryAfter
+                continue
+            }
+
+            if ($attempt -gt $MaxRetries) {
+                throw "MDCA API call failed after $($MaxRetries + 1) attempts: $($_.Exception.Message)"
+            }
+            throw
+        }
+    }
+}
+
 function Disconnect-LabServices {
     [CmdletBinding()]
     param()
@@ -411,4 +540,7 @@ Export-ModuleMember -Function @(
     'Test-LabWorkloadCompatibility'
     'Export-LabManifest'
     'Import-LabManifest'
+    'Get-MdcaPortalUrl'
+    'Connect-LabMdca'
+    'Invoke-MdcaApi'
 )

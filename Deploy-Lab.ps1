@@ -472,6 +472,12 @@ try {
         }
     }
 
+    if ($Config.workloads.PSObject.Properties['appGovernance'] -and $Config.workloads.appGovernance.enabled) {
+        Invoke-Workload -Name 'appGovernance' -Step 'AppGovernance' -Description 'Deploying App Governance and Cloud Discovery policies' -Action {
+            Deploy-AppGovernance -Config $Config -WhatIf:$WhatIfPreference
+        }
+    }
+
     if ($Config.workloads.testData.enabled) {
         Invoke-Workload -Name 'testData' -Step 'TestData' -Description 'Sending test data (emails, files)' -Action {
             Send-TestData -Config $Config -WhatIf:$WhatIfPreference

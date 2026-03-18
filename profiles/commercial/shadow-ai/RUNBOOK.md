@@ -28,6 +28,8 @@ Steps that require portal access after automated deployment.
 
 ## 2. Cloud Discovery for AI Apps
 
+> **Automated by `appGovernance` workload.** The steps below are for reference or manual fallback.
+
 **Portal:** Microsoft Defender for Cloud Apps > Cloud Discovery
 
 ### Option A: Defender for Endpoint integration (recommended)
@@ -41,12 +43,18 @@ Steps that require portal access after automated deployment.
 3. Select log format and data source
 
 ### Configure discovery policy
+> Automated: the deployer creates a `PVShadowAI-Generative AI Usage Alert` discovery policy via MDCA REST API.
+
+Manual fallback:
 1. Navigate to **Policies > Policy management > Create policy > Cloud Discovery policy**
 2. Filter by app category: **Generative AI**
 3. Set alert threshold (e.g., > 100 MB uploaded per day)
 4. Enable governance action: Tag as **Unsanctioned**
 
-## 3. OAuth App Governance
+### AI app tagging
+> Automated: the deployer tags ChatGPT, Claude, Gemini, Perplexity, Poe, and HuggingChat as **Unsanctioned** in the MDCA catalog.
+
+## 3. OAuth App Governance (manual — no API support for policy creation)
 
 **Portal:** Microsoft Defender for Cloud Apps > App Governance
 
@@ -59,6 +67,8 @@ Steps that require portal access after automated deployment.
 3. Review existing OAuth apps for AI-related permissions
 
 ## 4. Session Policies (Real-time monitoring)
+
+> **Automated by `appGovernance` workload.** The deployer creates a `PVShadowAI-Monitor AI Uploads` session policy via MDCA REST API. The steps below are for reference or manual fallback.
 
 **Portal:** Microsoft Defender for Cloud Apps > Policies > Session policies
 
@@ -110,7 +120,10 @@ To have alerts ready before a live demo:
 
 - [ ] Endpoint DLP browser restrictions configured for AI domains
 - [ ] Cloud Discovery showing AI app traffic (or snapshot uploaded)
-- [ ] OAuth app governance policy active
+- [ ] AI apps tagged as unsanctioned in MDCA catalog (automated)
+- [ ] Cloud Discovery alert policy active (automated)
+- [ ] Session policy for upload monitoring active (automated)
+- [ ] OAuth app governance policy active (manual)
 - [ ] Conditional Access policies in report-only mode
 - [ ] Activity Explorer shows DLP matches for PVShadowAI policies
 - [ ] Insider Risk dashboard shows policy activity
