@@ -17,6 +17,7 @@ Automated Microsoft Purview lab deployment using PowerShell 7+, config files, an
 - `Microsoft.Graph.Authentication`
 - `Microsoft.Graph.Users`
 - `Microsoft.Graph.Groups`
+- `Microsoft.Graph.Identity.SignIns`
 - Roles: Compliance Administrator, User Administrator, eDiscovery Administrator
 
 ```powershell
@@ -24,6 +25,7 @@ Install-Module ExchangeOnlineManagement -Scope CurrentUser
 Install-Module Microsoft.Graph.Authentication -Scope CurrentUser
 Install-Module Microsoft.Graph.Users -Scope CurrentUser
 Install-Module Microsoft.Graph.Groups -Scope CurrentUser
+Install-Module Microsoft.Graph.Identity.SignIns -Scope CurrentUser
 ```
 
 ## Quick start

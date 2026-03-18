@@ -10,6 +10,7 @@ $script:RequiredModules = @(
     'Microsoft.Graph.Authentication'
     'Microsoft.Graph.Users'
     'Microsoft.Graph.Groups'
+    'Microsoft.Graph.Identity.SignIns'
 )
 
 function Test-LabPrerequisites {

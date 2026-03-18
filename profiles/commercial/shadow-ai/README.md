@@ -97,6 +97,15 @@ All rules include policy tips with user education messages.
 - Unified audit logging enabled
 - Searches validated: Copilot activity, DLP policy matches, external AI app access
 
+### Conditional Access (2 policies, report-only)
+
+| Policy | Action | Condition |
+|---|---|---|
+| Block AI Apps High Sign-In Risk | Block | High sign-in risk |
+| Require MFA for AI App Access | MFA | All users |
+
+Both policies deploy in report-only mode. Update `targetAppIds` in config with your tenant's enterprise app IDs for AI services (ChatGPT, Claude, etc.).
+
 ### Test Data
 
 **3 documents** uploaded to user OneDrive:
@@ -113,11 +122,6 @@ See `appGovernance` section in config for portal steps:
 - Configure Cloud Discovery for AI apps (ChatGPT, Claude, Gemini, Perplexity, Poe, HuggingChat)
 - Create OAuth app policies for AI-related permissions
 - Set up session policies for real-time upload monitoring
-
-### Conditional Access
-See `conditionalAccess` section in config for portal steps:
-- Block AI apps for high sign-in risk users
-- Require MFA for AI app access
 
 ### Endpoint DLP Browser Restrictions
 The blocked AI site URL list is in config under `endpointDlpBrowserRestrictions`. To enforce:

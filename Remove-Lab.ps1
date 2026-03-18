@@ -189,6 +189,13 @@ try {
         Write-LabLog -Message 'insiderRisk workload is disabled, skipping.' -Level Info
     }
 
+    # Conditional Access
+    if ($Config.workloads.PSObject.Properties['conditionalAccess'] -and $Config.workloads.conditionalAccess.enabled) {
+        Write-LabStep -StepName 'ConditionalAccess' -Description 'Removing Conditional Access policies'
+        Remove-ConditionalAccess -Config $Config -Manifest (Get-WorkloadManifest -WorkloadName 'conditionalAccess') -WhatIf:$WhatIfPreference
+        Write-LabLog -Message 'Conditional Access removal complete.' -Level Success
+    }
+
     # 2. Communication Compliance
     if ($Config.workloads.communicationCompliance.enabled) {
         Write-LabStep -StepName 'CommunicationCompliance' -Description 'Removing communication compliance policies'

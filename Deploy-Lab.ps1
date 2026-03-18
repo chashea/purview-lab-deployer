@@ -466,6 +466,12 @@ try {
         }
     } else { Write-LabLog -Message 'insiderRisk workload is disabled, skipping.' -Level Info }
 
+    if ($Config.workloads.PSObject.Properties['conditionalAccess'] -and $Config.workloads.conditionalAccess.enabled) {
+        Invoke-Workload -Name 'conditionalAccess' -Step 'ConditionalAccess' -Description 'Deploying Conditional Access policies' -Action {
+            Deploy-ConditionalAccess -Config $Config -WhatIf:$WhatIfPreference
+        }
+    }
+
     if ($Config.workloads.testData.enabled) {
         Invoke-Workload -Name 'testData' -Step 'TestData' -Description 'Sending test data (emails, files)' -Action {
             Send-TestData -Config $Config -WhatIf:$WhatIfPreference

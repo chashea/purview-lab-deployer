@@ -592,6 +592,30 @@
         }
       ]
     },
+    "conditionalAccess": {
+      "enabled": true,
+      "policies": [
+        {
+          "name": "Block AI Apps High Sign-In Risk",
+          "action": "block",
+          "signInRiskLevels": ["high"],
+          "targetAppIds": [
+            "00000000-0000-0000-0000-000000000001",
+            "00000000-0000-0000-0000-000000000002"
+          ],
+          "state": "enabledForReportingButNotEnforced"
+        },
+        {
+          "name": "Require MFA for AI App Access",
+          "action": "mfa",
+          "targetAppIds": [
+            "00000000-0000-0000-0000-000000000001",
+            "00000000-0000-0000-0000-000000000002"
+          ],
+          "state": "enabledForReportingButNotEnforced"
+        }
+      ]
+    },
     "testData": {
       "enabled": true,
       "emails": [],
