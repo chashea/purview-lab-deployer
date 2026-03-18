@@ -31,6 +31,10 @@ Install-Module Microsoft.Graph.Identity.SignIns -Scope CurrentUser
 ## Quick start
 
 ```powershell
+# Clone the repo and navigate to it
+git clone https://github.com/chashea/purview-lab-deployer.git
+cd purview-lab-deployer
+
 # Interactive
 ./Deploy-Lab-Interactive.ps1
 ./Remove-Lab-Interactive.ps1
