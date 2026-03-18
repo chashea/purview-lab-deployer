@@ -9,6 +9,19 @@ This folder contains deployment capability profiles used by `Deploy-Lab.ps1` and
 
 These are selected by the `-Cloud` parameter (`commercial` or `gcc`).
 
+## Basic lab profiles
+
+- `commercial/basic-lab/README.md` - Basic lab deployment guide (commercial)
+- `gcc/basic-lab/README.md` - Basic lab deployment guide (GCC)
+
+```powershell
+# Commercial
+./Deploy-Lab.ps1 -Cloud commercial -LabProfile basic-lab -TenantId <tenant-guid>
+
+# GCC
+./Deploy-Lab.ps1 -Cloud gcc -LabProfile basic-lab -TenantId <tenant-guid>
+```
+
 ## Shadow AI profiles
 
 - `commercial/shadow-ai/capabilities.json` - Shadow AI scenario profile for commercial
