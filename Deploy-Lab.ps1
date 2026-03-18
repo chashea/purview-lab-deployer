@@ -410,6 +410,12 @@ try {
         }
     } else { Write-LabLog -Message 'testUsers workload is disabled, skipping.' -Level Info }
 
+    if ($Config.workloads.PSObject.Properties['customSensitiveInfoTypes'] -and $Config.workloads.customSensitiveInfoTypes.enabled) {
+        Invoke-Workload -Name 'customSensitiveInfoTypes' -Step 'CustomSensitiveInfoTypes' -Description 'Deploying custom sensitive information types' -Action {
+            Deploy-CustomSensitiveInfoTypes -Config $Config -WhatIf:$WhatIfPreference
+        }
+    }
+
     if ($Config.workloads.sensitivityLabels.enabled) {
         Invoke-Workload -Name 'sensitivityLabels' -Step 'SensitivityLabels' -Description 'Deploying sensitivity labels' -Action {
             Deploy-SensitivityLabels -Config $Config -WhatIf:$WhatIfPreference

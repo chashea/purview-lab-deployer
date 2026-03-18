@@ -91,6 +91,29 @@
         }
       ]
     },
+    "customSensitiveInfoTypes": {
+      "enabled": true,
+      "types": [
+        {
+          "name": "Contoso Customer ID",
+          "description": "Matches Contoso customer identifiers (CUST-XXXXXX format)",
+          "pattern": "CUST-[0-9]{6}",
+          "confidenceLevel": "High"
+        },
+        {
+          "name": "API Key Pattern",
+          "description": "Detects API keys and tokens (sk-/pk-/api_ prefixed strings)",
+          "pattern": "(sk|pk|api)[-_][A-Za-z0-9]{20,}",
+          "confidenceLevel": "High"
+        },
+        {
+          "name": "Internal Project Code",
+          "description": "Matches internal project codes (PRJ-XXXX format)",
+          "pattern": "PRJ-[A-Z0-9]{4,8}",
+          "confidenceLevel": "Medium"
+        }
+      ]
+    },
     "dlp": {
       "enabled": true,
       "policies": [
@@ -140,7 +163,8 @@
             {
               "name": "Detect Bank Accounts in AI Content",
               "sensitiveInfoTypes": [
-                "U.S. Bank Account Number"
+                "U.S. Bank Account Number",
+                "Contoso Customer ID"
               ],
               "minCount": 1,
               "enforcement": {
@@ -203,7 +227,8 @@
             {
               "name": "Detect Credit Cards in External AI Sharing",
               "sensitiveInfoTypes": [
-                "Credit Card Number"
+                "Credit Card Number",
+                "API Key Pattern"
               ],
               "minCount": 1,
               "enforcement": {
@@ -383,6 +408,33 @@
           ],
           "direction": "Both",
           "condition": "data sharing"
+        },
+        {
+          "name": "Sensitive Business Data in AI Prompts",
+          "reviewers": [
+            "lramirez@MngEnvMCAP648165.onmicrosoft.com"
+          ],
+          "supervisedUsers": [
+            "vcho@MngEnvMCAP648165.onmicrosoft.com",
+            "kmills@MngEnvMCAP648165.onmicrosoft.com",
+            "etran@MngEnvMCAP648165.onmicrosoft.com"
+          ],
+          "direction": "Both",
+          "condition": "sensitive business data"
+        },
+        {
+          "name": "Compliance Violations in AI Content",
+          "reviewers": [
+            "etran@MngEnvMCAP648165.onmicrosoft.com"
+          ],
+          "supervisedUsers": [
+            "aharper@MngEnvMCAP648165.onmicrosoft.com",
+            "opark@MngEnvMCAP648165.onmicrosoft.com",
+            "vcho@MngEnvMCAP648165.onmicrosoft.com",
+            "mahmed@MngEnvMCAP648165.onmicrosoft.com"
+          ],
+          "direction": "Both",
+          "condition": "compliance violations"
         }
       ]
     },
@@ -396,6 +448,21 @@
             "PVShadowAI-AI-Governance",
             "PVShadowAI-Privileged-Data-Owners",
             "PVShadowAI-Business-Users"
+          ]
+        },
+        {
+          "name": "AI Data Exfiltration Watch",
+          "template": "Data leaks",
+          "priorityUserGroups": [
+            "PVShadowAI-Business-Users"
+          ]
+        },
+        {
+          "name": "Departing User AI Risk",
+          "template": "Data theft by departing users",
+          "priorityUserGroups": [
+            "PVShadowAI-AI-Governance",
+            "PVShadowAI-Privileged-Data-Owners"
           ]
         }
       ]
