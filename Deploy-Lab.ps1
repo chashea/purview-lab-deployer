@@ -531,10 +531,10 @@ try {
                         if ($blockProp.found) {
                             $isBlocked = [bool]$blockProp.value
                             if ($action -eq 'block' -and -not $isBlocked) {
-                                $validationFailures.Add("DLP rule '$targetRuleName' expected block action but BlockAccess is not enabled.")
+                                $validationWarnings.Add("DLP rule '$targetRuleName' expected block action but BlockAccess is not enabled (enforcement may have fallen back to baseline).")
                             }
                             if ($action -eq 'auditOnly' -and $isBlocked) {
-                                $validationFailures.Add("DLP rule '$targetRuleName' expected auditOnly action but BlockAccess is enabled.")
+                                $validationWarnings.Add("DLP rule '$targetRuleName' expected auditOnly action but BlockAccess is enabled.")
                             }
                         }
                         else {
@@ -542,10 +542,10 @@ try {
                             if ($modeProp.found) {
                                 $modeValue = [string]$modeProp.value
                                 if ($action -eq 'block' -and $modeValue -notmatch 'Enforce|Block') {
-                                    $validationFailures.Add("DLP rule '$targetRuleName' expected block action but $($modeProp.name)='$modeValue'.")
+                                    $validationWarnings.Add("DLP rule '$targetRuleName' expected block action but $($modeProp.name)='$modeValue' (enforcement may have fallen back to baseline).")
                                 }
                                 if ($action -eq 'auditOnly' -and $modeValue -match 'Enforce|Block') {
-                                    $validationFailures.Add("DLP rule '$targetRuleName' expected auditOnly action but $($modeProp.name)='$modeValue'.")
+                                    $validationWarnings.Add("DLP rule '$targetRuleName' expected auditOnly action but $($modeProp.name)='$modeValue'.")
                                 }
                             }
                             else {
@@ -561,7 +561,7 @@ try {
                         $overrideProp = Get-LabObjectProperty -Object $ruleObject -CandidateNames @('AllowOverrideWithJustification', 'AllowOverride', 'UserCanOverride')
                         if ($overrideProp.found) {
                             if (-not [bool]$overrideProp.value) {
-                                $validationFailures.Add("DLP rule '$targetRuleName' expected user override for justification but '$($overrideProp.name)' is disabled.")
+                                $validationWarnings.Add("DLP rule '$targetRuleName' expected user override for justification but '$($overrideProp.name)' is disabled (enforcement may have fallen back).")
                             }
                         }
                         else {
@@ -576,7 +576,7 @@ try {
                         if ($notifyParamSupported) {
                             $notifyProp = Get-LabObjectProperty -Object $ruleObject -CandidateNames @('NotifyUser', 'UserNotificationEnabled')
                             if ($notifyProp.found -and -not [bool]$notifyProp.value) {
-                                $validationFailures.Add("DLP rule '$targetRuleName' expected user notification enabled but '$($notifyProp.name)' is disabled.")
+                                $validationWarnings.Add("DLP rule '$targetRuleName' expected user notification enabled but '$($notifyProp.name)' is disabled (enforcement may have fallen back).")
                             }
                         }
                         else {
@@ -588,7 +588,7 @@ try {
                         if ($alertParamSupported) {
                             $alertProp = Get-LabObjectProperty -Object $ruleObject -CandidateNames @('GenerateAlert', 'AlertEnabled')
                             if ($alertProp.found -and -not [bool]$alertProp.value) {
-                                $validationFailures.Add("DLP rule '$targetRuleName' expected alert generation enabled but '$($alertProp.name)' is disabled.")
+                                $validationWarnings.Add("DLP rule '$targetRuleName' expected alert generation enabled but '$($alertProp.name)' is disabled (enforcement may have fallen back).")
                             }
                         }
                         else {

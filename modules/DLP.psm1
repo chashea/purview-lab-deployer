@@ -474,7 +474,7 @@ function Deploy-DLP {
 
                 if ($setRuleCommand -and $ruleUpdateParams.Count -gt 0 -and $PSCmdlet.ShouldProcess($ruleName, 'Update DLP rule optional enforcement settings')) {
                     try {
-                        Set-DlpComplianceRule -Identity $ruleName @ruleUpdateParams -ErrorAction Stop | Out-Null
+                        Set-DlpComplianceRule -Identity $ruleName @ruleUpdateParams -Confirm:$false -ErrorAction Stop | Out-Null
                         Write-LabLog -Message "Updated DLP rule optional settings: $ruleName" -Level Success
                     }
                     catch {
