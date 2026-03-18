@@ -97,11 +97,7 @@
         {
           "name": "GenAI Prompt PII Protection",
           "locations": [
-            "Exchange",
-            "SharePoint",
-            "Teams",
-            "Devices",
-            "Copilot"
+            "Devices"
           ],
           "rules": [
             {
@@ -138,11 +134,7 @@
         {
           "name": "GenAI Financial and Payroll Guardrail",
           "locations": [
-            "Exchange",
-            "SharePoint",
-            "OneDrive",
-            "Devices",
-            "Copilot"
+            "Devices"
           ],
           "rules": [
             {
@@ -187,9 +179,6 @@
         {
           "name": "External AI Upload Risk Signals",
           "locations": [
-            "Exchange",
-            "Teams",
-            "Devices",
             "Copilot"
           ],
           "rules": [
@@ -239,10 +228,6 @@
           "name": "Labeled Data AI Restriction",
           "policyMode": "labelRestriction",
           "locations": [
-            "Exchange",
-            "SharePoint",
-            "Teams",
-            "Devices",
             "Copilot"
           ],
           "labels": [
