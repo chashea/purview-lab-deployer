@@ -5,8 +5,11 @@ Comprehensive Shadow AI detection and governance demo for Microsoft Purview.
 ## Quick start
 
 ```powershell
-# Deploy
+# Deploy (uses existing Entra ID users by default)
 ./Deploy-Lab.ps1 -Cloud commercial -LabProfile shadow-ai -TenantId <tenant-guid>
+
+# Deploy with new test user creation
+./Deploy-Lab.ps1 -Cloud commercial -LabProfile shadow-ai -TenantId <tenant-guid> -TestUsersMode create
 
 # Dry run
 ./Deploy-Lab.ps1 -Cloud commercial -LabProfile shadow-ai -WhatIf
