@@ -14,7 +14,7 @@
 
 .PARAMETER LabProfile
     Deployment profile name. Resolves to a config file under configs/<cloud>/.
-    Available profiles: full-lab, shadow-ai.
+    Available profiles: basic-lab, shadow-ai.
 
 .PARAMETER SkipAuth
     Skip connecting to Exchange Online and Microsoft Graph (for testing).
@@ -27,13 +27,13 @@
     Cloud profile to use (`commercial` or `gcc`). If omitted, uses config value.
 
 .EXAMPLE
-    ./Deploy-Lab.ps1 -Cloud commercial -LabProfile full-lab
+    ./Deploy-Lab.ps1 -Cloud commercial -LabProfile basic-lab
 
 .EXAMPLE
     ./Deploy-Lab.ps1 -Cloud commercial -LabProfile shadow-ai
 
 .EXAMPLE
-    ./Deploy-Lab.ps1 -ConfigPath configs/commercial/full-demo.json -WhatIf
+    ./Deploy-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -WhatIf
 #>
 
 [CmdletBinding(SupportsShouldProcess)]
@@ -43,7 +43,7 @@ param(
     [string]$ConfigPath,
 
     [Parameter()]
-    [ValidateSet('full-lab', 'shadow-ai')]
+    [ValidateSet('basic-lab', 'shadow-ai')]
     [string]$LabProfile,
 
     [Parameter()]
@@ -65,7 +65,7 @@ $ErrorActionPreference = 'Stop'
 
 # Profile-to-config resolution
 $profileConfigMap = @{
-    'full-lab'  = 'full-demo.json'
+    'basic-lab' = 'basic-lab-demo.json'
     'shadow-ai' = 'shadow-ai-demo.json'
 }
 

@@ -14,7 +14,7 @@
 
 .PARAMETER LabProfile
     Deployment profile name. Resolves to a config file under configs/<cloud>/.
-    Available profiles: full-lab, shadow-ai.
+    Available profiles: basic-lab, shadow-ai.
 
 .PARAMETER ManifestPath
     Optional path to a deployment manifest. When provided, uses manifest
@@ -32,13 +32,13 @@
     Cloud profile to use (`commercial` or `gcc`). If omitted, uses config value.
 
 .EXAMPLE
-    ./Remove-Lab.ps1 -Cloud commercial -LabProfile full-lab
+    ./Remove-Lab.ps1 -Cloud commercial -LabProfile basic-lab
 
 .EXAMPLE
     ./Remove-Lab.ps1 -Cloud commercial -LabProfile shadow-ai -Confirm:$false
 
 .EXAMPLE
-    ./Remove-Lab.ps1 -ConfigPath configs/commercial/full-demo.json -ManifestPath manifests/lab_20260316-100000.json
+    ./Remove-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -ManifestPath manifests/lab_20260316-100000.json
 #>
 
 [CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
@@ -48,7 +48,7 @@ param(
     [string]$ConfigPath,
 
     [Parameter()]
-    [ValidateSet('full-lab', 'shadow-ai')]
+    [ValidateSet('basic-lab', 'shadow-ai')]
     [string]$LabProfile,
 
     [Parameter()]
@@ -70,7 +70,7 @@ $ErrorActionPreference = 'Stop'
 
 # Profile-to-config resolution
 $profileConfigMap = @{
-    'full-lab'  = 'full-demo.json'
+    'basic-lab' = 'basic-lab-demo.json'
     'shadow-ai' = 'shadow-ai-demo.json'
 }
 

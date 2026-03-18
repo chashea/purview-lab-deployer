@@ -53,7 +53,7 @@ do {
 
 # Profile selection
 $profiles = @(
-    @{ Number = 1; Name = 'full-lab';  Description = 'Full demo lab' }
+    @{ Number = 1; Name = 'basic-lab'; Description = 'Basic demo lab' }
     @{ Number = 2; Name = 'shadow-ai'; Description = 'Shadow AI demo' }
 )
 
@@ -67,7 +67,7 @@ Write-Host ''
 do {
     $profileInput = Read-Host 'Select profile [1/2] (default: 1)'
     if ([string]::IsNullOrWhiteSpace($profileInput)) {
-        $selectedLabProfile = 'full-lab'
+        $selectedLabProfile = 'basic-lab'
     }
     else {
         $match = $profiles | Where-Object { $_.Number -eq [int]$profileInput -or $_.Name -eq $profileInput.Trim() }

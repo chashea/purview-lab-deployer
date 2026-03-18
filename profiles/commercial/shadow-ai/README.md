@@ -23,7 +23,7 @@ Comprehensive Shadow AI detection and governance demo for Microsoft Purview.
 - **Config:** `configs/commercial/shadow-ai-demo.json`
 - **Prefix:** `PVShadowAI` (all resources scoped to this prefix)
 - **Cloud:** commercial
-- **Lifecycle:** fully independent from baseline `full-lab` deployment
+- **Lifecycle:** fully independent from baseline `basic-lab` deployment
 
 ## What gets deployed
 

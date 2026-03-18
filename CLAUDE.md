@@ -26,17 +26,17 @@ Separate Shadow AI deployment track with independent prefix and lifecycle.
 
 ## Running
 ```powershell
-# Full demo (commercial)
-./Deploy-Lab.ps1 -ConfigPath configs/commercial/full-demo.json -Cloud commercial
+# Basic lab (commercial)
+./Deploy-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -Cloud commercial
 
 # Shadow AI (commercial)
 ./Deploy-Lab.ps1 -ConfigPath configs/commercial/shadow-ai-demo.json -Cloud commercial
 
 # Dry run
-./Deploy-Lab.ps1 -ConfigPath configs/commercial/full-demo.json -WhatIf
+./Deploy-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -WhatIf
 
 # Teardown
-./Remove-Lab.ps1 -ConfigPath configs/commercial/full-demo.json -Cloud commercial
+./Remove-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -Cloud commercial
 ```
 
 ## Testing

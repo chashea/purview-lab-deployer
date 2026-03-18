@@ -4,10 +4,10 @@ This folder contains Microsoft Purview lab configs for commercial tenants.
 
 ## Primary config
 
-- Baseline full deployment: `full-demo.json`
+- Baseline lab deployment: `basic-lab-demo.json`
 
 ```powershell
-./Deploy-Lab.ps1 -ConfigPath configs/commercial/full-demo.json -TenantId <tenant-guid> -Cloud commercial
+./Deploy-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -TenantId <tenant-guid> -Cloud commercial
 ```
 
 ## Other configs
@@ -22,7 +22,7 @@ This folder contains Microsoft Purview lab configs for commercial tenants.
 
 ## Shadow AI (separate deployment)
 
-Shadow AI is intentionally separate from `full-demo.json`.
+Shadow AI is intentionally separate from `basic-lab-demo.json`.
 
 ```powershell
 ./Deploy-Lab.ps1 -ConfigPath configs/commercial/shadow-ai-demo.json -TenantId <tenant-guid> -Cloud commercial
@@ -35,8 +35,8 @@ More details: `../../profiles/commercial/shadow-ai/README.md`
 
 ```powershell
 # Config-based removal
-./Remove-Lab.ps1 -ConfigPath configs/commercial/full-demo.json -TenantId <tenant-guid> -Cloud commercial
+./Remove-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -TenantId <tenant-guid> -Cloud commercial
 
 # Manifest-based removal
-./Remove-Lab.ps1 -ConfigPath configs/commercial/full-demo.json -ManifestPath manifests/commercial/<manifest>.json -TenantId <tenant-guid> -Cloud commercial
+./Remove-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -ManifestPath manifests/commercial/<manifest>.json -TenantId <tenant-guid> -Cloud commercial
 ```

@@ -4,10 +4,10 @@ This folder contains Microsoft Purview lab configs for GCC tenants.
 
 ## Primary config
 
-- Baseline full deployment: `full-demo.json`
+- Baseline lab deployment: `basic-lab-demo.json`
 
 ```powershell
-./Deploy-Lab.ps1 -ConfigPath configs/gcc/full-demo.json -TenantId <tenant-guid> -Cloud gcc
+./Deploy-Lab.ps1 -ConfigPath configs/gcc/basic-lab-demo.json -TenantId <tenant-guid> -Cloud gcc
 ```
 
 ## Other configs
@@ -22,9 +22,9 @@ This folder contains Microsoft Purview lab configs for GCC tenants.
 ## Teardown examples
 
 ```powershell
-# Config-based removal (full demo)
-./Remove-Lab.ps1 -ConfigPath configs/gcc/full-demo.json -TenantId <tenant-guid> -Cloud gcc
+# Config-based removal (basic lab)
+./Remove-Lab.ps1 -ConfigPath configs/gcc/basic-lab-demo.json -TenantId <tenant-guid> -Cloud gcc
 
 # Manifest-based removal
-./Remove-Lab.ps1 -ConfigPath configs/gcc/full-demo.json -ManifestPath manifests/gcc/<manifest>.json -TenantId <tenant-guid> -Cloud gcc
+./Remove-Lab.ps1 -ConfigPath configs/gcc/basic-lab-demo.json -ManifestPath manifests/gcc/<manifest>.json -TenantId <tenant-guid> -Cloud gcc
 ```
