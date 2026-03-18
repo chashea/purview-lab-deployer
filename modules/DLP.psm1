@@ -373,6 +373,9 @@ function Deploy-DLP {
         if (($policy.PSObject.Properties.Name -contains 'policyMode') -and -not [string]::IsNullOrWhiteSpace([string]$policy.policyMode)) {
             Write-LabLog -Message "DLP policy mode for '$policyName': $($policy.policyMode)" -Level Info
         }
+        if ($policy.PSObject.Properties.Name -contains 'endpointDlpBrowserRestrictions' -and $policy.endpointDlpBrowserRestrictions) {
+            Write-LabLog -Message "Note: Endpoint browser URL restrictions for '$policyName' must be configured in the Purview portal (Endpoint DLP settings > Browser restrictions)." -Level Info
+        }
 
         # Check if policy exists
         $existing = $null

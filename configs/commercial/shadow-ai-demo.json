@@ -131,6 +131,10 @@
               "minCount": 1,
               "enforcement": {
                 "action": "auditOnly",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Social Security Numbers detected in AI interaction. This data is monitored for compliance."
+                },
                 "alert": {
                   "enabled": true,
                   "severity": "low"
@@ -145,6 +149,10 @@
               "minCount": 1,
               "enforcement": {
                 "action": "auditOnly",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Credit card numbers detected in AI interaction. This data is monitored for compliance."
+                },
                 "alert": {
                   "enabled": true,
                   "severity": "low"
@@ -214,6 +222,10 @@
               "minCount": 1,
               "enforcement": {
                 "action": "block",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Medical data detected. Uploading protected health information to external AI tools violates policy."
+                },
                 "alert": {
                   "enabled": true,
                   "severity": "high"
@@ -233,6 +245,10 @@
               "minCount": 1,
               "enforcement": {
                 "action": "block",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Credit card data detected in external AI sharing. This action is blocked per data protection policy."
+                },
                 "alert": {
                   "enabled": true,
                   "severity": "high"
@@ -272,6 +288,10 @@
               ],
               "enforcement": {
                 "action": "block",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "This content has a sensitivity label that restricts AI usage. Use approved tools only."
+                },
                 "alert": {
                   "enabled": true,
                   "severity": "high"
@@ -279,6 +299,69 @@
                 "incidentReport": {
                   "enabled": true,
                   "severity": "high"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Endpoint AI Site Restrictions",
+          "locations": ["Devices"],
+          "policyMode": "highRiskBlock",
+          "endpointDlpBrowserRestrictions": {
+            "blockedUrls": [
+              "chat.openai.com",
+              "chatgpt.com",
+              "claude.ai",
+              "gemini.google.com",
+              "bard.google.com",
+              "copilot.microsoft.com",
+              "poe.com",
+              "perplexity.ai",
+              "huggingface.co/chat"
+            ]
+          },
+          "rules": [
+            {
+              "name": "Block Sensitive Data Upload to AI Sites",
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)",
+                "Credit Card Number",
+                "Contoso Customer ID",
+                "API Key Pattern"
+              ],
+              "minCount": 1,
+              "enforcement": {
+                "action": "block",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Uploading sensitive data to external AI tools is prohibited. Use Microsoft Copilot for AI-assisted tasks with organizational data protection."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "high"
+                },
+                "incidentReport": {
+                  "enabled": true,
+                  "severity": "high"
+                }
+              }
+            },
+            {
+              "name": "Warn on Any Data Paste to AI Sites",
+              "sensitiveInfoTypes": [
+                "Internal Project Code"
+              ],
+              "minCount": 1,
+              "enforcement": {
+                "action": "allowWithJustification",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "You are pasting content into an external AI tool. Consider using Microsoft Copilot instead for better data protection. Provide justification to proceed."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "medium"
                 }
               }
             }
@@ -493,6 +576,38 @@
           "to": "pdesai",
           "subject": "HR case notes used in AI draft",
           "body": "Priya, a manager asked an external AI tool to draft an employee memo from HR case notes containing medical terms and SSN 605-44-8821. We should trigger Shadow AI response playbook."
+        },
+        {
+          "from": "etran",
+          "to": "lramirez",
+          "subject": "API keys found in AI chatbot history",
+          "body": "Leah, we found evidence that an engineer shared API credentials api_prod_mK7nP3qR5sT9uW2x and project code PRJ-TITAN in an external AI chatbot. Customer CUST-294018 data may also be exposed. Please initiate incident response."
+        },
+        {
+          "from": "mahmed",
+          "to": "pdesai",
+          "subject": "Customer IDs uploaded to unauthorized AI tool",
+          "body": "Priya, bulk customer records including CUST-571039, CUST-482916, and CUST-103847 were uploaded to an unsanctioned AI summarization service. The upload also contained project references PRJ-ECHO and SSN 331-55-7742."
+        }
+      ],
+      "documents": [
+        {
+          "fileName": "Q4-Financial-Forecast.docx",
+          "owner": "vcho",
+          "label": "PVShadowAI-Confidential",
+          "content": "Q4 Financial Forecast - CONFIDENTIAL\n\nProjected Revenue: $14.2M\nCustomer ID: CUST-482917\nPayroll routing: 021000021\nAccount: 0012345678\n\nDo not share externally or with AI tools."
+        },
+        {
+          "fileName": "Customer-Data-Export.docx",
+          "owner": "aharper",
+          "label": "PVShadowAI-Highly-Confidential-AI-Regulated-Data",
+          "content": "Customer Data Export - HIGHLY CONFIDENTIAL\n\nCustomer: Jane Smith\nSSN: 287-44-9921\nCredit Card: 4532-1111-2222-3333\nCustomer ID: CUST-193847\nAPI Key: sk-proj-abc123def456ghi789jkl"
+        },
+        {
+          "fileName": "Engineering-Specs.docx",
+          "owner": "opark",
+          "label": "PVShadowAI-Confidential",
+          "content": "Internal Engineering Specifications\n\nProject: PRJ-NOVA2025\nAPI Endpoint Key: api_live_xK9mN2pQ4rS6tU8v\nArchitecture notes for internal review only.\nDo not paste into external AI services."
         }
       ]
     }

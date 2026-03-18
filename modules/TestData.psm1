@@ -128,8 +128,54 @@ function Send-TestData {
         }
     }
 
+    # --- Document creation and upload ---
+    $createdDocs = [System.Collections.Generic.List[hashtable]]::new()
+
+    if ($Config.workloads.testData.PSObject.Properties['documents'] -and $Config.workloads.testData.documents) {
+        foreach ($doc in $Config.workloads.testData.documents) {
+            $ownerUpn = [string]$userPrincipalNameLookup[[string]$doc.owner]
+            if ([string]::IsNullOrWhiteSpace($ownerUpn)) {
+                Write-LabLog -Message "Document owner not found, skipping: $($doc.owner)" -Level Warning
+                continue
+            }
+
+            if ($PSCmdlet.ShouldProcess("$($doc.fileName) for $ownerUpn", 'Create and upload document')) {
+                try {
+                    # Create document content as plain text (Word upload via Graph)
+                    $contentBytes = [System.Text.Encoding]::UTF8.GetBytes($doc.content)
+
+                    # Upload to user's OneDrive root
+                    $uploadUri = "/v1.0/users/$ownerUpn/drive/root:/$($doc.fileName):/content"
+                    Invoke-MgGraphRequest -Method PUT `
+                        -Uri $uploadUri `
+                        -ContentType 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' `
+                        -Body $contentBytes `
+                        -ErrorAction Stop | Out-Null
+
+                    Write-LabLog -Message "Uploaded document $($doc.fileName) to $ownerUpn OneDrive" -Level Success
+
+                    if (-not [string]::IsNullOrWhiteSpace($doc.label)) {
+                        Write-LabLog -Message "Note: Sensitivity label '$($doc.label)' for $($doc.fileName) must be applied via Purview auto-labeling or manually." -Level Info
+                    }
+
+                    $createdDocs.Add(@{
+                        fileName = $doc.fileName
+                        owner    = $ownerUpn
+                        label    = $doc.label
+                    })
+                }
+                catch {
+                    Write-LabLog -Message "Failed to upload document $($doc.fileName) for $ownerUpn`: $($_.Exception.Message)" -Level Warning
+                }
+
+                Start-Sleep -Seconds 2
+            }
+        }
+    }
+
     return @{
-        emails = $sentEmails.ToArray()
+        emails    = $sentEmails.ToArray()
+        documents = $createdDocs.ToArray()
     }
 }
 
