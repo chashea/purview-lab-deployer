@@ -372,7 +372,7 @@ function Deploy-DLP {
     if ($useSimulationMode) {
         $simulationModeParam = Get-LabSupportedParameterName -CommandInfo $newPolicyCommand -CandidateNames @('Mode')
         if ($simulationModeParam) {
-            Write-LabLog -Message "DLP simulation mode enabled — all policies will deploy as TestWithNotifications." -Level Info
+            Write-LabLog -Message "DLP simulation mode enabled -- all policies will deploy as TestWithNotifications." -Level Info
         }
         else {
             Write-LabLog -Message "DLP simulation mode requested but 'New-DlpCompliancePolicy' does not support '-Mode'. Policies will deploy in default mode." -Level Warning
