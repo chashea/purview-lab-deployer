@@ -366,6 +366,19 @@ function Deploy-DLP {
     $newRuleCommand = Get-Command -Name New-DlpComplianceRule -ErrorAction Stop
     $setRuleCommand = Get-Command -Name Set-DlpComplianceRule -ErrorAction SilentlyContinue
 
+    # Resolve simulation mode: deploy all policies as TestWithNotifications
+    $useSimulationMode = ($Config.workloads.dlp.PSObject.Properties.Name -contains 'simulationMode') -and [bool]$Config.workloads.dlp.simulationMode
+    $simulationModeParam = $null
+    if ($useSimulationMode) {
+        $simulationModeParam = Get-LabSupportedParameterName -CommandInfo $newPolicyCommand -CandidateNames @('Mode')
+        if ($simulationModeParam) {
+            Write-LabLog -Message "DLP simulation mode enabled — all policies will deploy as TestWithNotifications." -Level Info
+        }
+        else {
+            Write-LabLog -Message "DLP simulation mode requested but 'New-DlpCompliancePolicy' does not support '-Mode'. Policies will deploy in default mode." -Level Warning
+        }
+    }
+
     foreach ($policy in $Config.workloads.dlp.policies) {
         $policyName = "$($Config.prefix)-$($policy.name)"
         $createLocationParams = Get-LabDlpLocationParameters -Locations ([string[]]@($policy.locations)) -CommandInfo $newPolicyCommand -PolicyName $policyName
@@ -392,6 +405,12 @@ function Deploy-DLP {
                 $setLocationParams = Get-LabDlpLocationParameters -Locations ([string[]]@($policy.locations)) -CommandInfo $setPolicyCommand -PolicyName $policyName -PreferAddParameters
                 $setScopeParams = Get-LabPolicyScopeParameters -Policy $policy -CommandInfo $setPolicyCommand -PolicyName $policyName
                 $setParams = @{ Identity = $policyName; ErrorAction = 'Stop' }
+                if ($useSimulationMode) {
+                    $setModeParam = Get-LabSupportedParameterName -CommandInfo $setPolicyCommand -CandidateNames @('Mode')
+                    if ($setModeParam) {
+                        $setParams[$setModeParam] = 'TestWithNotifications'
+                    }
+                }
                 foreach ($entry in $setLocationParams.GetEnumerator()) {
                     $setParams[$entry.Key] = $entry.Value
                 }
@@ -400,10 +419,11 @@ function Deploy-DLP {
                 }
 
                 if ($setParams.Count -gt 2) {
-                    if ($PSCmdlet.ShouldProcess($policyName, 'Update DLP policy locations')) {
+                    if ($PSCmdlet.ShouldProcess($policyName, 'Update DLP policy')) {
                         try {
                             Set-DlpCompliancePolicy @setParams | Out-Null
-                            Write-LabLog -Message "Updated DLP policy locations: $policyName" -Level Success
+                            $modeLabel = if ($useSimulationMode -and $setParams.ContainsKey('Mode')) { ' (simulation)' } else { '' }
+                            Write-LabLog -Message "Updated DLP policy: $policyName$modeLabel" -Level Success
                         }
                         catch {
                             if ($setScopeParams.Count -gt 0 -and $setLocationParams.Count -gt 0) {
@@ -429,6 +449,9 @@ function Deploy-DLP {
                 Name        = $policyName
                 ErrorAction = 'Stop'
             }
+            if ($useSimulationMode -and $simulationModeParam) {
+                $newPolicyParams[$simulationModeParam] = 'TestWithNotifications'
+            }
             foreach ($entry in $createLocationParams.GetEnumerator()) {
                 $newPolicyParams[$entry.Key] = $entry.Value
             }
@@ -438,12 +461,17 @@ function Deploy-DLP {
 
             try {
                 New-DlpCompliancePolicy @newPolicyParams | Out-Null
-                Write-LabLog -Message "Created DLP policy: $policyName" -Level Success
+                $modeLabel = if ($useSimulationMode -and $simulationModeParam) { ' (simulation)' } else { '' }
+                Write-LabLog -Message "Created DLP policy: $policyName$modeLabel" -Level Success
             }
             catch {
                 if ($createScopeParams.Count -gt 0) {
                     Write-LabLog -Message "Policy creation with optional scope parameters failed for $policyName. Retrying with baseline location parameters." -Level Warning
-                    New-DlpCompliancePolicy -Name $policyName @createLocationParams -ErrorAction Stop | Out-Null
+                    $fallbackParams = @{ Name = $policyName; ErrorAction = 'Stop' }
+                    if ($useSimulationMode -and $simulationModeParam) {
+                        $fallbackParams[$simulationModeParam] = 'TestWithNotifications'
+                    }
+                    New-DlpCompliancePolicy @fallbackParams @createLocationParams | Out-Null
                     Write-LabLog -Message "Created DLP policy (without optional scope parameters): $policyName" -Level Success
                 }
                 else {

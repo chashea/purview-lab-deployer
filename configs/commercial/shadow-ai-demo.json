@@ -116,6 +116,7 @@
     },
     "dlp": {
       "enabled": true,
+      "simulationMode": true,
       "policies": [
         {
           "name": "GenAI Prompt PII Protection",
@@ -509,9 +510,9 @@
           "name": "Shadow-AI-Incident-Review",
           "description": "Investigation into potential sensitive data exposure through unapproved AI tool usage.",
           "custodians": [
-            "etran@MngEnvMCAP648165.onmicrosoft.com",
-            "lramirez@MngEnvMCAP648165.onmicrosoft.com",
-            "kmills@MngEnvMCAP648165.onmicrosoft.com"
+            "etran",
+            "lramirez",
+            "kmills"
           ],
           "holdQuery": "\"AI\" OR \"copilot\" OR \"chatbot\" OR \"prompt\"",
           "searchQuery": "\"public AI\" OR \"external AI\" OR \"paste\" OR \"upload\""
@@ -524,12 +525,12 @@
         {
           "name": "External AI Prompt Sharing Monitoring",
           "reviewers": [
-            "pdesai@MngEnvMCAP648165.onmicrosoft.com"
+            "pdesai"
           ],
           "supervisedUsers": [
-            "aharper@MngEnvMCAP648165.onmicrosoft.com",
-            "opark@MngEnvMCAP648165.onmicrosoft.com",
-            "mahmed@MngEnvMCAP648165.onmicrosoft.com"
+            "aharper",
+            "opark",
+            "mahmed"
           ],
           "direction": "Both",
           "condition": "data sharing"
@@ -537,12 +538,12 @@
         {
           "name": "Sensitive Business Data in AI Prompts",
           "reviewers": [
-            "lramirez@MngEnvMCAP648165.onmicrosoft.com"
+            "lramirez"
           ],
           "supervisedUsers": [
-            "vcho@MngEnvMCAP648165.onmicrosoft.com",
-            "kmills@MngEnvMCAP648165.onmicrosoft.com",
-            "etran@MngEnvMCAP648165.onmicrosoft.com"
+            "vcho",
+            "kmills",
+            "etran"
           ],
           "direction": "Both",
           "condition": "sensitive business data"
@@ -550,13 +551,13 @@
         {
           "name": "Compliance Violations in AI Content",
           "reviewers": [
-            "etran@MngEnvMCAP648165.onmicrosoft.com"
+            "etran"
           ],
           "supervisedUsers": [
-            "aharper@MngEnvMCAP648165.onmicrosoft.com",
-            "opark@MngEnvMCAP648165.onmicrosoft.com",
-            "vcho@MngEnvMCAP648165.onmicrosoft.com",
-            "mahmed@MngEnvMCAP648165.onmicrosoft.com"
+            "aharper",
+            "opark",
+            "vcho",
+            "mahmed"
           ],
           "direction": "Both",
           "condition": "compliance violations"

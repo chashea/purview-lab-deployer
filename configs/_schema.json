@@ -129,6 +129,10 @@
             "enabled": {
               "type": "boolean"
             },
+            "simulationMode": {
+              "type": "boolean",
+              "description": "When true, all DLP policies deploy in simulation mode (TestWithNotifications) instead of active enforcement."
+            },
             "policies": {
               "type": "array",
               "items": {
