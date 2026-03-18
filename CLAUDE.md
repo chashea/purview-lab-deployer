@@ -37,9 +37,6 @@ Separate Shadow AI deployment track with independent prefix and lifecycle.
 
 # Teardown
 ./Remove-Lab.ps1 -ConfigPath configs/commercial/full-demo.json -Cloud commercial
-
-# GCC label publication
-./scripts/Publish-Labels-GCC.ps1 -ConfigPath configs/gcc/full-demo.json -TenantId <tenant-guid>
 ```
 
 ## Testing

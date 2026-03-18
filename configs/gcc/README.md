@@ -19,12 +19,6 @@ This folder contains Microsoft Purview lab configs for GCC tenants.
 - `dlp-only.json`
 - `ediscovery-retention.json`
 
-## GCC label publication helper
-
-```powershell
-./scripts/Publish-Labels-GCC.ps1 -ConfigPath configs/gcc/full-demo.json -TenantId <tenant-guid>
-```
-
 ## Teardown examples
 
 ```powershell

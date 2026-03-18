@@ -47,8 +47,7 @@ root/
 │   │   ├── capabilities.json             # GCC workload capabilities
 │   │   └── shadow-ai/                    # Shadow AI scenario profile + guide
 │   └── README.md
-├── scripts/
-│   └── Publish-Labels-GCC.ps1            # GCC label publication helper
+├── scripts/                              # Helper scripts
 ├── manifests/                            # Deploy manifests (gitignored)
 ├── logs/                                 # Transcripts (gitignored)
 └── tasks/                                # Dev-internal tracking
@@ -73,8 +72,6 @@ root/
   - removes in reverse dependency order; `TestData` is intentionally a no-op for removal
 
 - Interactive wrappers collect cloud/tenant/config input and call the non-interactive orchestrators.
-
-- `scripts/Publish-Labels-GCC.ps1`: standalone GCC label publication helper (not called by orchestrators).
 
 - Core shared infrastructure:
   - `modules/Prerequisites.psm1`: prerequisites, auth, config, cloud profile, workload compatibility, manifest I/O
