@@ -217,6 +217,10 @@ try {
             $dlpPreflightBlockers.Add('New/Set-DlpComplianceRule cmdlets are unavailable.')
         }
 
+        if ($policyCommands.Count -eq 0 -or $ruleCommands.Count -eq 0) {
+            # Skip per-policy/rule preflight when cmdlets are unavailable
+        }
+        else {
         foreach ($policy in @($Config.workloads.dlp.policies)) {
             $policyName = "$($Config.prefix)-$($policy.name)"
 
@@ -294,6 +298,7 @@ try {
                 }
             }
         }
+        } # end else (cmdlets available)
 
         foreach ($warning in @($dlpPreflightWarnings | Sort-Object -Unique)) {
             Write-LabLog -Message $warning -Level Warning
