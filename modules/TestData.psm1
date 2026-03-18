@@ -165,7 +165,13 @@ function Send-TestData {
                     })
                 }
                 catch {
-                    Write-LabLog -Message "Failed to upload document $($doc.fileName) for $ownerUpn`: $($_.Exception.Message)" -Level Warning
+                    $errMsg = $_.Exception.Message
+                    if ($errMsg -match 'mysite not found|NotFound') {
+                        Write-LabLog -Message "Skipping document upload '$($doc.fileName)' for $ownerUpn - OneDrive not provisioned (requires SharePoint license). Assign license and re-run." -Level Warning
+                    }
+                    else {
+                        Write-LabLog -Message "Failed to upload document $($doc.fileName) for $ownerUpn`: $errMsg" -Level Warning
+                    }
                 }
 
                 Start-Sleep -Seconds 2

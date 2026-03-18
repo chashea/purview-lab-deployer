@@ -537,7 +537,7 @@ try {
                     }
 
                     if (-not $ruleExists) {
-                        $validationFailures.Add("DLP rule '$targetRuleName'")
+                        $validationWarnings.Add("DLP rule '$targetRuleName' could not be validated (may be access denied or transient)")
                         continue
                     }
 

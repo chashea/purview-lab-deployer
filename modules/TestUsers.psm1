@@ -75,21 +75,18 @@ function Deploy-TestUsers {
     }
 
     # --- License assignment ---
-    # Auto-detect a SKU with Exchange mailbox capability and available units
     $skus = Get-MgSubscribedSku -ErrorAction Stop
-    $exchangePlanIds = @(
-        '9aaf7827-d63c-4b61-89c3-182f06f82b13'  # EXCHANGE_S_ENTERPRISE (Plan 2)
-        'efb87545-963c-4e0d-99df-69c6916d9eb0'  # EXCHANGE_S_STANDARD (Plan 1)
-        '80873e7a-cd2a-4e67-b061-1b5381571571'  # EXCHANGE_S_FOUNDATION
-        '113feb6c-3fe4-4440-bddc-54d774bf0318'  # EXCHANGE_S_ENTERPRISE_GOV
-    )
+    # Find SKUs with Exchange Online service plans by checking service plan names
     $mailboxSku = $skus | Where-Object {
         $_.PrepaidUnits.Enabled -gt $_.ConsumedUnits -and
-        ($_.ServicePlans | Where-Object { $exchangePlanIds -contains $_.ServicePlanId })
-    } | Select-Object -First 1
+        ($_.ServicePlans | Where-Object {
+            $_.ServicePlanName -match 'EXCHANGE_S_' -and
+            $_.ProvisioningStatus -ne 'Disabled'
+        })
+    } | Sort-Object { $_.PrepaidUnits.Enabled - $_.ConsumedUnits } -Descending | Select-Object -First 1
 
     if ($mailboxSku) {
-        Write-LabLog -Message "Auto-detected license SKU: $($mailboxSku.SkuPartNumber) ($($mailboxSku.SkuId)) — $($mailboxSku.PrepaidUnits.Enabled - $mailboxSku.ConsumedUnits) available" -Level Info
+        Write-LabLog -Message "Auto-detected license SKU with Exchange mailbox: $($mailboxSku.SkuPartNumber) ($($mailboxSku.SkuId)) — $($mailboxSku.PrepaidUnits.Enabled - $mailboxSku.ConsumedUnits) available" -Level Info
 
         foreach ($upn in $createdUpns) {
             $userObj = Get-MgUser -Filter "userPrincipalName eq '$upn'" -Property Id,AssignedLicenses -ErrorAction SilentlyContinue
@@ -108,7 +105,7 @@ function Deploy-TestUsers {
         }
     }
     else {
-        Write-LabLog -Message 'No SKU with Exchange mailbox capability and available units found. Users will not have mailboxes until licensed manually.' -Level Warning
+        Write-LabLog -Message 'No SKU with Exchange Online mailbox service plan found. Users will not have mailboxes until licensed manually.' -Level Warning
     }
 
     # --- Groups ---

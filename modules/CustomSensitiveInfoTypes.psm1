@@ -17,59 +17,28 @@ function Deploy-CustomSensitiveInfoTypes {
         [PSCustomObject]$Config
     )
 
-    $createdTypes = [System.Collections.Generic.List[hashtable]]::new()
+    $types = @()
 
-    # Check if the cmdlet is available in this environment
-    $newSitCmd = Get-Command -Name New-DlpSensitiveInformationType -ErrorAction SilentlyContinue
-    if (-not $newSitCmd) {
-        Write-LabLog -Message 'New-DlpSensitiveInformationType cmdlet unavailable. Custom SITs must be created manually in the Purview portal.' -Level Warning
-        return @{ types = @() }
+    if (-not $Config.workloads.customSensitiveInfoTypes.types) {
+        return @{ types = $types }
     }
 
-    foreach ($type in $Config.workloads.customSensitiveInfoTypes.types) {
-        $name = "$($Config.prefix)-$($type.name)"
+    Write-LabLog -Message 'Custom Sensitive Info Types require manual creation in the Purview portal (Data classification > Classifiers > Sensitive info types > Create).' -Level Warning
 
-        # Check if already exists
-        $existing = Get-DlpSensitiveInformationType -Identity $name -ErrorAction SilentlyContinue
-        if ($existing) {
-            Write-LabLog -Message "Custom SIT already exists: $name" -Level Warning
-            $createdTypes.Add(@{
-                name   = $name
-                status = 'already_exists'
-            })
-            continue
-        }
-
-        if ($PSCmdlet.ShouldProcess($name, 'Create custom sensitive information type')) {
-            try {
-                New-DlpSensitiveInformationType `
-                    -Name $name `
-                    -Description $type.description `
-                    -ErrorAction Stop | Out-Null
-
-                Write-LabLog -Message "Created custom SIT: $name (pattern: $($type.pattern), confidence: $($type.confidenceLevel))" -Level Success
-
-                $createdTypes.Add(@{
-                    name            = $name
-                    pattern         = $type.pattern
-                    confidenceLevel = $type.confidenceLevel
-                    status          = 'created'
-                })
-            }
-            catch {
-                Write-LabLog -Message "Failed to create custom SIT '$name': $_" -Level Warning
-                $createdTypes.Add(@{
-                    name   = $name
-                    status = 'failed'
-                    error  = $_.ToString()
-                })
-            }
+    if ($PSCmdlet.ShouldProcess('Custom SITs', 'Log manual creation guidance')) {
+        foreach ($type in $Config.workloads.customSensitiveInfoTypes.types) {
+        $typeName = "$($Config.prefix)-$($type.name)"
+        Write-LabLog -Message "Custom SIT to create manually: '$typeName' — Pattern: $($type.pattern) — Confidence: $($type.confidenceLevel)" -Level Info
+        $types += @{
+            name            = $typeName
+            pattern         = $type.pattern
+            confidenceLevel = $type.confidenceLevel
+            status          = 'manual-required'
         }
     }
-
-    return @{
-        types = $createdTypes.ToArray()
     }
+
+    return @{ types = $types }
 }
 
 function Remove-CustomSensitiveInfoTypes {

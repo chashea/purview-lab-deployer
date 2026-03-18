@@ -171,8 +171,7 @@
             {
               "name": "Detect Bank Accounts in AI Content",
               "sensitiveInfoTypes": [
-                "U.S. Bank Account Number",
-                "Contoso Customer ID"
+                "U.S. Bank Account Number"
               ],
               "minCount": 1,
               "enforcement": {
@@ -239,8 +238,7 @@
             {
               "name": "Detect Credit Cards in External AI Sharing",
               "sensitiveInfoTypes": [
-                "Credit Card Number",
-                "API Key Pattern"
+                "Credit Card Number"
               ],
               "minCount": 1,
               "enforcement": {
@@ -374,7 +372,7 @@
           "rules": [
             {
               "name": "Block AI for Elevated Risk Users",
-              "sensitiveInfoTypes": ["U.S. Social Security Number (SSN)", "Credit Card Number", "Contoso Customer ID"],
+              "sensitiveInfoTypes": ["U.S. Social Security Number (SSN)", "Credit Card Number"],
               "minCount": 1,
               "insiderRiskLevel": "Elevated",
               "enforcement": {
