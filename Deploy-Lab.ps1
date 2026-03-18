@@ -102,12 +102,13 @@ try {
     $resolvedCloud = Resolve-LabCloud -Cloud $Cloud -Config $Config
     $capabilityProfile = Import-LabCloudProfile -Cloud $resolvedCloud -RepositoryRoot $PSScriptRoot
 
-    # Apply TestUsersMode override if specified
-    if (-not [string]::IsNullOrWhiteSpace($TestUsersMode) -and $Config.workloads.testUsers) {
+    # Apply TestUsersMode override — defaults to 'existing' (no user creation)
+    $effectiveMode = if (-not [string]::IsNullOrWhiteSpace($TestUsersMode)) { $TestUsersMode } else { 'existing' }
+    if ($Config.workloads.testUsers) {
         if ($Config.workloads.testUsers.PSObject.Properties['mode']) {
-            $Config.workloads.testUsers.mode = $TestUsersMode
+            $Config.workloads.testUsers.mode = $effectiveMode
         } else {
-            $Config.workloads.testUsers | Add-Member -NotePropertyName 'mode' -NotePropertyValue $TestUsersMode
+            $Config.workloads.testUsers | Add-Member -NotePropertyName 'mode' -NotePropertyValue $effectiveMode
         }
     }
 
