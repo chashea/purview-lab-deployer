@@ -169,6 +169,12 @@ try {
 
     # Remove workloads in reverse dependency order
 
+    # AuditConfig — non-destructive removal
+    if ($Config.workloads.PSObject.Properties['auditConfig'] -and $Config.workloads.auditConfig.enabled) {
+        Write-LabStep -StepName 'AuditConfig' -Description 'Audit configuration removal'
+        Remove-AuditConfig -Config $Config -Manifest (Get-WorkloadManifest -WorkloadName 'auditConfig') -WhatIf:$WhatIfPreference
+    }
+
     # TestData — skip (sent emails cannot be recalled)
     Write-LabStep -StepName 'TestData' -Description 'Test data removal'
     Write-LabLog -Message 'TestData: skipped. Sent emails and uploaded files cannot be recalled.' -Level Warning

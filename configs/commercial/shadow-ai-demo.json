@@ -366,6 +366,52 @@
               }
             }
           ]
+        },
+        {
+          "name": "Adaptive AI Protection by Risk Level",
+          "locations": ["Devices", "Copilot"],
+          "policyMode": "adaptiveProtection",
+          "rules": [
+            {
+              "name": "Block AI for Elevated Risk Users",
+              "sensitiveInfoTypes": ["U.S. Social Security Number (SSN)", "Credit Card Number", "Contoso Customer ID"],
+              "minCount": 1,
+              "insiderRiskLevel": "Elevated",
+              "enforcement": {
+                "action": "block",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Your access to AI tools is restricted due to elevated risk level. Contact your compliance team."
+                },
+                "alert": { "enabled": true, "severity": "high" },
+                "incidentReport": { "enabled": true, "severity": "high" }
+              }
+            },
+            {
+              "name": "Warn AI for Moderate Risk Users",
+              "sensitiveInfoTypes": ["U.S. Social Security Number (SSN)", "Credit Card Number"],
+              "minCount": 1,
+              "insiderRiskLevel": "Moderate",
+              "enforcement": {
+                "action": "allowWithJustification",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Moderate risk detected. Provide justification for sharing sensitive data with AI tools."
+                },
+                "alert": { "enabled": true, "severity": "medium" }
+              }
+            },
+            {
+              "name": "Audit AI for Minor Risk Users",
+              "sensitiveInfoTypes": ["U.S. Social Security Number (SSN)"],
+              "minCount": 1,
+              "insiderRiskLevel": "Minor",
+              "enforcement": {
+                "action": "auditOnly",
+                "alert": { "enabled": true, "severity": "low" }
+              }
+            }
+          ]
         }
       ]
     },
@@ -608,6 +654,95 @@
           "owner": "opark",
           "label": "PVShadowAI-Confidential",
           "content": "Internal Engineering Specifications\n\nProject: PRJ-NOVA2025\nAPI Endpoint Key: api_live_xK9mN2pQ4rS6tU8v\nArchitecture notes for internal review only.\nDo not paste into external AI services."
+        }
+      ]
+    },
+    "auditConfig": {
+      "enabled": true,
+      "searches": [
+        {
+          "name": "Copilot Activity Audit",
+          "operations": ["CopilotInteraction", "MicrosoftCopilotForM365"]
+        },
+        {
+          "name": "DLP Policy Match Audit",
+          "operations": ["DlpRuleMatch", "DlpRuleUndo", "DlpInfo"]
+        },
+        {
+          "name": "External AI App Access Audit",
+          "operations": ["FileUploaded", "FileSyncUploadedFull", "FileModifiedExtended"]
+        }
+      ]
+    },
+    "appGovernance": {
+      "enabled": false,
+      "note": "App Governance and Cloud Discovery require manual configuration in Defender for Cloud Apps portal.",
+      "cloudDiscovery": {
+        "targetApps": [
+          { "name": "ChatGPT", "vendor": "OpenAI", "riskScore": "Medium" },
+          { "name": "Claude", "vendor": "Anthropic", "riskScore": "Medium" },
+          { "name": "Google Gemini", "vendor": "Google", "riskScore": "Medium" },
+          { "name": "Perplexity", "vendor": "Perplexity AI", "riskScore": "Medium" },
+          { "name": "Poe", "vendor": "Quora", "riskScore": "High" },
+          { "name": "HuggingChat", "vendor": "Hugging Face", "riskScore": "High" }
+        ],
+        "portalSteps": [
+          "Navigate to Defender for Cloud Apps > Cloud Discovery",
+          "Upload network logs or configure Defender for Endpoint integration",
+          "Create Cloud Discovery policy targeting AI/ML app category",
+          "Set alerts for data upload volume thresholds to AI apps"
+        ]
+      },
+      "oauthPolicies": {
+        "portalSteps": [
+          "Navigate to Defender for Cloud Apps > App Governance",
+          "Create OAuth app policy for apps requesting Mail.Read, Files.ReadWrite permissions",
+          "Set automatic ban for apps with High risk score accessing AI categories",
+          "Configure alerting for new OAuth app registrations with broad permissions"
+        ]
+      },
+      "sessionPolicies": {
+        "portalSteps": [
+          "Navigate to Defender for Cloud Apps > Policies > Session policies",
+          "Create session policy for real-time monitoring of file uploads to AI apps",
+          "Configure content inspection for sensitive data in browser sessions",
+          "Enable block action for uploads containing detected sensitive info types"
+        ]
+      }
+    },
+    "conditionalAccess": {
+      "enabled": false,
+      "note": "Conditional Access policies require manual configuration in Microsoft Entra admin center.",
+      "policies": [
+        {
+          "name": "Block AI Apps for High Risk Users",
+          "description": "Block access to known AI applications for users with high sign-in risk",
+          "conditions": {
+            "signInRiskLevels": ["high"],
+            "targetApps": ["ChatGPT", "Claude", "Gemini"]
+          },
+          "grantControls": "Block",
+          "portalSteps": [
+            "Navigate to Entra admin center > Protection > Conditional Access",
+            "Create new policy targeting AI app enterprise applications",
+            "Set condition: Sign-in risk = High",
+            "Set grant control: Block access",
+            "Enable in report-only mode first"
+          ]
+        },
+        {
+          "name": "Require MFA for AI App Access",
+          "description": "Require multi-factor authentication when accessing AI applications",
+          "conditions": {
+            "targetApps": ["All AI applications"]
+          },
+          "grantControls": "Require MFA",
+          "portalSteps": [
+            "Navigate to Entra admin center > Protection > Conditional Access",
+            "Create new policy targeting AI app enterprise applications",
+            "Set grant control: Require multifactor authentication",
+            "Enable in report-only mode first"
+          ]
         }
       ]
     }

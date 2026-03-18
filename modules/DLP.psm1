@@ -503,6 +503,19 @@ function Deploy-DLP {
                     ContentContainsSensitiveInformation = $sitArray
                     ErrorAction                       = 'Stop'
                 }
+
+                # Adaptive Protection: insider risk level condition
+                if ($rule.PSObject.Properties['insiderRiskLevel'] -and -not [string]::IsNullOrWhiteSpace([string]$rule.insiderRiskLevel)) {
+                    $riskParam = Get-LabSupportedParameterName -CommandInfo $newRuleCommand -CandidateNames @('IncludeUserRiskLevels')
+                    if ($riskParam) {
+                        $baseRuleParams[$riskParam] = @([string]$rule.insiderRiskLevel)
+                        Write-LabLog -Message "Rule '$ruleName' scoped to insider risk level: $($rule.insiderRiskLevel)" -Level Info
+                    }
+                    else {
+                        Write-LabLog -Message "Rule '$ruleName' requested insider risk level '$($rule.insiderRiskLevel)' but IncludeUserRiskLevels parameter is unavailable. Risk scoping will be skipped." -Level Warning
+                    }
+                }
+
                 $optionalRuleParams = Get-LabDlpRuleOptionalParameters -Policy $policy -Rule $rule -CommandInfo $newRuleCommand -RuleName $ruleName
                 $ruleParams = @{}
                 foreach ($entry in $baseRuleParams.GetEnumerator()) {

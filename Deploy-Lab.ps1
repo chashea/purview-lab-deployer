@@ -458,6 +458,12 @@ try {
         }
     } else { Write-LabLog -Message 'testData workload is disabled, skipping.' -Level Info }
 
+    if ($Config.workloads.PSObject.Properties['auditConfig'] -and $Config.workloads.auditConfig.enabled) {
+        Invoke-Workload -Name 'auditConfig' -Step 'AuditConfig' -Description 'Configuring audit logging for AI activities' -Action {
+            Deploy-AuditConfig -Config $Config -WhatIf:$WhatIfPreference
+        }
+    }
+
     # Export manifest (skip in WhatIf)
     $manifestPath = $null
     if (-not $WhatIfPreference) {
