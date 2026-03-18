@@ -10,6 +10,15 @@ This folder contains Microsoft Purview lab configs for GCC tenants.
 ./Deploy-Lab.ps1 -ConfigPath configs/gcc/basic-lab-demo.json -TenantId <tenant-guid> -Cloud gcc
 ```
 
+## Shadow AI demo
+
+- Shadow AI config: `shadow-ai-demo.json`
+- Guide: `../../profiles/gcc/shadow-ai/README.md`
+
+```powershell
+./Deploy-Lab.ps1 -Cloud gcc -LabProfile shadow-ai -TenantId <tenant-guid>
+```
+
 ## Other configs
 
 - `medical-demo.json`

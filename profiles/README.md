@@ -13,10 +13,15 @@ These are selected by the `-Cloud` parameter (`commercial` or `gcc`).
 
 - `commercial/shadow-ai/capabilities.json` - Shadow AI scenario profile for commercial
 - `commercial/shadow-ai/README.md` - Shadow AI deployment guide (commercial)
+- `gcc/shadow-ai/capabilities.json` - Shadow AI scenario profile for GCC
+- `gcc/shadow-ai/README.md` - Shadow AI deployment guide (GCC)
 
 Shadow AI profiles are documentation/scenario metadata and do not replace cloud routing.
 
 ```powershell
 # Commercial
-./Deploy-Lab.ps1 -ConfigPath configs/commercial/shadow-ai-demo.json -TenantId <tenant-guid> -Cloud commercial
+./Deploy-Lab.ps1 -Cloud commercial -LabProfile shadow-ai -TenantId <tenant-guid>
+
+# GCC
+./Deploy-Lab.ps1 -Cloud gcc -LabProfile shadow-ai -TenantId <tenant-guid>
 ```
