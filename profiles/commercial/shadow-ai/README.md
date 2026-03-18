@@ -96,8 +96,6 @@ All rules include policy tips with user education messages.
 
 ### Test Data
 
-**6 emails** with sensitive content (SSNs, credit cards, bank accounts, API keys, customer IDs, project codes)
-
 **3 documents** uploaded to user OneDrive:
 - Q4-Financial-Forecast.docx (Confidential) — financial data + customer IDs
 - Customer-Data-Export.docx (Highly Confidential) — PII + API keys

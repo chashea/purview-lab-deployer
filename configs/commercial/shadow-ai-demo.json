@@ -594,44 +594,7 @@
     },
     "testData": {
       "enabled": true,
-      "emails": [
-        {
-          "from": "aharper",
-          "to": "pdesai",
-          "subject": "Can I paste customer export into public AI?",
-          "body": "Priya, I drafted a prompt for a public AI assistant using a customer export that includes SSN 438-22-9014 and card 4111-1111-1111-1111. Is this allowed for campaign planning?"
-        },
-        {
-          "from": "vcho",
-          "to": "etran",
-          "subject": "Payroll spreadsheet summarized by external chatbot",
-          "body": "Ethan, someone uploaded payroll records including routing 021000021 and account 0012345678 into a public chatbot for analysis. We need immediate guidance and containment."
-        },
-        {
-          "from": "opark",
-          "to": "lramirez",
-          "subject": "Code snippet and customer ticket pasted into AI service",
-          "body": "Leah, an engineer pasted customer support notes and internal source snippets into an unapproved AI service. The thread includes billing details and full names. Please advise on legal hold scope."
-        },
-        {
-          "from": "kmills",
-          "to": "pdesai",
-          "subject": "HR case notes used in AI draft",
-          "body": "Priya, a manager asked an external AI tool to draft an employee memo from HR case notes containing medical terms and SSN 605-44-8821. We should trigger Shadow AI response playbook."
-        },
-        {
-          "from": "etran",
-          "to": "lramirez",
-          "subject": "API keys found in AI chatbot history",
-          "body": "Leah, we found evidence that an engineer shared API credentials api_prod_mK7nP3qR5sT9uW2x and project code PRJ-TITAN in an external AI chatbot. Customer CUST-294018 data may also be exposed. Please initiate incident response."
-        },
-        {
-          "from": "mahmed",
-          "to": "pdesai",
-          "subject": "Customer IDs uploaded to unauthorized AI tool",
-          "body": "Priya, bulk customer records including CUST-571039, CUST-482916, and CUST-103847 were uploaded to an unsanctioned AI summarization service. The upload also contained project references PRJ-ECHO and SSN 331-55-7742."
-        }
-      ],
+      "emails": [],
       "documents": [
         {
           "fileName": "Q4-Financial-Forecast.docx",
