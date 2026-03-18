@@ -347,7 +347,7 @@
         },
         {
           "name": "Adaptive AI Protection by Risk Level",
-          "locations": ["Devices", "Copilot"],
+          "locations": ["Copilot"],
           "policyMode": "adaptiveProtection",
           "rules": [
             {

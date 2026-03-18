@@ -60,7 +60,7 @@ All users are auto-licensed with an Exchange-capable SKU for mailbox provisionin
 | External AI Upload Risk Signals | Copilot | High-risk block | Medical terms, Credit Cards |
 | Labeled Data AI Restriction | Copilot | Label restriction | Restrict labeled data in AI |
 | Endpoint AI Site Restrictions | Devices | High-risk block | Block sensitive upload to AI sites, Warn on paste |
-| Adaptive AI Protection by Risk Level | Devices + Copilot | Adaptive | Elevated=block, Moderate=warn, Minor=audit |
+| Adaptive AI Protection by Risk Level | Copilot | Adaptive | Elevated=block, Moderate=warn, Minor=audit |
 
 **Blocked AI site URLs:** chat.openai.com, chatgpt.com, claude.ai, gemini.google.com, bard.google.com, copilot.microsoft.com, poe.com, perplexity.ai, huggingface.co/chat
 
