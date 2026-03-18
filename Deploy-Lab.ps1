@@ -513,7 +513,7 @@ try {
                     }
 
                     # Re-check cmdlet capability so validation matches what deploy could actually set
-                    $ruleCommands = @('New-DlpComplianceRule', 'Set-DlpComplianceRule') | Where-Object { Get-Command $_ -ErrorAction SilentlyContinue }
+                    $ruleCommands = @('New-DlpComplianceRule', 'Set-DlpComplianceRule') | ForEach-Object { Get-Command $_ -ErrorAction SilentlyContinue } | Where-Object { $_ }
                     $actionParamSupported = [bool](Get-LabSupportedParameterName -Commands $ruleCommands -CandidateNames @('BlockAccess', 'Mode', 'EnforcementMode', 'Action'))
                     $overrideParamSupported = [bool](Get-LabSupportedParameterName -Commands $ruleCommands -CandidateNames @('AllowOverrideWithJustification', 'AllowOverride', 'UserCanOverride'))
                     $notifyParamSupported = [bool](Get-LabSupportedParameterName -Commands $ruleCommands -CandidateNames @('NotifyUser', 'UserNotificationEnabled'))
