@@ -512,6 +512,13 @@ try {
                         continue
                     }
 
+                    # Re-check cmdlet capability so validation matches what deploy could actually set
+                    $ruleCommands = @('New-DlpComplianceRule', 'Set-DlpComplianceRule') | Where-Object { Get-Command $_ -ErrorAction SilentlyContinue }
+                    $actionParamSupported = [bool](Get-LabSupportedParameterName -Commands $ruleCommands -CandidateNames @('BlockAccess', 'Mode', 'EnforcementMode', 'Action'))
+                    $overrideParamSupported = [bool](Get-LabSupportedParameterName -Commands $ruleCommands -CandidateNames @('AllowOverrideWithJustification', 'AllowOverride', 'UserCanOverride'))
+                    $notifyParamSupported = [bool](Get-LabSupportedParameterName -Commands $ruleCommands -CandidateNames @('NotifyUser', 'UserNotificationEnabled'))
+                    $alertParamSupported = [bool](Get-LabSupportedParameterName -Commands $ruleCommands -CandidateNames @('GenerateAlert', 'AlertEnabled'))
+
                     $action = if (($enforcement.PSObject.Properties.Name -contains 'action') -and -not [string]::IsNullOrWhiteSpace([string]$enforcement.action)) {
                         ([string]$enforcement.action).Trim()
                     }
@@ -519,7 +526,7 @@ try {
                         $null
                     }
 
-                    if ($action) {
+                    if ($action -and $actionParamSupported) {
                         $blockProp = Get-LabObjectProperty -Object $ruleObject -CandidateNames @('BlockAccess')
                         if ($blockProp.found) {
                             $isBlocked = [bool]$blockProp.value
@@ -546,8 +553,11 @@ try {
                             }
                         }
                     }
+                    elseif ($action -and -not $actionParamSupported) {
+                        $validationWarnings.Add("DLP rule '$targetRuleName' action '$action' skipped validation — cmdlet does not support action parameters in this environment.")
+                    }
 
-                    if ($action -eq 'allowWithJustification') {
+                    if ($action -eq 'allowWithJustification' -and $overrideParamSupported) {
                         $overrideProp = Get-LabObjectProperty -Object $ruleObject -CandidateNames @('AllowOverrideWithJustification', 'AllowOverride', 'UserCanOverride')
                         if ($overrideProp.found) {
                             if (-not [bool]$overrideProp.value) {
@@ -558,18 +568,31 @@ try {
                             $validationWarnings.Add("DLP rule '$targetRuleName' allowWithJustification could not be validated due to missing override property.")
                         }
                     }
+                    elseif ($action -eq 'allowWithJustification' -and -not $overrideParamSupported) {
+                        $validationWarnings.Add("DLP rule '$targetRuleName' allowWithJustification skipped validation — cmdlet does not support override parameters.")
+                    }
 
                     if (($enforcement.PSObject.Properties.Name -contains 'userNotification') -and $null -ne $enforcement.userNotification -and [bool]$enforcement.userNotification.enabled) {
-                        $notifyProp = Get-LabObjectProperty -Object $ruleObject -CandidateNames @('NotifyUser', 'UserNotificationEnabled')
-                        if ($notifyProp.found -and -not [bool]$notifyProp.value) {
-                            $validationFailures.Add("DLP rule '$targetRuleName' expected user notification enabled but '$($notifyProp.name)' is disabled.")
+                        if ($notifyParamSupported) {
+                            $notifyProp = Get-LabObjectProperty -Object $ruleObject -CandidateNames @('NotifyUser', 'UserNotificationEnabled')
+                            if ($notifyProp.found -and -not [bool]$notifyProp.value) {
+                                $validationFailures.Add("DLP rule '$targetRuleName' expected user notification enabled but '$($notifyProp.name)' is disabled.")
+                            }
+                        }
+                        else {
+                            $validationWarnings.Add("DLP rule '$targetRuleName' user notification skipped validation — cmdlet does not support notification parameters.")
                         }
                     }
 
                     if (($enforcement.PSObject.Properties.Name -contains 'alert') -and $null -ne $enforcement.alert -and [bool]$enforcement.alert.enabled) {
-                        $alertProp = Get-LabObjectProperty -Object $ruleObject -CandidateNames @('GenerateAlert', 'AlertEnabled')
-                        if ($alertProp.found -and -not [bool]$alertProp.value) {
-                            $validationFailures.Add("DLP rule '$targetRuleName' expected alert generation enabled but '$($alertProp.name)' is disabled.")
+                        if ($alertParamSupported) {
+                            $alertProp = Get-LabObjectProperty -Object $ruleObject -CandidateNames @('GenerateAlert', 'AlertEnabled')
+                            if ($alertProp.found -and -not [bool]$alertProp.value) {
+                                $validationFailures.Add("DLP rule '$targetRuleName' expected alert generation enabled but '$($alertProp.name)' is disabled.")
+                            }
+                        }
+                        else {
+                            $validationWarnings.Add("DLP rule '$targetRuleName' alert generation skipped validation — cmdlet does not support alert parameters.")
                         }
                     }
                 }
