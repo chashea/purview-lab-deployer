@@ -111,3 +111,11 @@ Shadow AI is intentionally separated from baseline full-demo. Different prefix, 
   - optional `policyMode`, `enforcement`, `appliesToGroups`, and `labels` fields in config
   - `modules/DLP.psm1` dynamically detects supported cmdlet parameters at runtime
   - unsupported enforcement params degrade gracefully to audit with warnings
+
+## Git and release workflow
+
+- Always `git push` changes to `origin main` after committing.
+- After pushing, update GitHub Releases with notes from the commit(s).
+- Small commits (bug fixes, config tweaks, doc updates) increment the **minor** version (e.g., v0.32.0 → v0.33.0).
+- Large features or breaking changes increment the **major** version.
+- Use `gh release create` with a tag and release notes summarizing the changes.
