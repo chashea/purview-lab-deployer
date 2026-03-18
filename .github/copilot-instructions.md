@@ -19,8 +19,8 @@ Invoke-ScriptAnalyzer -Path ./Deploy-Lab.ps1 -Severity Warning -ExcludeRule PSAv
 Optional smoke checks without connecting to cloud services:
 
 ```powershell
-./Deploy-Lab.ps1 -ConfigPath configs/commercial/full-demo.json -Cloud commercial -SkipAuth -WhatIf
-./Remove-Lab.ps1 -ConfigPath configs/commercial/full-demo.json -Cloud commercial -SkipAuth -WhatIf
+./Deploy-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -Cloud commercial -SkipAuth -WhatIf
+./Remove-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -Cloud commercial -SkipAuth -WhatIf
 ```
 
 ## Repository layout
@@ -33,15 +33,16 @@ root/
 ├── configs/
 │   ├── _schema.json                      # Canonical JSON schema
 │   ├── commercial/                       # Commercial tenant configs
-│   │   ├── full-demo.json, shadow-ai-demo.json, dlp-only.json, ...
+│   │   ├── basic-lab-demo.json, shadow-ai-demo.json, dlp-only.json, ...
 │   │   └── README.md
 │   └── gcc/                              # GCC tenant configs
-│       ├── full-demo.json, dlp-only.json, ...
+│       ├── basic-lab-demo.json, dlp-only.json, ...
 │       └── README.md
 ├── modules/                              # Workload modules (*.psm1)
 ├── profiles/
 │   ├── commercial/
 │   │   ├── capabilities.json             # Commercial workload capabilities
+│   │   ├── basic-lab/                    # Basic lab scenario profile + guide
 │   │   └── shadow-ai/                    # Shadow AI scenario profile + guide
 │   ├── gcc/
 │   │   ├── capabilities.json             # GCC workload capabilities
@@ -80,11 +81,11 @@ root/
 
 ## Deployment tracks
 
-- **Full demo** (baseline): `configs/<cloud>/full-demo.json` — all workloads, prefix `PVLab`
+- **Basic lab** (baseline): `configs/<cloud>/basic-lab-demo.json` — core compliance workloads, prefix `PVLab`
 - **Shadow AI** (separate): `configs/commercial/shadow-ai-demo.json` — AI-focused DLP/labels/retention/eDiscovery/IRM, prefix `PVShadowAI`
 - **Scenario configs**: `dlp-only.json`, `education-demo.json`, `eu-gdpr-demo.json`, etc.
 
-Shadow AI is intentionally separated from baseline full-demo. Different prefix, different config, independent deploy/remove lifecycle.
+Shadow AI is intentionally separated from baseline basic-lab. Different prefix, different config, independent deploy/remove lifecycle.
 
 ## Key conventions
 

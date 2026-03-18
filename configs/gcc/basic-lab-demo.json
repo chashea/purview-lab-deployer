@@ -1,6 +1,6 @@
 {
   "$schema": "./_schema.json",
-  "labName": "Full Purview Demo",
+  "labName": "Basic Purview Lab",
   "prefix": "PVLab",
   "domain": "MngEnvMCAP648165.onmicrosoft.com",
   "workloads": {
