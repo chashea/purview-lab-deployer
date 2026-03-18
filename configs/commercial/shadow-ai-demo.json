@@ -324,9 +324,7 @@
               "name": "Block Sensitive Data Upload to AI Sites",
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)",
-                "Credit Card Number",
-                "Contoso Customer ID",
-                "API Key Pattern"
+                "Credit Card Number"
               ],
               "minCount": 1,
               "enforcement": {
@@ -342,24 +340,6 @@
                 "incidentReport": {
                   "enabled": true,
                   "severity": "high"
-                }
-              }
-            },
-            {
-              "name": "Warn on Any Data Paste to AI Sites",
-              "sensitiveInfoTypes": [
-                "Internal Project Code"
-              ],
-              "minCount": 1,
-              "enforcement": {
-                "action": "allowWithJustification",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "You are pasting content into an external AI tool. Consider using Microsoft Copilot instead for better data protection. Provide justification to proceed."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "medium"
                 }
               }
             }
@@ -436,6 +416,24 @@
               "contentMarking": {
                 "headerText": "CONFIDENTIAL - AI Restricted Recipients",
                 "footerText": "Do not paste into external AI systems"
+              }
+            },
+            {
+              "name": "AI Blocked from External Tools",
+              "tooltip": "Encrypted data restricted from external/public AI tools.",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "CONFIDENTIAL - AI Blocked",
+                "footerText": "External AI sharing restricted"
+              }
+            },
+            {
+              "name": "AI Regulated Data",
+              "tooltip": "Encrypted regulated content requiring compliance review before AI use.",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "CONFIDENTIAL - AI Regulated Data",
+                "footerText": "Regulated data - restrict external AI use"
               }
             }
           ]
@@ -669,78 +667,6 @@
         {
           "name": "External AI App Access Audit",
           "operations": ["FileUploaded", "FileSyncUploadedFull", "FileModifiedExtended"]
-        }
-      ]
-    },
-    "appGovernance": {
-      "enabled": false,
-      "note": "App Governance and Cloud Discovery require manual configuration in Defender for Cloud Apps portal.",
-      "cloudDiscovery": {
-        "targetApps": [
-          { "name": "ChatGPT", "vendor": "OpenAI", "riskScore": "Medium" },
-          { "name": "Claude", "vendor": "Anthropic", "riskScore": "Medium" },
-          { "name": "Google Gemini", "vendor": "Google", "riskScore": "Medium" },
-          { "name": "Perplexity", "vendor": "Perplexity AI", "riskScore": "Medium" },
-          { "name": "Poe", "vendor": "Quora", "riskScore": "High" },
-          { "name": "HuggingChat", "vendor": "Hugging Face", "riskScore": "High" }
-        ],
-        "portalSteps": [
-          "Navigate to Defender for Cloud Apps > Cloud Discovery",
-          "Upload network logs or configure Defender for Endpoint integration",
-          "Create Cloud Discovery policy targeting AI/ML app category",
-          "Set alerts for data upload volume thresholds to AI apps"
-        ]
-      },
-      "oauthPolicies": {
-        "portalSteps": [
-          "Navigate to Defender for Cloud Apps > App Governance",
-          "Create OAuth app policy for apps requesting Mail.Read, Files.ReadWrite permissions",
-          "Set automatic ban for apps with High risk score accessing AI categories",
-          "Configure alerting for new OAuth app registrations with broad permissions"
-        ]
-      },
-      "sessionPolicies": {
-        "portalSteps": [
-          "Navigate to Defender for Cloud Apps > Policies > Session policies",
-          "Create session policy for real-time monitoring of file uploads to AI apps",
-          "Configure content inspection for sensitive data in browser sessions",
-          "Enable block action for uploads containing detected sensitive info types"
-        ]
-      }
-    },
-    "conditionalAccess": {
-      "enabled": false,
-      "note": "Conditional Access policies require manual configuration in Microsoft Entra admin center.",
-      "policies": [
-        {
-          "name": "Block AI Apps for High Risk Users",
-          "description": "Block access to known AI applications for users with high sign-in risk",
-          "conditions": {
-            "signInRiskLevels": ["high"],
-            "targetApps": ["ChatGPT", "Claude", "Gemini"]
-          },
-          "grantControls": "Block",
-          "portalSteps": [
-            "Navigate to Entra admin center > Protection > Conditional Access",
-            "Create new policy targeting AI app enterprise applications",
-            "Set condition: Sign-in risk = High",
-            "Set grant control: Block access",
-            "Enable in report-only mode first"
-          ]
-        },
-        {
-          "name": "Require MFA for AI App Access",
-          "description": "Require multi-factor authentication when accessing AI applications",
-          "conditions": {
-            "targetApps": ["All AI applications"]
-          },
-          "grantControls": "Require MFA",
-          "portalSteps": [
-            "Navigate to Entra admin center > Protection > Conditional Access",
-            "Create new policy targeting AI app enterprise applications",
-            "Set grant control: Require multifactor authentication",
-            "Enable in report-only mode first"
-          ]
         }
       ]
     }

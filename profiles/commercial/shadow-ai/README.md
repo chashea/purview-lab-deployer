@@ -41,17 +41,9 @@ Comprehensive Shadow AI detection and governance demo for Microsoft Purview.
 
 All users are auto-licensed with an Exchange-capable SKU for mailbox provisioning.
 
-### Custom Sensitive Info Types (3)
-
-| Name | Pattern | Confidence |
-|---|---|---|
-| Contoso Customer ID | `CUST-XXXXXX` | High |
-| API Key Pattern | `sk-/pk-/api_` prefixed | High |
-| Internal Project Code | `PRJ-XXXX` | Medium |
-
 ### Sensitivity Labels
 
-- **Confidential** (parent) with sublabels: AI-Restricted-Recipients, AI-Internal-Use
+- **Confidential** (parent) with sublabels: AI-Internal-Use, AI-Restricted-Recipients, AI-Blocked-from-External-Tools, AI-Regulated-Data
 - **Highly Confidential** (parent) with sublabels: AI-Blocked-from-External-Tools, AI-Regulated-Data
 - Auto-label policy for SSN detection
 - Publication policy for all users
