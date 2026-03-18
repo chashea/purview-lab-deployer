@@ -9,6 +9,23 @@ Automated Microsoft Purview lab deployment using PowerShell 7+, config files, an
 - Shadow AI guide (commercial): `profiles/commercial/shadow-ai/README.md`
 - Profiles guide: `profiles/README.md`
 
+## Workload modules
+
+| Module | Automated | Notes |
+|--------|-----------|-------|
+| TestUsers | Full | Create or reference existing Entra ID users and groups |
+| CustomSensitiveInfoTypes | Full | Custom SIT patterns for DLP |
+| SensitivityLabels | Full | Labels and auto-label policies |
+| DLP | Full | Policies and rules with enforcement config |
+| Retention | Full | Retention policies and labels |
+| EDiscovery | Full | Cases, custodians, holds, searches |
+| CommunicationCompliance | Full | Supervision policies |
+| InsiderRisk | Full | Insider risk management policies |
+| ConditionalAccess | Full | CA policies (report-only mode) |
+| AppGovernance | Hybrid | MDCA app tagging via API; discovery/session policies via API; OAuth app governance logged as manual portal steps |
+| AuditConfig | Full | Audit log searches |
+| TestData | Full | Send test emails with sensitive content |
+
 ## Shared prerequisites
 
 - PowerShell 7+ (`pwsh`)
