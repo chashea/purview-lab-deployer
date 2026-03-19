@@ -37,7 +37,19 @@ function Deploy-EDiscovery {
 
         if ($missingCustodians.Count -gt 0) {
             $missingSummary = (($missingCustodians | Sort-Object -Unique) -join ', ')
-            throw "eDiscovery case '$name' references custodians that were not found in Microsoft Graph: $missingSummary"
+            if ($resolvedCustodians.Count -eq 0) {
+                $ctx = Get-MgContext
+                if ($ctx -and -not [string]::IsNullOrWhiteSpace($ctx.Account)) {
+                    Write-LabLog -Message "eDiscovery case '$name': configured custodians not found ($missingSummary). Falling back to current user: $($ctx.Account)" -Level Warning
+                    $resolvedCustodians.Add([string]$ctx.Account)
+                }
+                else {
+                    throw "eDiscovery case '$name' references custodians that were not found in Microsoft Graph: $missingSummary"
+                }
+            }
+            else {
+                Write-LabLog -Message "eDiscovery case '$name': some custodians not found ($missingSummary). Proceeding with resolved custodians." -Level Warning
+            }
         }
 
         $resolvedCustodianAddresses = @($resolvedCustodians | Sort-Object -Unique)
