@@ -117,20 +117,6 @@ Both policies deploy in report-only mode. Update `targetAppIds` in config with y
 
 The following items are documented in config but require manual setup:
 
-### App Governance — OAuth App Policies (manual only)
-OAuth app governance policy creation is not supported via API. See `appGovernance.manualSteps` in config:
-- Navigate to **Microsoft Defender for Cloud Apps > App Governance > Policies**
-- Create policy: condition = app requests `Mail.Read`, `Files.ReadWrite.All`, or `Sites.ReadWrite.All` AND app category contains "Generative AI"
-- Action: Generate alert + optionally disable app
-
-### App Governance — Automated via MDCA REST API
-The following are deployed automatically by the `appGovernance` workload:
-- **AI app tagging:** ChatGPT, Claude, Gemini, Perplexity, Poe, HuggingChat tagged as unsanctioned in MDCA catalog
-- **Cloud Discovery policy:** Alert on Generative AI category usage exceeding 100 MB/day
-- **Session policy:** Monitor uploads to AI apps with content inspection
-
-Requires an MDCA API token (Entra app registration with Cloud App Security permissions) or `mdcaApiToken` in config.
-
 ### Endpoint DLP Browser Restrictions
 The blocked AI site URL list is in config under `endpointDlpBrowserRestrictions`. To enforce:
 1. Navigate to Purview portal > Data Loss Prevention > Endpoint DLP settings
@@ -140,8 +126,8 @@ The blocked AI site URL list is in config under `endpointDlpBrowserRestrictions`
 ## Demo scenarios
 
 ### Scenario 1: Shadow AI Discovery
-1. Show Cloud Discovery detecting ChatGPT, Claude, Gemini usage (portal)
-2. Display risk scores for unsanctioned AI apps
+1. Show unified audit log entries for external AI app access
+2. Display DLP policy matches for AI site uploads in Activity Explorer
 3. Show volume of data being shared via audit searches
 
 ### Scenario 2: Data Protection

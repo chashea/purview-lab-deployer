@@ -37,10 +37,6 @@
     "testData": {
       "status": "available",
       "note": "Graph sendMail test seeding available in GCC."
-    },
-    "appGovernance": {
-      "status": "limited",
-      "note": "MDCA portal URL differs for GCC (.cloudappsecurity.us). Cloud Discovery and session policy availability may vary by tenant configuration."
     }
   }
 }

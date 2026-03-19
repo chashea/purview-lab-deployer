@@ -283,7 +283,9 @@
         },
         {
           "name": "Endpoint AI Site Restrictions",
-          "locations": ["Devices"],
+          "locations": [
+            "Devices"
+          ],
           "policyMode": "highRiskBlock",
           "endpointDlpBrowserRestrictions": {
             "blockedUrls": [
@@ -326,12 +328,17 @@
         },
         {
           "name": "Adaptive AI Protection by Risk Level",
-          "locations": ["Copilot"],
+          "locations": [
+            "Copilot"
+          ],
           "policyMode": "adaptiveProtection",
           "rules": [
             {
               "name": "Block AI for Elevated Risk Users",
-              "sensitiveInfoTypes": ["U.S. Social Security Number (SSN)", "Credit Card Number"],
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)",
+                "Credit Card Number"
+              ],
               "minCount": 1,
               "insiderRiskLevel": "Elevated",
               "enforcement": {
@@ -340,13 +347,22 @@
                   "enabled": true,
                   "message": "Your access to AI tools is restricted due to elevated risk level. Contact your compliance team."
                 },
-                "alert": { "enabled": true, "severity": "high" },
-                "incidentReport": { "enabled": true, "severity": "high" }
+                "alert": {
+                  "enabled": true,
+                  "severity": "high"
+                },
+                "incidentReport": {
+                  "enabled": true,
+                  "severity": "high"
+                }
               }
             },
             {
               "name": "Warn AI for Moderate Risk Users",
-              "sensitiveInfoTypes": ["U.S. Social Security Number (SSN)", "Credit Card Number"],
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)",
+                "Credit Card Number"
+              ],
               "minCount": 1,
               "insiderRiskLevel": "Moderate",
               "enforcement": {
@@ -355,17 +371,25 @@
                   "enabled": true,
                   "message": "Moderate risk detected. Provide justification for sharing sensitive data with AI tools."
                 },
-                "alert": { "enabled": true, "severity": "medium" }
+                "alert": {
+                  "enabled": true,
+                  "severity": "medium"
+                }
               }
             },
             {
               "name": "Audit AI for Minor Risk Users",
-              "sensitiveInfoTypes": ["U.S. Social Security Number (SSN)"],
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)"
+              ],
               "minCount": 1,
               "insiderRiskLevel": "Minor",
               "enforcement": {
                 "action": "auditOnly",
-                "alert": { "enabled": true, "severity": "low" }
+                "alert": {
+                  "enabled": true,
+                  "severity": "low"
+                }
               }
             }
           ]
@@ -577,7 +601,9 @@
         {
           "name": "Block AI Apps High Sign-In Risk",
           "action": "block",
-          "signInRiskLevels": ["high"],
+          "signInRiskLevels": [
+            "high"
+          ],
           "targetAppIds": [
             "00000000-0000-0000-0000-000000000001",
             "00000000-0000-0000-0000-000000000002"
@@ -624,48 +650,26 @@
       "searches": [
         {
           "name": "Copilot Activity Audit",
-          "operations": ["CopilotInteraction", "MicrosoftCopilotForM365"]
+          "operations": [
+            "CopilotInteraction",
+            "MicrosoftCopilotForM365"
+          ]
         },
         {
           "name": "DLP Policy Match Audit",
-          "operations": ["DlpRuleMatch", "DlpRuleUndo", "DlpInfo"]
+          "operations": [
+            "DlpRuleMatch",
+            "DlpRuleUndo",
+            "DlpInfo"
+          ]
         },
         {
           "name": "External AI App Access Audit",
-          "operations": ["FileUploaded", "FileSyncUploadedFull", "FileModifiedExtended"]
-        }
-      ]
-    },
-    "appGovernance": {
-      "enabled": true,
-      "aiApps": [
-        { "name": "ChatGPT", "tag": "unsanctioned" },
-        { "name": "Claude", "tag": "unsanctioned" },
-        { "name": "Google Gemini", "tag": "unsanctioned" },
-        { "name": "Perplexity", "tag": "unsanctioned" },
-        { "name": "Poe", "tag": "unsanctioned" },
-        { "name": "HuggingChat", "tag": "unsanctioned" }
-      ],
-      "discoveryPolicies": [
-        {
-          "name": "Generative AI Usage Alert",
-          "category": "Generative AI",
-          "thresholdMb": 100,
-          "governanceAction": "tag_unsanctioned"
-        }
-      ],
-      "sessionPolicies": [
-        {
-          "name": "Monitor AI Uploads",
-          "controlType": "monitor",
-          "contentInspection": true
-        }
-      ],
-      "manualSteps": [
-        {
-          "name": "OAuth App Governance Policy",
-          "portal": "Microsoft Defender for Cloud Apps > App Governance > Policies",
-          "instructions": "Create policy: condition = app requests Mail.Read, Files.ReadWrite.All, or Sites.ReadWrite.All AND app category contains Generative AI. Action = generate alert."
+          "operations": [
+            "FileUploaded",
+            "FileSyncUploadedFull",
+            "FileModifiedExtended"
+          ]
         }
       ]
     }

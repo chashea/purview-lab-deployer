@@ -175,13 +175,6 @@ try {
         Remove-AuditConfig -Config $Config -Manifest (Get-WorkloadManifest -WorkloadName 'auditConfig') -WhatIf:$WhatIfPreference
     }
 
-    # AppGovernance — remove MDCA policies and untag apps
-    if ($Config.workloads.PSObject.Properties['appGovernance'] -and $Config.workloads.appGovernance.enabled) {
-        Write-LabStep -StepName 'AppGovernance' -Description 'Removing App Governance and Cloud Discovery policies'
-        Remove-AppGovernance -Config $Config -Manifest (Get-WorkloadManifest -WorkloadName 'appGovernance') -WhatIf:$WhatIfPreference
-        Write-LabLog -Message 'App Governance removal complete.' -Level Success
-    }
-
     # TestData — skip (sent emails cannot be recalled)
     Write-LabStep -StepName 'TestData' -Description 'Test data removal'
     Write-LabLog -Message 'TestData: skipped. Sent emails and uploaded files cannot be recalled.' -Level Warning

@@ -29,8 +29,6 @@ Comprehensive Shadow AI detection and governance demo for Microsoft Purview in G
 
 - **Communication Compliance:** available but feature parity and release cadence may differ from commercial. Validate DSPM/advanced workflows in tenant.
 - **Insider Risk Management:** available but rollout stage may differ. Validate in tenant before production runs.
-- **MDCA portal URL:** GCC uses `.cloudappsecurity.us` (auto-detected by the deployer).
-- **App Governance:** Cloud Discovery and session policy availability may vary by GCC tenant configuration.
 
 ## What gets deployed
 
@@ -123,20 +121,6 @@ Both policies deploy in report-only mode. Update `targetAppIds` in config with y
 ## Manual portal configuration required
 
 The following items are documented in config but require manual setup:
-
-### App Governance — OAuth App Policies (manual only)
-OAuth app governance policy creation is not supported via API. See `appGovernance.manualSteps` in config:
-- Navigate to **Microsoft Defender for Cloud Apps > App Governance > Policies**
-- Create policy: condition = app requests `Mail.Read`, `Files.ReadWrite.All`, or `Sites.ReadWrite.All` AND app category contains "Generative AI"
-- Action: Generate alert + optionally disable app
-
-### App Governance — Automated via MDCA REST API
-The following are deployed automatically by the `appGovernance` workload:
-- **AI app tagging:** ChatGPT, Claude, Gemini, Perplexity, Poe, HuggingChat tagged as unsanctioned in MDCA catalog
-- **Cloud Discovery policy:** Alert on Generative AI category usage exceeding 100 MB/day
-- **Session policy:** Monitor uploads to AI apps with content inspection
-
-Requires an MDCA API token (Entra app registration with Cloud App Security permissions) or `mdcaApiToken` in config.
 
 ### Endpoint DLP Browser Restrictions
 The blocked AI site URL list is in config under `endpointDlpBrowserRestrictions`. To enforce:

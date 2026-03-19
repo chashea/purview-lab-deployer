@@ -31,7 +31,6 @@ Each profile is a self-contained deployment with its own prefix, config, and lif
 | CommunicationCompliance | Full | Supervision policies |
 | InsiderRisk | Full | Insider risk management policies |
 | ConditionalAccess | Full | CA policies (report-only mode) |
-| AppGovernance | Hybrid | MDCA app tagging + discovery/session policies via API; OAuth governance is manual |
 | AuditConfig | Full | Audit log searches |
 | TestData | Full | Test emails and documents with sensitive content |
 
