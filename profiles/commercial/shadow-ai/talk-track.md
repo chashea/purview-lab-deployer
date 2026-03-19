@@ -140,7 +140,7 @@
 
 > "So to recap — what you've seen is a complete governance framework for shadow AI:
 >
-> 1. **Discover** — Audit logs and Cloud Discovery show you what's happening
+> 1. **Discover** — Audit logs and Activity Explorer show you what's happening
 > 2. **Protect** — Tiered DLP policies match enforcement to risk level
 > 3. **Adapt** — Insider Risk scores drive dynamic enforcement
 > 4. **Label** — Sensitivity labels make protection portable

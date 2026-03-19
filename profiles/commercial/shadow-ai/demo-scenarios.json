@@ -12,8 +12,8 @@
     {
       "step": 2,
       "title": "Discovery — What we found",
-      "talkTrack": "Using Cloud Discovery and audit logs, we detected AI tool usage across the organization.",
-      "showInPortal": ["Cloud Discovery dashboard", "Activity Explorer filtered to AI workloads"],
+      "talkTrack": "Using audit logs and Activity Explorer, we detected AI tool usage across the organization.",
+      "showInPortal": ["Audit log search results", "Activity Explorer filtered to AI workloads"],
       "duration": "3 min"
     },
     {
@@ -42,16 +42,16 @@
     {
       "id": "S1",
       "name": "Shadow AI Discovery",
-      "description": "Show cloud app discovery detecting AI tool usage",
+      "description": "Show audit logs and Activity Explorer detecting AI tool usage",
       "steps": [
-        "Open Defender for Cloud Apps > Cloud Discovery",
-        "Filter to Generative AI category",
-        "Show discovered apps with risk scores",
-        "Highlight data volume uploaded to unsanctioned AI apps"
+        "Open Microsoft Purview > Audit > Search",
+        "Run Copilot Activity Audit and External AI App Access Audit searches",
+        "Show DLP policy matches in Activity Explorer filtered to PVShadowAI policies",
+        "Highlight volume and types of sensitive data shared with AI tools"
       ],
       "expectedOutcome": "Audience sees concrete evidence of shadow AI in environment",
       "automatedArtifacts": ["Audit searches validated during deploy"],
-      "manualPrep": ["Cloud Discovery logs or Defender for Endpoint integration"]
+      "manualPrep": ["Generate test DLP alerts before demo for Activity Explorer data"]
     },
     {
       "id": "S2",
