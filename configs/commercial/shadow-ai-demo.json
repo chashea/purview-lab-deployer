@@ -623,7 +623,44 @@
     },
     "testData": {
       "enabled": true,
-      "emails": [],
+      "emails": [
+        {
+          "from": "aharper",
+          "to": "vcho",
+          "subject": "Quick way to summarize campaign data",
+          "body": "Hey Victor, I found this public AI tool that can analyze spreadsheets instantly. I just paste the data into the prompt window and it generates a full summary. Way faster than doing it manually. Want me to show you?"
+        },
+        {
+          "from": "vcho",
+          "to": "aharper",
+          "subject": "RE: Quick way to summarize campaign data",
+          "body": "That sounds useful but be careful — I heard the security team is cracking down on external AI tools. I tried to upload a forecast to one of those chatbot sites last week and the browser blocked it. Maybe stick to Copilot for now?"
+        },
+        {
+          "from": "aharper",
+          "to": "vcho",
+          "subject": "RE: RE: Quick way to summarize campaign data",
+          "body": "Good call. I already used the external AI service to paste the customer data export though — it generated a great segmentation analysis. Hopefully that is fine since it was just names and IDs, nothing too sensitive."
+        },
+        {
+          "from": "etran",
+          "to": "pdesai",
+          "subject": "DLP alert - potential data exposure via external AI",
+          "body": "Priya, we got a DLP alert this morning. Looks like someone in Marketing tried to paste sensitive customer data into a public AI chatbot. The content included PII fields — customer names and ID numbers. I have placed a hold on the mailbox. Can you review and advise on next steps?"
+        },
+        {
+          "from": "pdesai",
+          "to": "lramirez",
+          "subject": "FW: DLP alert - potential data exposure via external AI",
+          "body": "Leah, forwarding this from Ethan on the security team. We have a potential incident involving an employee using an external AI tool to upload customer data. The eDiscovery case is already set up. Could you confirm whether this triggers our breach notification obligations?"
+        },
+        {
+          "from": "lramirez",
+          "to": "pdesai",
+          "subject": "RE: DLP alert - potential data exposure via external AI",
+          "body": "Thanks Priya. Based on what Ethan described, if customer PII was pasted into a public AI service, we may need to assess whether the AI provider retained the data. Let us pull the full communication thread from the eDiscovery search results before making a determination. I will also check whether the prompt history was captured in our audit logs."
+        }
+      ],
       "documents": [
         {
           "fileName": "Q4-Financial-Forecast.docx",
