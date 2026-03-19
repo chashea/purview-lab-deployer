@@ -5,11 +5,14 @@ Baseline Microsoft Purview lab demonstrating core compliance workloads.
 ## Quick start
 
 ```powershell
-# Deploy
+git clone https://github.com/chashea/purview-lab-deployer.git
+cd purview-lab-deployer
+
+# Deploy (test users auto-created)
 ./Deploy-Lab.ps1 -Cloud commercial -LabProfile basic-lab -TenantId <tenant-guid>
 
-# Deploy with new test user creation
-./Deploy-Lab.ps1 -Cloud commercial -LabProfile basic-lab -TenantId <tenant-guid> -TestUsersMode create
+# Deploy without test users
+./Deploy-Lab.ps1 -Cloud commercial -LabProfile basic-lab -TenantId <tenant-guid> -SkipTestUsers
 
 # Dry run
 ./Deploy-Lab.ps1 -Cloud commercial -LabProfile basic-lab -WhatIf
