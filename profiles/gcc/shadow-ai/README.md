@@ -32,18 +32,15 @@ Comprehensive Shadow AI detection and governance demo for Microsoft Purview in G
 
 ## What gets deployed
 
-### Identity (8 users, 3 groups)
+### Identity (5 users, 3 groups)
 
 | User | Department | Role |
 |---|---|---|
 | aharper | Marketing | Marketing Manager |
 | vcho | Finance | Finance Controller |
 | lramirez | Legal | Privacy Counsel |
-| etran | IT Security | Security Analyst |
-| kmills | HR | HR Specialist |
-| pdesai | Compliance | Compliance Officer |
-| opark | Engineering | Software Engineer |
-| mahmed | Operations | Operations Lead |
+| etran | IT | Security Architect |
+| pdesai | Compliance | Compliance Lead |
 
 **Groups:** AI-Governance, Privileged-Data-Owners, Business-Users
 
