@@ -405,11 +405,20 @@
           "color": "#0078D4",
           "sublabels": [
             {
-              "name": "AI Internal Use",
-              "tooltip": "Internal content approved for enterprise AI copilots.",
+              "name": "All Employees",
+              "tooltip": "General internal content safe for enterprise AI tools.",
               "encryption": false,
               "contentMarking": {
-                "footerText": "CONFIDENTIAL - AI Internal Use Only"
+                "footerText": "CONFIDENTIAL - All Employees"
+              }
+            },
+            {
+              "name": "AI Internal Use",
+              "tooltip": "Internal content approved for enterprise AI copilots.",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "CONFIDENTIAL - AI Internal Use",
+                "footerText": "Approved for enterprise AI copilots only"
               }
             },
             {
@@ -446,6 +455,33 @@
           "tooltip": "Regulated or high-risk data that must never be shared with external AI services.",
           "color": "#D13438",
           "sublabels": [
+            {
+              "name": "All Employees",
+              "tooltip": "High-sensitivity content accessible org-wide but never externally.",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "HIGHLY CONFIDENTIAL - All Employees",
+                "footerText": "Do not share outside the organization"
+              }
+            },
+            {
+              "name": "AI Internal Use",
+              "tooltip": "Encrypted content approved for enterprise AI copilots only.",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "HIGHLY CONFIDENTIAL - AI Internal Use",
+                "footerText": "Approved for enterprise AI copilots only"
+              }
+            },
+            {
+              "name": "AI Restricted Recipients",
+              "tooltip": "Encrypted content restricted to named recipients only.",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "HIGHLY CONFIDENTIAL - AI Restricted Recipients",
+                "footerText": "Do not paste into external AI systems"
+              }
+            },
             {
               "name": "AI Blocked from External Tools",
               "tooltip": "Encrypted data blocked from external/public AI tools.",
