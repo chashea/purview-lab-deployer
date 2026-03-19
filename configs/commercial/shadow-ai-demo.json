@@ -36,31 +36,10 @@
           "usageLocation": "US"
         },
         {
-          "displayName": "Kara Mills",
-          "mailNickname": "kmills",
-          "department": "HR",
-          "jobTitle": "HR Director",
-          "usageLocation": "US"
-        },
-        {
           "displayName": "Priya Desai",
           "mailNickname": "pdesai",
           "department": "Compliance",
           "jobTitle": "Compliance Lead",
-          "usageLocation": "US"
-        },
-        {
-          "displayName": "Owen Park",
-          "mailNickname": "opark",
-          "department": "Engineering",
-          "jobTitle": "Product Engineer",
-          "usageLocation": "US"
-        },
-        {
-          "displayName": "Mina Ahmed",
-          "mailNickname": "mahmed",
-          "department": "Operations",
-          "jobTitle": "Operations Manager",
           "usageLocation": "US"
         }
       ],
@@ -77,16 +56,15 @@
           "displayName": "PVShadowAI-Privileged-Data-Owners",
           "members": [
             "vcho",
-            "kmills",
-            "opark"
+            "pdesai"
           ]
         },
         {
           "displayName": "PVShadowAI-Business-Users",
           "members": [
             "aharper",
-            "mahmed",
-            "opark"
+            "vcho",
+            "etran"
           ]
         }
       ]
@@ -512,7 +490,7 @@
           "custodians": [
             "etran",
             "lramirez",
-            "kmills"
+            "pdesai"
           ],
           "holdQuery": "\"AI\" OR \"copilot\" OR \"chatbot\" OR \"prompt\"",
           "searchQuery": "\"public AI\" OR \"external AI\" OR \"paste\" OR \"upload\""
@@ -529,8 +507,8 @@
           ],
           "supervisedUsers": [
             "aharper",
-            "opark",
-            "mahmed"
+            "vcho",
+            "etran"
           ],
           "direction": "Both",
           "condition": "data sharing"
@@ -542,7 +520,7 @@
           ],
           "supervisedUsers": [
             "vcho",
-            "kmills",
+            "lramirez",
             "etran"
           ],
           "direction": "Both",
@@ -555,9 +533,9 @@
           ],
           "supervisedUsers": [
             "aharper",
-            "opark",
             "vcho",
-            "mahmed"
+            "lramirez",
+            "pdesai"
           ],
           "direction": "Both",
           "condition": "compliance violations"
@@ -635,7 +613,7 @@
         },
         {
           "fileName": "Engineering-Specs.docx",
-          "owner": "opark",
+          "owner": "etran",
           "label": "PVShadowAI-Confidential",
           "content": "Internal Engineering Specifications\n\nProject: PRJ-NOVA2025\nAPI Endpoint Key: api_live_xK9mN2pQ4rS6tU8v\nArchitecture notes for internal review only.\nDo not paste into external AI services."
         }

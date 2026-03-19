@@ -26,6 +26,10 @@
 .PARAMETER Cloud
     Cloud profile to use (`commercial` or `gcc`). If omitted, uses config value.
 
+.PARAMETER SkipTestUsers
+    Skip test user creation entirely. Useful when deploying policies against
+    existing tenant users without provisioning new accounts.
+
 .EXAMPLE
     ./Deploy-Lab.ps1 -Cloud commercial -LabProfile basic-lab
 
@@ -58,7 +62,10 @@ param(
 
     [Parameter()]
     [ValidateSet('create', 'existing')]
-    [string]$TestUsersMode
+    [string]$TestUsersMode,
+
+    [Parameter()]
+    [switch]$SkipTestUsers
 )
 
 $ErrorActionPreference = 'Stop'
@@ -102,8 +109,18 @@ try {
     $resolvedCloud = Resolve-LabCloud -Cloud $Cloud -Config $Config
     $capabilityProfile = Import-LabCloudProfile -Cloud $resolvedCloud -RepositoryRoot $PSScriptRoot
 
-    # Apply TestUsersMode override — defaults to 'existing' (no user creation)
-    $effectiveMode = if (-not [string]::IsNullOrWhiteSpace($TestUsersMode)) { $TestUsersMode } else { 'existing' }
+    # Apply SkipTestUsers override
+    if ($SkipTestUsers -and $Config.workloads.testUsers) {
+        if ($Config.workloads.testUsers.PSObject.Properties['enabled']) {
+            $Config.workloads.testUsers.enabled = $false
+        } else {
+            $Config.workloads.testUsers | Add-Member -NotePropertyName 'enabled' -NotePropertyValue $false
+        }
+        Write-LabLog -Message 'Test user creation skipped (-SkipTestUsers).' -Level Info
+    }
+
+    # Apply TestUsersMode override — defaults to 'create' (auto-create test users)
+    $effectiveMode = if (-not [string]::IsNullOrWhiteSpace($TestUsersMode)) { $TestUsersMode } else { 'create' }
     if ($Config.workloads.testUsers) {
         if ($Config.workloads.testUsers.PSObject.Properties['mode']) {
             $Config.workloads.testUsers.mode = $effectiveMode

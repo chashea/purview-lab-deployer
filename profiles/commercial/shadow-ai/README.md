@@ -27,22 +27,19 @@ Comprehensive Shadow AI detection and governance demo for Microsoft Purview.
 
 ## What gets deployed
 
-### Identity (8 users, 3 groups)
+### Identity (5 users, 3 groups)
 
 | User | Department | Role |
 |---|---|---|
 | aharper | Marketing | Marketing Manager |
 | vcho | Finance | Finance Controller |
 | lramirez | Legal | Privacy Counsel |
-| etran | IT Security | Security Analyst |
-| kmills | HR | HR Specialist |
-| pdesai | Compliance | Compliance Officer |
-| opark | Engineering | Software Engineer |
-| mahmed | Operations | Operations Lead |
+| etran | IT Security | Security Architect |
+| pdesai | Compliance | Compliance Lead |
 
 **Groups:** AI-Governance, Privileged-Data-Owners, Business-Users
 
-All users are auto-licensed with an Exchange-capable SKU for mailbox provisioning.
+All users are auto-created and licensed by default. Use `-SkipTestUsers` to skip user creation.
 
 ### Sensitivity Labels
 
