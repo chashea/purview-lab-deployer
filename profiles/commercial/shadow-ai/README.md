@@ -82,7 +82,8 @@ All users are auto-created and licensed by default. Use `-SkipTestUsers` to skip
 
 - **Confidential** (parent) with sublabels: AI-Internal-Use, AI-Restricted-Recipients, AI-Blocked-from-External-Tools, AI-Regulated-Data
 - **Highly Confidential** (parent) with sublabels: AI-Blocked-from-External-Tools, AI-Regulated-Data
-- Auto-label policy for SSN detection
+- Auto-label policy: SSN → Highly Confidential\AI Regulated Data
+- Auto-label policy: Credit Card, Bank Account, IBAN, IP Address → Confidential\AI Regulated Data
 - Publication policy for all users
 
 ### DLP Policies (6 policies, 12 rules)

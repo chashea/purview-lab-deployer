@@ -515,6 +515,21 @@
             "SharePoint",
             "OneDrive"
           ]
+        },
+        {
+          "name": "Auto-label Financial and Network Data as Confidential AI Regulated Data",
+          "labelName": "Confidential\\AI Regulated Data",
+          "sensitiveInfoTypes": [
+            "Credit Card Number",
+            "U.S. Bank Account Number",
+            "International Banking Account Number (IBAN)",
+            "IP Address"
+          ],
+          "locations": [
+            "Exchange",
+            "SharePoint",
+            "OneDrive"
+          ]
         }
       ]
     },
