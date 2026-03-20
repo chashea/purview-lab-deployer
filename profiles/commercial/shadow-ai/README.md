@@ -2,22 +2,56 @@
 
 Comprehensive Shadow AI detection and governance demo for Microsoft Purview.
 
-## Quick start
+## Prerequisites
+
+Before you begin, make sure you have the following installed on your machine:
+
+1. **Git** — used to download the repository.
+   - **Windows:** Download and install from [git-scm.com](https://git-scm.com/download/win). Use the default options during install.
+   - **macOS:** Open Terminal and run `xcode-select --install`, or install from [git-scm.com](https://git-scm.com/download/mac).
+   - **Linux:** Run `sudo apt install git` (Debian/Ubuntu) or `sudo dnf install git` (Fedora).
+   - To verify Git is installed, open a terminal and run: `git --version`
+
+2. **PowerShell 7+** — the scripts require PowerShell 7 or later (not Windows PowerShell 5.1).
+   - Install from [learn.microsoft.com/powershell/scripting/install](https://learn.microsoft.com/powershell/scripting/install/installing-powershell).
+   - To verify, run: `pwsh --version`
+
+## Getting the repository
+
+Open a terminal (Terminal on macOS/Linux, PowerShell or Command Prompt on Windows) and run:
+
+```bash
+git clone https://github.com/chashea/purview-lab-deployer.git
+```
+
+This creates a `purview-lab-deployer` folder in your current directory. Next, navigate into it:
+
+```bash
+cd purview-lab-deployer
+```
+
+> **Tip:** If you're not sure where the folder was created, run `pwd` (macOS/Linux) or `cd` (Windows) to see your current directory path.
+
+## Deploy the Shadow AI lab
+
+From inside the `purview-lab-deployer` folder, open a **PowerShell 7** session (run `pwsh` if you're in a different shell) and run **one command**:
 
 ```powershell
-git clone https://github.com/chashea/purview-lab-deployer.git
-cd purview-lab-deployer
-
-# Deploy (test users auto-created)
 ./Deploy-Lab.ps1 -Cloud commercial -LabProfile shadow-ai -TenantId <tenant-guid>
+```
 
-# Deploy without test users
+Replace `<tenant-guid>` with your Microsoft 365 tenant ID. That's it — this single command deploys the full Shadow AI demo environment, including test users, policies, labels, and test data.
+
+### Optional variations
+
+```powershell
+# Deploy without creating test users (use your own accounts)
 ./Deploy-Lab.ps1 -Cloud commercial -LabProfile shadow-ai -TenantId <tenant-guid> -SkipTestUsers
 
-# Dry run
+# Dry run — preview what would be created without making changes
 ./Deploy-Lab.ps1 -Cloud commercial -LabProfile shadow-ai -WhatIf
 
-# Remove
+# Remove everything when you're done
 ./Remove-Lab.ps1 -Cloud commercial -LabProfile shadow-ai -Confirm:$false -TenantId <tenant-guid>
 ```
 
