@@ -6,13 +6,18 @@
 #>
 
 $script:LocationParamCandidates = @{
-    'Exchange'   = @('ExchangeLocation')
-    'SharePoint' = @('SharePointLocation')
-    'OneDrive'   = @('OneDriveLocation')
-    'Teams'      = @('TeamsLocation')
-    'Devices'    = @('EndpointDlpLocation', 'DevicesLocation', 'DeviceLocation')
-    'Copilot'    = @('CopilotLocation', 'M365CopilotLocation', 'ThirdPartyAppDlpLocation')
+    'Exchange'            = @('ExchangeLocation')
+    'SharePoint'          = @('SharePointLocation')
+    'OneDrive'            = @('OneDriveLocation')
+    'Teams'               = @('TeamsLocation')
+    'Devices'             = @('EndpointDlpLocation', 'DevicesLocation', 'DeviceLocation')
+    'Copilot'             = @('CopilotLocation', 'M365CopilotLocation', 'ThirdPartyAppDlpLocation')
+    'CopilotExperiences'  = @('CopilotLocation', 'M365CopilotLocation')
 }
+
+# Fixed GUID for "Microsoft 365 Copilot and Copilot Chat" in the -Locations JSON payload.
+# Used as fallback when no dedicated CopilotLocation parameter exists on the cmdlet.
+$script:CopilotLocationGuid = '470f2276-e011-4e9d-a6ec-20768be3a4b0'
 
 function Get-LabSupportedParameterName {
     [CmdletBinding()]
@@ -72,9 +77,15 @@ function Get-LabDlpLocationParameters {
     )
 
     $locationParams = @{}
+    $unresolvedCopilotExperiences = $false
+
     foreach ($location in @($Locations | Sort-Object -Unique)) {
         $baseParam = Get-LabDlpLocationParameter -Location $location -CommandInfo $CommandInfo
         if (-not $baseParam) {
+            if ($location -eq 'CopilotExperiences') {
+                $unresolvedCopilotExperiences = $true
+                continue
+            }
             Write-LabLog -Message "DLP location '$location' is not supported by cmdlet '$($CommandInfo.Name)' in this environment for policy '$PolicyName'. Skipping this location." -Level Warning
             continue
         }
@@ -94,6 +105,23 @@ function Get-LabDlpLocationParameters {
         }
 
         $locationParams[$targetParam] = 'All'
+    }
+
+    # CopilotExperiences fallback: when no dedicated CopilotLocation parameter
+    # exists, use the -Locations JSON payload + -EnforcementPlanes approach
+    # documented in New-DlpCompliancePolicy Example 4 on Microsoft Learn.
+    if ($unresolvedCopilotExperiences) {
+        if ($CommandInfo.Parameters.ContainsKey('Locations')) {
+            $copilotPayload = '[{"Workload":"Applications","Location":"' + $script:CopilotLocationGuid + '","Inclusions":[{"Type":"Tenant","Identity":"All"}]}]'
+            $locationParams['Locations'] = $copilotPayload
+            Write-LabLog -Message "Copilot location resolved via -Locations JSON payload for policy '$PolicyName' (Microsoft 365 Copilot and Copilot Chat)." -Level Info
+        }
+        else {
+            Write-LabLog -Message "DLP location 'CopilotExperiences' could not be resolved for policy '$PolicyName'. Neither a dedicated CopilotLocation parameter nor the generic -Locations parameter is available on '$($CommandInfo.Name)'." -Level Warning
+        }
+        if ($CommandInfo.Parameters.ContainsKey('EnforcementPlanes')) {
+            $locationParams['EnforcementPlanes'] = @('CopilotExperiences')
+        }
     }
 
     return $locationParams
@@ -223,6 +251,15 @@ function Get-LabDlpRuleOptionalParameters {
                     'allowWithJustification' { 'Audit' }
                     default { $null }
                 }
+            }
+        }
+
+        # CopilotExperiences block: add -RestrictAccess ExcludeContentProcessing per MS Learn guidance
+        $isCopilotPolicy = ($Policy.PSObject.Properties.Name -contains 'locations') -and (@($Policy.locations) -contains 'CopilotExperiences')
+        if ($enforcementAction -eq 'block' -and $isCopilotPolicy) {
+            $restrictParam = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('RestrictAccess')
+            if ($restrictParam) {
+                $optionalParams[$restrictParam] = @(@{ setting = 'ExcludeContentProcessing'; value = 'Block' })
             }
         }
 

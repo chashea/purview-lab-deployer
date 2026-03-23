@@ -129,7 +129,7 @@
           "name": "Copilot Prompt SIT Block",
           "policyMode": "copilotPromptBlock",
           "locations": [
-            "Copilot"
+            "CopilotExperiences"
           ],
           "rules": [
             {
@@ -204,7 +204,7 @@
           "name": "Copilot Labeled Content Block",
           "policyMode": "copilotLabelBlock",
           "locations": [
-            "Copilot"
+            "CopilotExperiences"
           ],
           "labels": [
             "PVCopilotDLP-Highly-Confidential-Restricted",
