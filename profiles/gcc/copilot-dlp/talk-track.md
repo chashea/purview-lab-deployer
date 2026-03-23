@@ -25,6 +25,10 @@ If any feature is not yet available in GCC, use the **"coming to GCC"** callout 
 
 This positions the demo as forward-looking without losing credibility.
 
+### GCC Limitation: No SIT-Based Copilot DLP
+
+> **Important:** In GCC, you cannot create a DLP policy targeting Microsoft 365 Copilot with Sensitive Information Type (SIT) conditions in the rules. Only label-based rules are supported for Copilot DLP in GCC. SIT-based Copilot DLP (blocking prompts containing SSN, credit card, PHI, etc.) is available in commercial tenants but not in GCC. This lab focuses exclusively on label-based content blocking.
+
 ---
 
 ## Opening (2 min)
@@ -34,12 +38,13 @@ This positions the demo as forward-looking without losing credibility.
 > In this lab, we'll let Copilot loose — then show how Purview puts it back inside the guardrails without breaking productivity.
 >
 > By the end of this session, you'll see how to:
-> - Block Copilot from processing sensitive prompts (PII, PHI, PCI)
 > - Prevent Copilot from summarizing or reasoning over labeled content
 > - Stop Copilot from using sensitive data for web search
 > - See the full audit trail when Copilot is constrained
 >
-> All of this runs the same in GCC as commercial. Same policies, same enforcement model, same audit trail. The only difference is the licensing — G5 instead of E5."
+> All of this runs the same in GCC as commercial. Same policies, same enforcement model, same audit trail. The only difference is the licensing — G5 instead of E5.
+>
+> **Note:** In GCC, Copilot DLP supports label-based content blocking. SIT-based prompt blocking (detecting PII/PHI/PCI in prompts) is not available for Copilot in GCC — that capability is commercial-only today."
 
 ---
 
@@ -60,38 +65,11 @@ This positions the demo as forward-looking without losing credibility.
 
 ---
 
-## Phase 1: Block Sensitive Prompts — "What you type matters" (10 min)
-
-**Portal:** Microsoft Purview > DLP > Policies > `PVCopilotDLP-Copilot Prompt SIT Block`
-
-> "The first guardrail: if a user types sensitive information directly into a Copilot prompt, DLP intercepts it."
-
-**Show the policy:**
-- Location: Microsoft 365 Copilot & Copilot Chat
-- Condition: Content contains sensitive info types
-- 3 rules: SSN, Credit Card, PHI
-- Action: Block Copilot response
-
-**Live demo:**
-
-| Prompt | Result |
-|---|---|
-| "Summarize benefits for employee 078-05-1120" | Blocked — SSN detected |
-| "What charges on card 4532-8721-0034-6619?" | Blocked — credit card detected |
-| "Summarize treatment for diabetes mellitus" | Blocked — PHI detected |
-| "What are our Q4 revenue projections?" | Normal response — no sensitive data |
-
-> "The user sees a clear, policy-driven message — not a vague error. They know exactly why Copilot can't answer, and they know it's intentional."
-
-> *GCC callout:* "This enforcement uses the same SIT detection engine across commercial and GCC. The patterns, checksums, and confidence levels are identical."
-
----
-
-## Phase 2: Block Labeled Files — "The label is the boundary" (10 min)
+## Phase 1: Block Labeled Files — "The label is the boundary" (10 min)
 
 **Portal:** Microsoft Purview > DLP > Policies > `PVCopilotDLP-Copilot Labeled Content Block`
 
-> "The second guardrail: if a file has a sensitivity label that restricts AI access, Copilot cannot summarize, reference, or reason over it."
+> "The first guardrail: if a file has a sensitivity label that restricts AI access, Copilot cannot summarize, reference, or reason over it."
 
 **Show the policy:**
 - Location: Microsoft 365 Copilot
@@ -111,11 +89,11 @@ This positions the demo as forward-looking without losing credibility.
 
 ### Expert Callout
 
-> "Important technical note: you cannot mix sensitive info type conditions and label conditions in the same DLP rule. But you can use multiple rules in one policy, or separate policies — which is exactly what we've done here."
+> "Important technical note: in GCC, Copilot DLP only supports label-based conditions. SIT-based conditions (detecting sensitive info types in prompts) are not available for Copilot DLP rules in GCC. This lab uses a single policy with two label-based rules — one for Restricted content, one for Regulated Data."
 
 ---
 
-## Phase 3: Web Search Prevention — "Even the web has boundaries" (5 min)
+## Phase 2: Web Search Prevention — "Even the web has boundaries" (5 min)
 
 > "This capability is currently in Private Preview. For government organizations, this is especially relevant — you don't want Copilot sending CUI-adjacent prompts to web search endpoints."
 
@@ -128,7 +106,7 @@ This positions the demo as forward-looking without losing credibility.
 
 ---
 
-## Phase 4: Evidence & Investigations — "Prove it works" (5 min)
+## Phase 3: Evidence & Investigations — "Prove it works" (5 min)
 
 **Portal:** Microsoft Purview > Audit > Search
 
@@ -152,12 +130,13 @@ This positions the demo as forward-looking without losing credibility.
 > "To recap — what you've seen today:
 >
 > 1. **Copilot without guardrails** — full access to everything
-> 2. **Guardrail #1** — DLP blocks sensitive data in prompts (SSN, credit card, PHI)
-> 3. **Guardrail #2** — DLP blocks Copilot from labeled content (Highly Confidential)
-> 4. **Guardrail #3** — DLP prevents sensitive data in web search (preview)
-> 5. **Full audit trail** — every blocked event is recorded and investigable
+> 2. **Guardrail #1** — DLP blocks Copilot from labeled content (Highly Confidential)
+> 3. **Guardrail #2** — DLP prevents sensitive data in web search (preview)
+> 4. **Full audit trail** — every blocked event is recorded and investigable
 >
 > We didn't turn Copilot off. We taught it what it's allowed to see, summarize, and search.
+>
+> In GCC, label-based content blocking is the primary Copilot DLP control. SIT-based prompt blocking is available in commercial — when it comes to GCC, the same policy model will apply.
 >
 > This runs identically in GCC. Same policies, same enforcement, same audit trail. G5 licensing, GCC compliance boundary. Your agency's data stays inside the guardrails."
 
@@ -166,7 +145,7 @@ This positions the demo as forward-looking without losing credibility.
 ## Anticipated Questions
 
 **Q: "Is this the same in GCC as commercial?"**
-> "Yes. The DLP engine, sensitivity labels, and audit infrastructure are the same. The only differences are licensing (G5 vs E5) and feature rollout timing — GCC may lag commercial by weeks to months on new features."
+> "The label-based DLP enforcement, sensitivity labels, and audit infrastructure are the same. The key difference in GCC is that SIT-based Copilot DLP policies (blocking prompts containing SSN, credit card, PHI) are not available — only label-based content blocking works for Copilot in GCC. Licensing is G5 vs E5, and feature rollout timing may lag by weeks to months."
 
 **Q: "Does this work with GCC High or DoD?"**
 > "This demo targets GCC (not GCC High or DoD). GCC High and DoD have different endpoint configurations and more restrictive feature availability. Contact your Microsoft account team for GCC High/DoD guidance."
@@ -203,7 +182,7 @@ This positions the demo as forward-looking without losing credibility.
 |---|---|---|
 | Test users | 3 | Megan Torres (Finance), Jordan Kim (Marketing), Nadia Shah (Compliance) |
 | Security groups | 2 | Copilot-Users, Compliance-Admins |
-| DLP policies | 2 | Copilot Prompt SIT Block (3 rules), Copilot Labeled Content Block (2 rules) |
+| DLP policies | 1 | Copilot Labeled Content Block (2 rules) |
 | Sensitivity labels | 2 parents + 5 sublabels | Confidential (General, Business Sensitive), Highly Confidential (All Employees, Restricted, Regulated Data) |
 | Auto-label policies | 1 | SSN → Highly Confidential\Regulated Data |
 | Retention | 1 | Copilot interaction retention (365 days) |

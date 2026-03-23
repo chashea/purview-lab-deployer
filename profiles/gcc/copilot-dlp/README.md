@@ -8,6 +8,8 @@
 >
 > **Feature parity:** DLP for Copilot and Copilot audit events may have delayed rollout in GCC compared to commercial. Validate availability in your tenant before deploying. The deployer gracefully degrades if `CopilotLocation` is not yet available — DLP policies will log a warning and skip the Copilot location.
 >
+> **GCC Limitation — No SIT-Based Copilot DLP:** In GCC, you cannot create a DLP policy targeting Microsoft 365 Copilot with Sensitive Information Type (SIT) conditions in the rules. Only label-based rules are supported for Copilot DLP in GCC. This lab deploys label-based content blocking only.
+>
 > **Copilot availability:** Confirm Microsoft 365 Copilot is available and licensed in your GCC tenant. GCC feature rollout may lag behind commercial by weeks to months.
 
 ## Scenario Overview
@@ -20,7 +22,7 @@ This lab demonstrates how Microsoft Purview DLP enforces data boundaries for Mic
 | Security groups | 2 | Copilot-Users, Compliance-Admins |
 | Sensitivity labels | 2 parents, 5 sublabels | Confidential (General, Business Sensitive), Highly Confidential (All Employees, Restricted, Regulated Data) |
 | Auto-label policies | 1 | SSN content → Highly Confidential\Regulated Data |
-| DLP policies | 2 | Copilot Prompt SIT Block (3 rules), Copilot Labeled Content Block (2 rules) |
+| DLP policies | 1 | Copilot Labeled Content Block (2 rules) |
 | Retention policies | 1 | Copilot interaction retention (365 days) |
 | eDiscovery cases | 1 | Copilot DLP incident review |
 | Audit searches | 3 | CopilotInteraction, DlpRuleMatch, DlpRuleUndo |
@@ -73,16 +75,15 @@ If `CopilotLocation` is not available, the deployer will skip the Copilot locati
 | Phase | Title | Duration | Automated? |
 |---|---|---|---|
 | 0 | Baseline — Copilot without guardrails | 5 min | Manual (see RUNBOOK) |
-| 1 | Block sensitive prompts (SIT-based) | 20 min | Automated (DLP policy) |
-| 2 | Block labeled files from Copilot | 20 min | Automated (DLP policy) |
-| 3 | Stop Copilot web search with sensitive data | 15 min | Manual/Preview (see RUNBOOK) |
-| 4 | Evidence & investigations | 15 min | Automated (audit + eDiscovery) |
+| 1 | Block labeled files from Copilot | 20 min | Automated (DLP policy) |
+| 2 | Stop Copilot web search with sensitive data | 15 min | Manual/Preview (see RUNBOOK) |
+| 3 | Evidence & investigations | 15 min | Automated (audit + eDiscovery) |
 
 ## Key Technical Notes
 
-- **SIT + label conditions cannot be mixed in the same DLP rule** for Copilot. This lab uses separate policies/rules for each condition type.
+- **GCC supports label-based Copilot DLP only.** SIT-based conditions (sensitive info types in prompts) are not supported for Copilot DLP rules in GCC. This lab deploys a single policy with two label-based rules.
 - DLP policies deploy in **simulation mode** (TestWithNotifications) by default. Switch to enforce for live demos.
-- Phase 3 (web search prevention) requires **Private Preview** enrollment — may not be available in GCC.
+- Phase 2 (web search prevention) requires **Private Preview** enrollment — may not be available in GCC.
 - **GCC rollout lag:** If Copilot DLP features are not yet available in your GCC tenant, the deployer degrades gracefully. Use the RUNBOOK to identify which features require manual portal configuration.
 
 ## References

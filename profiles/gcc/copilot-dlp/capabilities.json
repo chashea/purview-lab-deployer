@@ -5,6 +5,7 @@
   "notes": [
     "Scenario profile for Copilot DLP Guardrails demo in GCC.",
     "Use with configs/gcc/copilot-dlp-demo.json.",
+    "GCC only supports label-based Copilot DLP policies. SIT-based conditions (sensitive info types in prompts) are not supported for Copilot DLP rules in GCC — only label-based content blocking is available.",
     "DLP Copilot location support may have delayed rollout in GCC — validate CopilotLocation parameter availability in tenant before demo.",
     "Microsoft 365 Copilot availability in GCC may lag behind commercial. Confirm Copilot licensing and feature parity before deployment."
   ],
@@ -19,7 +20,7 @@
     },
     "dlp": {
       "status": "required",
-      "note": "Copilot prompt SIT blocking and label-based content blocking. CopilotLocation parameter must be available in GCC tenant."
+      "note": "Label-based Copilot content blocking only. SIT-based Copilot DLP is not supported in GCC. CopilotLocation parameter must be available in GCC tenant."
     },
     "retention": {
       "status": "required",

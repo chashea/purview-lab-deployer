@@ -4,6 +4,8 @@ Complete these steps after running `Deploy-Lab.ps1` to prepare the full demo exp
 
 > **GCC Note:** Feature rollout for Copilot DLP may lag behind commercial. If any step references a feature not yet available in your GCC tenant, note it in the demo as "coming to GCC" and proceed with the remaining phases.
 
+> **GCC Limitation — No SIT-Based Copilot DLP:** In GCC, you cannot create a DLP policy targeting Microsoft 365 Copilot with Sensitive Information Type (SIT) conditions in the rules. Only label-based rules are supported for Copilot DLP in GCC. This runbook covers label-based content blocking only. SIT-based Copilot prompt blocking is available in commercial tenants.
+
 ---
 
 ## Pre-Flight: Validate GCC Feature Availability
@@ -24,7 +26,7 @@ Get-Label | Where-Object { $_.DisplayName -like 'PVCopilotDLP*' }
 | Check | Expected | If Missing |
 |---|---|---|
 | CopilotLocation param | `CopilotLocation` in output | DLP policies skip Copilot location — add manually in portal when available |
-| CopilotInteraction audit | Results or "no results" (not an error) | Copilot audit may not be enabled — Phase 4 audit demos will be limited |
+| CopilotInteraction audit | Results or "no results" (not an error) | Copilot audit may not be enabled — Phase 3 audit demos will be limited |
 | Published labels | PVCopilotDLP labels listed | Labels need time to publish — wait 15–30 minutes after deploy |
 
 ---
@@ -48,39 +50,7 @@ The baseline creates the before/after contrast. Show Copilot working without gua
 
 ---
 
-## Phase 1 — Verify DLP Prompt Blocking (Automated)
-
-After policy propagation, verify the "Copilot Prompt SIT Block" policy is active.
-
-### GCC-Specific Check
-
-If the deployer warned that `CopilotLocation` was unavailable, the DLP policies were created without the Copilot scope. In that case:
-
-1. Navigate to **Microsoft Purview > DLP > Policies**
-2. Edit `PVCopilotDLP-Copilot Prompt SIT Block`
-3. Add location: **Microsoft 365 Copilot** (if available in portal)
-4. If not available in portal either, note this phase as "coming to GCC" and proceed to Phase 2
-
-### Verification Steps (if Copilot location is active)
-
-1. Confirm `PVCopilotDLP-Copilot Prompt SIT Block` shows status **TestWithNotifications**
-2. Open Copilot and type a prompt containing a test SSN: `"Summarize the benefits for employee 078-05-1120"`
-3. Copilot should display a policy-driven block message
-4. Repeat with a credit card number: `"What charges were made on card 4532-8721-0034-6619?"`
-5. Repeat with medical terms: `"Summarize the treatment plan for diabetes mellitus"`
-
-### Expected Behavior
-
-| Prompt Contains | Copilot Response |
-|---|---|
-| SSN (078-05-1120) | Blocked — policy message shown |
-| Credit card (4532-8721-...) | Blocked — policy message shown |
-| Medical terms (diabetes mellitus) | Blocked — policy message shown |
-| No sensitive data | Normal response |
-
----
-
-## Phase 2 — Verify Label-Based Blocking (Automated)
+## Phase 1 — Verify Label-Based Blocking (Automated)
 
 ### Pre-Demo File Labeling
 
@@ -107,11 +77,11 @@ If Copilot location was not available for DLP policies, label-based blocking thr
 
 ### Expert Callout
 
-> "SIT + label conditions cannot be combined in the same DLP rule. We use separate policies — one for prompt content (SIT-based), one for file labels (label-based). You can have multiple rules in one policy, but each rule uses one condition type."
+> "In GCC, Copilot DLP only supports label-based conditions. SIT-based conditions are not available for Copilot DLP rules in GCC. This lab uses a single policy with two label-based rules — one for Restricted content, one for Regulated Data."
 
 ---
 
-## Phase 3 — Web Search Prevention (Private Preview)
+## Phase 2 — Web Search Prevention (Private Preview)
 
 > **GCC Status:** This feature is in Private Preview for commercial tenants. GCC availability is TBD. If not available, walk through the policy logic and explain the control.
 
@@ -129,7 +99,7 @@ Walk through the policy logic on screen and explain:
 
 ---
 
-## Phase 4 — Evidence & Investigations (Automated)
+## Phase 3 — Evidence & Investigations (Automated)
 
 ### GCC-Specific Check
 
