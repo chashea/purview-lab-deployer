@@ -59,10 +59,22 @@ function Set-LabLabelPublication {
 
     $publishableLabelSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
     foreach ($labelIdentity in $requestedLabels) {
+        # Look up by identity first, then fall back to display name (handles timestamped internal names)
+        $labelObject = $null
         try {
             $labelObject = Get-Label -Identity $labelIdentity -ErrorAction Stop
+            if ($labelObject.Mode -eq 'PendingDeletion') { $labelObject = $null }
         }
-        catch {
+        catch { $null = $_ }
+
+        if (-not $labelObject) {
+            try {
+                $labelObject = Get-Label -ErrorAction Stop | Where-Object { $_.DisplayName -eq $labelIdentity -and $_.Mode -ne 'PendingDeletion' } | Select-Object -First 1
+            }
+            catch { $null = $_ }
+        }
+
+        if (-not $labelObject) {
             Write-LabLog "Skipping publication target '$labelIdentity' because the label was not found." -Level Warning
             continue
         }
@@ -77,7 +89,11 @@ function Set-LabLabelPublication {
             continue
         }
 
-        $resolvedLabelIdentity = if (($labelObject.PSObject.Properties.Name -contains 'Name') -and -not [string]::IsNullOrWhiteSpace([string]$labelObject.Name)) {
+        # Use GUID for reliable identity resolution (handles timestamped internal names)
+        $resolvedLabelIdentity = if ($labelObject.Guid) {
+            [string]$labelObject.Guid
+        }
+        elseif (($labelObject.PSObject.Properties.Name -contains 'Name') -and -not [string]::IsNullOrWhiteSpace([string]$labelObject.Name)) {
             [string]$labelObject.Name
         }
         else {
@@ -390,18 +406,17 @@ function Deploy-SensitivityLabels {
     foreach ($label in $labelConfig.labels) {
         $parentName = "$($Config.prefix)-$($label.name)"
 
+        # Look up by identity; if PendingDeletion, search for an active duplicate
         $existingLabel = $null
         try {
-            $existingLabel = Get-Label -Identity $parentName -ErrorAction Stop
+            $candidates = @(Get-Label -ErrorAction Stop | Where-Object { $_.DisplayName -eq $parentName })
+            $existingLabel = $candidates | Where-Object { $_.Mode -ne 'PendingDeletion' } | Select-Object -First 1
+            if (-not $existingLabel -and ($candidates | Where-Object { $_.Mode -eq 'PendingDeletion' })) {
+                Write-LabLog "Label '$parentName' exists only in PendingDeletion state. Will create a new instance." -Level Warning
+            }
         }
         catch {
             $null = $_ # Label does not exist
-        }
-
-        if ($existingLabel -and $existingLabel.Mode -eq 'PendingDeletion') {
-            $null = $unavailableLabels.Add($parentName)
-            Write-LabLog "Label '$parentName' is in PendingDeletion state. Skipping label and related policies for this run." -Level Warning
-            continue
         }
 
         if ($existingLabel) {
@@ -410,8 +425,13 @@ function Deploy-SensitivityLabels {
         }
         else {
             if ($PSCmdlet.ShouldProcess($parentName, 'Create sensitivity label group')) {
+                # Use a unique internal name to avoid collisions with PendingDeletion ghosts (max 64 chars)
+                $suffix = (Get-Date -Format 'yyyyMMddHHmm')
+                $maxBase = 64 - $suffix.Length - 1
+                $baseName = if ($parentName.Length -gt $maxBase) { $parentName.Substring(0, $maxBase) } else { $parentName }
+                $internalName = "$baseName-$suffix"
                 $parentParams = @{
-                    Name        = $parentName
+                    Name        = $internalName
                     DisplayName = $parentName
                     Tooltip     = $label.tooltip
                     Comment     = 'Created by purview-lab-deployer'
@@ -432,13 +452,14 @@ function Deploy-SensitivityLabels {
             sublabels = @()
         }
 
-        # Get parent label ID for sublabel creation
+        # Get parent label ID for sublabel creation (prefer active over PendingDeletion)
         $parentLabel = $null
         try {
-            $parentLabel = Get-Label -Identity $parentName -ErrorAction Stop
+            $parentLabel = Get-Label -ErrorAction Stop | Where-Object { $_.DisplayName -eq $parentName -and $_.Mode -ne 'PendingDeletion' } | Select-Object -First 1
         }
-        catch {
-            Write-LabLog "Could not retrieve parent label $parentName for sublabel creation" -Level Warning
+        catch { $null = $_ }
+        if (-not $parentLabel) {
+            Write-LabLog "Could not retrieve active parent label $parentName for sublabel creation" -Level Warning
             $null = $unavailableLabels.Add($parentName)
         }
 
@@ -448,9 +469,14 @@ function Deploy-SensitivityLabels {
 
             $sublabelExists = $false
             try {
-                Get-Label -Identity $sublabelIdentity -ErrorAction Stop | Out-Null
-                $sublabelExists = $true
-                Write-LabLog "Sublabel already exists: $sublabelIdentity" -Level Info
+                $sublabelMatch = Get-Label -ErrorAction Stop | Where-Object { $_.DisplayName -eq $sublabelDisplay -and $_.Mode -ne 'PendingDeletion' } | Select-Object -First 1
+                if ($sublabelMatch) {
+                    $sublabelExists = $true
+                    Write-LabLog "Sublabel already exists: $sublabelIdentity" -Level Info
+                }
+                else {
+                    Write-LabLog "Sublabel not found, will create: $sublabelIdentity" -Level Info
+                }
             }
             catch {
                 Write-LabLog "Sublabel not found, will create: $sublabelIdentity" -Level Info
@@ -459,20 +485,26 @@ function Deploy-SensitivityLabels {
             if (-not $sublabelExists -and $null -ne $parentLabel) {
                 if ($PSCmdlet.ShouldProcess($sublabelIdentity, 'Create sensitivity sublabel')) {
                     try {
+                        $suffix = (Get-Date -Format 'yyyyMMddHHmm')
+                        $maxBase = 64 - $suffix.Length - 1
+                        $baseName = if ($sublabelIdentity.Length -gt $maxBase) { $sublabelIdentity.Substring(0, $maxBase) } else { $sublabelIdentity }
+                        $sublabelInternalName = "$baseName-$suffix"
                         New-Label `
-                            -Name $sublabelIdentity `
+                            -Name $sublabelInternalName `
                             -DisplayName $sublabelDisplay `
                             -ParentId $parentLabel.Guid `
                             -Tooltip $sublabel.tooltip `
                             -ContentType "File,Email" `
                             -ErrorAction Stop | Out-Null
+                        $newSublabel = Get-Label -ErrorAction Stop | Where-Object { $_.DisplayName -eq $sublabelDisplay -and $_.Mode -ne 'PendingDeletion' } | Select-Object -First 1
 
                         Write-LabLog "Created sublabel: $sublabelIdentity" -Level Success
-                        $null = $labelsToPublish.Add($sublabelIdentity)
+                        $null = $labelsToPublish.Add($sublabelDisplay)
 
-                        # Apply encryption settings
+                        # Apply encryption settings using GUID for reliable identity
+                        $sublabelId = if ($newSublabel) { $newSublabel.Guid } else { $sublabelInternalName }
                         if ($sublabel.encryption) {
-                            Set-Label -Identity $sublabelIdentity `
+                            Set-Label -Identity $sublabelId `
                                 -EncryptionEnabled $true `
                                 -EncryptionProtectionType 'Template' `
                                 -ErrorAction Stop | Out-Null
@@ -483,7 +515,7 @@ function Deploy-SensitivityLabels {
                         # Apply content marking settings
                         if ($sublabel.contentMarking) {
                             $markingParams = @{
-                                Identity = $sublabelIdentity
+                                Identity = $sublabelId
                             }
 
                             if ($sublabel.contentMarking.headerText) {
@@ -512,7 +544,7 @@ function Deploy-SensitivityLabels {
                 }
             }
             elseif ($sublabelExists) {
-                $null = $labelsToPublish.Add($sublabelIdentity)
+                $null = $labelsToPublish.Add($sublabelDisplay)
             }
             elseif ($null -eq $parentLabel) {
                 $null = $unavailableLabels.Add($sublabelIdentity)
