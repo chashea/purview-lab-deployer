@@ -53,6 +53,47 @@ This lab demonstrates how Microsoft Purview DLP enforces data boundaries for Mic
 | 3 | Stop Copilot web search with sensitive data | 15 min | Manual/Preview (see RUNBOOK) |
 | 4 | Evidence & investigations | 15 min | Automated (audit + eDiscovery) |
 
+## Post-Deploy Manual Steps
+
+The following items require manual configuration in the Purview compliance portal because the PowerShell cmdlets do not yet support them.
+
+### 1. Create label-based DLP rules for Copilot
+
+`New-DlpComplianceRule` has no parameter for sensitivity label conditions scoped to Copilot. The automated deployment creates the **Copilot Labeled Content Block** policy shell, but the two label-based rules must be added manually.
+
+1. Open **Microsoft Purview** → **Data loss prevention** → **Policies**
+2. Edit **PVCopilotDLP-Copilot Labeled Content Block**
+3. Add rule **Block Copilot from Restricted Content**:
+   - Condition: Content contains sensitivity label = `PVCopilotDLP-Highly-Confidential-Restricted`
+   - Action: Block
+   - User notification: _"Copilot cannot access this content. The file is labeled Highly Confidential — Restricted, which prevents Copilot from summarizing or referencing it."_
+   - Alert severity: High
+4. Add rule **Block Copilot from Regulated Data**:
+   - Condition: Content contains sensitivity label = `PVCopilotDLP-Highly-Confidential-Regulated-Data`
+   - Action: Block
+   - User notification: _"Copilot cannot access this content. The file contains regulated data that is blocked from AI processing by policy."_
+   - Alert severity: High
+5. Save and publish the policy
+
+### 2. Verify DLP enforcement settings on SIT rules
+
+The three SIT-based rules (Block SSN / Credit Card / PHI in Copilot Prompts) may deploy with baseline settings only if the cmdlet does not support enforcement parameters for Copilot-scoped policies. Verify in the portal:
+
+1. Open **PVCopilotDLP-Copilot Prompt SIT Block** policy
+2. For each rule, confirm:
+   - **Block access** is enabled
+   - **User notifications** are enabled with the configured message
+   - **Alert generation** is set to High severity
+3. If any are missing, edit the rule and enable them manually
+
+### 3. Scope DLP policies to Copilot location
+
+If the `CopilotLocation` parameter is not yet available in your tenant's PowerShell module, the DLP policies may deploy without a Copilot location scope. Verify:
+
+1. Open each DLP policy in the portal
+2. Under **Locations**, confirm **Microsoft 365 Copilot & Copilot Chat** is selected
+3. If missing, add the location and re-publish
+
 ## Key Technical Notes
 
 - **SIT + label conditions cannot be mixed in the same DLP rule** for Copilot. This lab uses separate policies/rules for each condition type.
