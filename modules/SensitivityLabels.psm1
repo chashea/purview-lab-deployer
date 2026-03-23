@@ -588,11 +588,22 @@ function Deploy-SensitivityLabels {
                     continue
                 }
 
-                try {
-                    Get-Label -Identity $targetLabel -ErrorAction Stop | Out-Null
+                $labelFound = $false
+                for ($attempt = 1; $attempt -le 3; $attempt++) {
+                    try {
+                        Get-Label -Identity $targetLabel -ErrorAction Stop | Out-Null
+                        $labelFound = $true
+                        break
+                    }
+                    catch {
+                        if ($attempt -lt 3) {
+                            Write-LabLog "Label '$targetLabel' not yet available (attempt $attempt/3). Waiting 10 seconds..." -Level Info
+                            Start-Sleep -Seconds 10
+                        }
+                    }
                 }
-                catch {
-                    Write-LabLog "Skipping auto-label policy '$policyName': target label '$targetLabel' not found." -Level Warning
+                if (-not $labelFound) {
+                    Write-LabLog "Skipping auto-label policy '$policyName': target label '$targetLabel' not found after 3 attempts." -Level Warning
                     continue
                 }
 

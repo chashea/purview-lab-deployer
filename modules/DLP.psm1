@@ -11,7 +11,7 @@ $script:LocationParamCandidates = @{
     'OneDrive'   = @('OneDriveLocation')
     'Teams'      = @('TeamsLocation')
     'Devices'    = @('EndpointDlpLocation', 'DevicesLocation', 'DeviceLocation')
-    'Copilot'    = @('CopilotLocation')
+    'Copilot'    = @('CopilotLocation', 'M365CopilotLocation', 'ThirdPartyAppDlpLocation')
 }
 
 function Get-LabSupportedParameterName {
@@ -556,6 +556,7 @@ function Deploy-DLP {
                     $ruleParams[$entry.Key] = $entry.Value
                 }
 
+                $createdWithBaseline = $false
                 try {
                     New-DlpComplianceRule @ruleParams | Out-Null
                 }
@@ -563,11 +564,26 @@ function Deploy-DLP {
                     if ($optionalRuleParams.Count -gt 0) {
                         Write-LabLog -Message "Rule creation with optional enforcement settings failed for $ruleName. Retrying with baseline settings only." -Level Warning
                         New-DlpComplianceRule @baseRuleParams | Out-Null
+                        $createdWithBaseline = $true
                     }
                     else {
                         throw
                     }
                 }
+
+                if ($createdWithBaseline -and $setRuleCommand -and $optionalRuleParams.Count -gt 0) {
+                    $setEnforcementParams = Get-LabDlpRuleOptionalParameters -Policy $policy -Rule $rule -CommandInfo $setRuleCommand -RuleName $ruleName
+                    if ($setEnforcementParams.Count -gt 0 -and $PSCmdlet.ShouldProcess($ruleName, 'Apply enforcement settings via Set-DlpComplianceRule')) {
+                        try {
+                            Set-DlpComplianceRule -Identity $ruleName @setEnforcementParams -Confirm:$false -ErrorAction Stop | Out-Null
+                            Write-LabLog -Message "Applied enforcement settings to rule: $ruleName" -Level Success
+                        }
+                        catch {
+                            Write-LabLog -Message "Could not apply enforcement settings to $ruleName`: $($_.Exception.Message)" -Level Warning
+                        }
+                    }
+                }
+
                 Write-LabLog -Message "Created DLP rule: $ruleName" -Level Success
             }
 

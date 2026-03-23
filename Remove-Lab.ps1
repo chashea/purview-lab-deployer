@@ -48,7 +48,7 @@ param(
     [string]$ConfigPath,
 
     [Parameter()]
-    [ValidateSet('basic-lab', 'shadow-ai')]
+    [ValidateSet('basic-lab', 'shadow-ai', 'copilot-dlp')]
     [string]$LabProfile,
 
     [Parameter()]
