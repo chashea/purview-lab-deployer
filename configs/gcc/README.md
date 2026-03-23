@@ -19,6 +19,15 @@ This folder contains Microsoft Purview lab configs for GCC tenants.
 ./Deploy-Lab.ps1 -Cloud gcc -LabProfile shadow-ai -TenantId <tenant-guid>
 ```
 
+## Copilot DLP demo
+
+- Copilot DLP config: `copilot-dlp-demo.json`
+- Guide: `../../profiles/gcc/copilot-dlp/README.md`
+
+```powershell
+./Deploy-Lab.ps1 -Cloud gcc -LabProfile copilot-dlp -TenantId <tenant-guid>
+```
+
 ## Other configs
 
 - `medical-demo.json`

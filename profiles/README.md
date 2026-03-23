@@ -51,4 +51,7 @@ Demonstrates how Purview DLP enforces data boundaries for M365 Copilot prompts, 
 ```powershell
 # Commercial
 ./Deploy-Lab.ps1 -Cloud commercial -LabProfile copilot-dlp -TenantId <tenant-guid>
+
+# GCC
+./Deploy-Lab.ps1 -Cloud gcc -LabProfile copilot-dlp -TenantId <tenant-guid>
 ```

@@ -1,0 +1,358 @@
+{
+  "$schema": "./_schema.json",
+  "labName": "Copilot DLP Guardrails Demo",
+  "prefix": "PVCopilotDLP",
+  "domain": "MngEnvMCAP648165.onmicrosoft.com",
+  "workloads": {
+    "testUsers": {
+      "enabled": true,
+      "users": [
+        {
+          "displayName": "Megan Torres",
+          "mailNickname": "mtorres",
+          "department": "Finance",
+          "jobTitle": "Financial Analyst",
+          "usageLocation": "US"
+        },
+        {
+          "displayName": "Jordan Kim",
+          "mailNickname": "jkim",
+          "department": "Marketing",
+          "jobTitle": "Brand Strategist",
+          "usageLocation": "US"
+        },
+        {
+          "displayName": "Nadia Shah",
+          "mailNickname": "nshah",
+          "department": "Compliance",
+          "jobTitle": "Data Security Admin",
+          "usageLocation": "US"
+        }
+      ],
+      "groups": [
+        {
+          "displayName": "PVCopilotDLP-Copilot-Users",
+          "members": [
+            "mtorres",
+            "jkim"
+          ]
+        },
+        {
+          "displayName": "PVCopilotDLP-Compliance-Admins",
+          "members": [
+            "nshah"
+          ]
+        }
+      ]
+    },
+    "sensitivityLabels": {
+      "enabled": true,
+      "labels": [
+        {
+          "name": "Confidential",
+          "tooltip": "Internal business content. Copilot may access unless restricted by DLP.",
+          "color": "#0078D4",
+          "sublabels": [
+            {
+              "name": "General",
+              "tooltip": "General internal content. No Copilot restrictions.",
+              "encryption": false,
+              "contentMarking": {
+                "footerText": "CONFIDENTIAL - General"
+              }
+            },
+            {
+              "name": "Business Sensitive",
+              "tooltip": "Sensitive business data. Copilot access monitored.",
+              "encryption": false,
+              "contentMarking": {
+                "footerText": "CONFIDENTIAL - Business Sensitive"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Highly Confidential",
+          "tooltip": "Restricted content. Copilot blocked from processing by DLP policy.",
+          "color": "#D13438",
+          "sublabels": [
+            {
+              "name": "All Employees",
+              "tooltip": "Highly confidential content accessible org-wide. Copilot blocked by DLP.",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "HIGHLY CONFIDENTIAL - All Employees",
+                "footerText": "Copilot access restricted by policy"
+              }
+            },
+            {
+              "name": "Restricted",
+              "tooltip": "Restricted content blocked from Copilot summarization and reasoning.",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "HIGHLY CONFIDENTIAL - Restricted",
+                "footerText": "Copilot access blocked — do not share"
+              }
+            },
+            {
+              "name": "Regulated Data",
+              "tooltip": "Regulated content (PII/PHI/PCI). Copilot fully blocked by DLP.",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "HIGHLY CONFIDENTIAL - Regulated Data",
+                "footerText": "Regulated data — Copilot blocked"
+              }
+            }
+          ]
+        }
+      ],
+      "autoLabelPolicies": [
+        {
+          "name": "Auto-label SSN Content as Regulated Data",
+          "labelName": "Highly Confidential\\Regulated Data",
+          "sensitiveInfoTypes": [
+            "U.S. Social Security Number (SSN)"
+          ],
+          "locations": [
+            "Exchange",
+            "SharePoint",
+            "OneDrive"
+          ]
+        }
+      ]
+    },
+    "dlp": {
+      "enabled": true,
+      "simulationMode": true,
+      "policies": [
+        {
+          "name": "Copilot Prompt SIT Block",
+          "policyMode": "copilotPromptBlock",
+          "locations": [
+            "Copilot"
+          ],
+          "rules": [
+            {
+              "name": "Block SSN in Copilot Prompts",
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)"
+              ],
+              "minCount": 1,
+              "enforcement": {
+                "action": "block",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Copilot cannot process this request. A Social Security Number was detected in your prompt, which violates data protection policy."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "high"
+                },
+                "incidentReport": {
+                  "enabled": true,
+                  "severity": "high"
+                }
+              }
+            },
+            {
+              "name": "Block Credit Card in Copilot Prompts",
+              "sensitiveInfoTypes": [
+                "Credit Card Number"
+              ],
+              "minCount": 1,
+              "enforcement": {
+                "action": "block",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Copilot cannot process this request. Credit card data was detected in your prompt, which violates data protection policy."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "high"
+                },
+                "incidentReport": {
+                  "enabled": true,
+                  "severity": "high"
+                }
+              }
+            },
+            {
+              "name": "Block PHI in Copilot Prompts",
+              "sensitiveInfoTypes": [
+                "All Medical Terms And Conditions"
+              ],
+              "minCount": 1,
+              "enforcement": {
+                "action": "block",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Copilot cannot process this request. Protected health information was detected in your prompt, which violates data protection policy."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "high"
+                },
+                "incidentReport": {
+                  "enabled": true,
+                  "severity": "high"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Copilot Labeled Content Block",
+          "policyMode": "copilotLabelBlock",
+          "locations": [
+            "Copilot"
+          ],
+          "labels": [
+            "PVCopilotDLP-Highly-Confidential-Restricted",
+            "PVCopilotDLP-Highly-Confidential-Regulated-Data"
+          ],
+          "rules": [
+            {
+              "name": "Block Copilot from Restricted Content",
+              "labels": [
+                "PVCopilotDLP-Highly-Confidential-Restricted"
+              ],
+              "enforcement": {
+                "action": "block",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Copilot cannot access this content. The file is labeled Highly Confidential — Restricted, which prevents Copilot from summarizing or referencing it."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "high"
+                },
+                "incidentReport": {
+                  "enabled": true,
+                  "severity": "high"
+                }
+              }
+            },
+            {
+              "name": "Block Copilot from Regulated Data",
+              "labels": [
+                "PVCopilotDLP-Highly-Confidential-Regulated-Data"
+              ],
+              "enforcement": {
+                "action": "block",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Copilot cannot access this content. The file contains regulated data that is blocked from AI processing by policy."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "high"
+                },
+                "incidentReport": {
+                  "enabled": true,
+                  "severity": "high"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "retention": {
+      "enabled": true,
+      "policies": [
+        {
+          "name": "Copilot Interaction Retention",
+          "retentionDays": 365,
+          "retentionAction": "retainOnly",
+          "locations": [
+            "Exchange",
+            "SharePoint"
+          ]
+        }
+      ]
+    },
+    "eDiscovery": {
+      "enabled": true,
+      "cases": [
+        {
+          "name": "Copilot-DLP-Incident-Review",
+          "description": "Investigation case for Copilot DLP policy violations involving sensitive prompts or labeled content access attempts.",
+          "custodians": [
+            "nshah"
+          ],
+          "holdQuery": "\"copilot\" OR \"DLP\" OR \"blocked\" OR \"policy violation\"",
+          "searchQuery": "\"sensitive data\" OR \"SSN\" OR \"credit card\" OR \"highly confidential\""
+        }
+      ]
+    },
+    "auditConfig": {
+      "enabled": true,
+      "searches": [
+        {
+          "name": "Copilot-Interaction-Audit",
+          "operations": [
+            "CopilotInteraction"
+          ]
+        },
+        {
+          "name": "Copilot-DLP-Match-Audit",
+          "operations": [
+            "DlpRuleMatch"
+          ]
+        },
+        {
+          "name": "Copilot-Policy-Override-Audit",
+          "operations": [
+            "DlpRuleUndo"
+          ]
+        }
+      ]
+    },
+    "testData": {
+      "enabled": true,
+      "emails": [
+        {
+          "from": "mtorres",
+          "to": "jkim",
+          "subject": "Q4 Revenue Projections — Internal Only",
+          "body": "Hey Jordan, here are the Q4 numbers. Customer account 4532-8721-0034-6619 has outstanding receivables. The projected revenue is $2.4M but that depends on closing the Contoso deal. Please keep this confidential."
+        },
+        {
+          "from": "jkim",
+          "to": "mtorres",
+          "subject": "RE: Q4 Revenue Projections — Internal Only",
+          "body": "Thanks Megan. I tried asking Copilot to summarize the financial report on SharePoint but it said it couldn't access the file due to a sensitivity policy. Is that expected? The file had a red 'Highly Confidential' label on it."
+        },
+        {
+          "from": "mtorres",
+          "to": "nshah",
+          "subject": "Copilot blocked my analysis request",
+          "body": "Hi Nadia, I was using Copilot to help with expense analysis and included some employee SSNs (like 078-05-1120 and 219-09-9999) in my prompt for context. Copilot refused to process the request and showed a policy message. Is this the new DLP policy? Just want to understand what I can and can't do."
+        },
+        {
+          "from": "nshah",
+          "to": "mtorres",
+          "subject": "RE: Copilot blocked my analysis request",
+          "body": "Hi Megan, yes — that is working as designed. Our DLP policy for Copilot detects sensitive info types like SSNs in prompts and blocks the response. You can still use Copilot for analysis, just don't include the actual SSN values in your prompt. Reference account IDs instead. I can see the audit trail for the block in the compliance portal."
+        }
+      ],
+      "documents": [
+        {
+          "name": "Q4-Revenue-Forecast.txt",
+          "content": "Q4 Revenue Forecast — Confidential\n\nProjected Revenue: $2,400,000\nOutstanding Accounts: Contoso (4532-8721-0034-6619), Fabrikam (5105-1051-0510-5100)\nKey Risk: Delayed payment from enterprise accounts.\n\nThis document contains financial projections for internal use only.",
+          "uploadTo": "SharePoint"
+        },
+        {
+          "name": "Employee-Benefits-Summary.txt",
+          "content": "Employee Benefits Enrollment Summary\n\nEmployee: Jane Doe, SSN: 078-05-1120\nEmployee: John Smith, SSN: 219-09-9999\nPlan: Premium Health Plus\nDependent Coverage: Family\n\nThis document contains protected personally identifiable information.",
+          "uploadTo": "SharePoint"
+        },
+        {
+          "name": "Patient-Intake-Notes.txt",
+          "content": "Patient Intake Notes — CONFIDENTIAL\n\nPatient: Maria Garcia\nDiagnosis: Type 2 Diabetes Mellitus, Hypertension\nMedications: Metformin 500mg, Lisinopril 10mg\nAllergies: Penicillin\nInsurance ID: BCBS-447291\n\nThis document contains protected health information (PHI).",
+          "uploadTo": "SharePoint"
+        }
+      ]
+    }
+  }
+}

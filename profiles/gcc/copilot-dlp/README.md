@@ -1,0 +1,92 @@
+# Copilot DLP Guardrails Demo (GCC)
+
+**Tagline:** "We're not turning Copilot off — we're teaching it what it's allowed to see, summarize, and search."
+
+## GCC-Specific Notes
+
+> **Licensing:** This lab requires **Microsoft 365 G5** (or G5 Compliance add-on) and **Copilot for Microsoft 365** in GCC.
+>
+> **Feature parity:** DLP for Copilot and Copilot audit events may have delayed rollout in GCC compared to commercial. Validate availability in your tenant before deploying. The deployer gracefully degrades if `CopilotLocation` is not yet available — DLP policies will log a warning and skip the Copilot location.
+>
+> **Copilot availability:** Confirm Microsoft 365 Copilot is available and licensed in your GCC tenant. GCC feature rollout may lag behind commercial by weeks to months.
+
+## Scenario Overview
+
+This lab demonstrates how Microsoft Purview DLP enforces data boundaries for Microsoft 365 Copilot prompts, files, and AI-driven actions in a GCC environment. Customers see what actually happens when those guardrails trigger — and the audit evidence that proves it.
+
+| Component | Count | Details |
+|---|---|---|
+| Test users | 3 | Megan Torres (Finance), Jordan Kim (Marketing), Nadia Shah (Compliance) |
+| Security groups | 2 | Copilot-Users, Compliance-Admins |
+| Sensitivity labels | 2 parents, 5 sublabels | Confidential (General, Business Sensitive), Highly Confidential (All Employees, Restricted, Regulated Data) |
+| Auto-label policies | 1 | SSN content → Highly Confidential\Regulated Data |
+| DLP policies | 2 | Copilot Prompt SIT Block (3 rules), Copilot Labeled Content Block (2 rules) |
+| Retention policies | 1 | Copilot interaction retention (365 days) |
+| eDiscovery cases | 1 | Copilot DLP incident review |
+| Audit searches | 3 | CopilotInteraction, DlpRuleMatch, DlpRuleUndo |
+| Test emails | 4 | Seeded with SSNs, credit cards, Copilot interaction context |
+| Test documents | 3 | Financial forecast, employee benefits (SSN), patient intake (PHI) |
+
+## Prerequisites
+
+- **Microsoft 365 G5** (or G5 Compliance add-on)
+- **Microsoft 365 Copilot** licenses assigned to demo users (GCC availability required)
+- Purview DLP permissions (Compliance Administrator or Data Security AI Admin)
+- Sensitivity labels published to demo users
+- Validate `CopilotLocation` parameter availability: run `Get-Command New-DlpCompliancePolicy` and check for `CopilotLocation` in parameters
+
+## Quick Start
+
+```powershell
+# Deploy
+./Deploy-Lab.ps1 -Cloud gcc -LabProfile copilot-dlp -TenantId <tenant-guid>
+
+# Deploy without test users (use existing tenant accounts)
+./Deploy-Lab.ps1 -Cloud gcc -LabProfile copilot-dlp -TenantId <tenant-guid> -SkipTestUsers
+
+# Dry run
+./Deploy-Lab.ps1 -Cloud gcc -LabProfile copilot-dlp -WhatIf
+
+# Teardown
+./Remove-Lab.ps1 -Cloud gcc -LabProfile copilot-dlp -Confirm:$false -TenantId <tenant-guid>
+```
+
+## Pre-Deploy Validation (GCC)
+
+Before deploying, confirm Copilot DLP support in your GCC tenant:
+
+```powershell
+# Connect to Security & Compliance PowerShell
+Connect-IPPSSession
+
+# Check if CopilotLocation parameter is available
+(Get-Command New-DlpCompliancePolicy).Parameters.Keys | Where-Object { $_ -like '*Copilot*' }
+
+# Expected output: CopilotLocation
+# If empty: Copilot DLP location is not yet available in this GCC tenant
+```
+
+If `CopilotLocation` is not available, the deployer will skip the Copilot location with a warning. DLP policies will be created without the Copilot scope — you can add the location manually in the portal when the feature rolls out.
+
+## Lab Phases (90–120 minutes, modular)
+
+| Phase | Title | Duration | Automated? |
+|---|---|---|---|
+| 0 | Baseline — Copilot without guardrails | 5 min | Manual (see RUNBOOK) |
+| 1 | Block sensitive prompts (SIT-based) | 20 min | Automated (DLP policy) |
+| 2 | Block labeled files from Copilot | 20 min | Automated (DLP policy) |
+| 3 | Stop Copilot web search with sensitive data | 15 min | Manual/Preview (see RUNBOOK) |
+| 4 | Evidence & investigations | 15 min | Automated (audit + eDiscovery) |
+
+## Key Technical Notes
+
+- **SIT + label conditions cannot be mixed in the same DLP rule** for Copilot. This lab uses separate policies/rules for each condition type.
+- DLP policies deploy in **simulation mode** (TestWithNotifications) by default. Switch to enforce for live demos.
+- Phase 3 (web search prevention) requires **Private Preview** enrollment — may not be available in GCC.
+- **GCC rollout lag:** If Copilot DLP features are not yet available in your GCC tenant, the deployer degrades gracefully. Use the RUNBOOK to identify which features require manual portal configuration.
+
+## References
+
+- [Learn about using Microsoft Purview DLP to protect interactions with Copilot](https://learn.microsoft.com/purview/dlp-microsoft-copilot)
+- [Use Microsoft Purview to manage data security for M365 Copilot](https://learn.microsoft.com/purview/ai-microsoft-purview)
+- [Microsoft 365 feature availability in GCC](https://learn.microsoft.com/office365/servicedescriptions/office-365-platform-service-description/office-365-us-government/gcc)

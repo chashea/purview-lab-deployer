@@ -1,0 +1,41 @@
+{
+  "profileType": "scenario-overlay",
+  "name": "copilot-dlp",
+  "baseCloud": "gcc",
+  "notes": [
+    "Scenario profile for Copilot DLP Guardrails demo in GCC.",
+    "Use with configs/gcc/copilot-dlp-demo.json.",
+    "DLP Copilot location support may have delayed rollout in GCC — validate CopilotLocation parameter availability in tenant before demo.",
+    "Microsoft 365 Copilot availability in GCC may lag behind commercial. Confirm Copilot licensing and feature parity before deployment."
+  ],
+  "workloads": {
+    "testUsers": {
+      "status": "required",
+      "note": "Demo identities and Copilot user groups."
+    },
+    "sensitivityLabels": {
+      "status": "required",
+      "note": "Confidential and Highly Confidential label hierarchies for Copilot blocking."
+    },
+    "dlp": {
+      "status": "required",
+      "note": "Copilot prompt SIT blocking and label-based content blocking. CopilotLocation parameter must be available in GCC tenant."
+    },
+    "retention": {
+      "status": "required",
+      "note": "Copilot interaction retention policy."
+    },
+    "eDiscovery": {
+      "status": "required",
+      "note": "Copilot DLP incident review case."
+    },
+    "auditConfig": {
+      "status": "required",
+      "note": "CopilotInteraction and DlpRuleMatch audit searches. Copilot audit events must be available in GCC tenant."
+    },
+    "testData": {
+      "status": "required",
+      "note": "Seeded emails and documents with sensitive content for demo."
+    }
+  }
+}
