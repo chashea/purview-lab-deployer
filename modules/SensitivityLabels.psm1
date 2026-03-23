@@ -25,7 +25,7 @@ function Resolve-LabLabelIdentity {
         return ($trimmed -replace ' ', '-')
     }
 
-    $parts = @($trimmed -split '\\\\|/|>')
+    $parts = @($trimmed -split '\\|/|>')
     $normalizedParts = @()
     foreach ($part in $parts) {
         $candidate = $part.Trim()
