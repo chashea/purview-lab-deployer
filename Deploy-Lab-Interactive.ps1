@@ -48,6 +48,7 @@ do {
 $profiles = @(
     @{ Number = 1; Name = 'basic-lab'; Description = 'Basic demo lab' }
     @{ Number = 2; Name = 'shadow-ai'; Description = 'Shadow AI demo' }
+    @{ Number = 3; Name = 'copilot-dlp'; Description = 'Copilot DLP guardrails demo' }
 )
 
 Write-Host ''
@@ -58,7 +59,7 @@ foreach ($p in $profiles) {
 Write-Host ''
 
 do {
-    $profileInput = Read-Host 'Select profile [1/2] (default: 1)'
+    $profileInput = Read-Host 'Select profile [1/2/3] (default: 1)'
     if ([string]::IsNullOrWhiteSpace($profileInput)) {
         $selectedLabProfile = 'basic-lab'
     }

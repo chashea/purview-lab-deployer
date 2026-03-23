@@ -1,0 +1,166 @@
+{
+  "demoName": "Copilot DLP Guardrails",
+  "version": "1.0",
+  "presentationFlow": [
+    {
+      "step": 0,
+      "title": "Baseline — Copilot without guardrails",
+      "talkTrack": "First, let's see what Copilot can do with no DLP policies in place. It can summarize documents, answer questions from files, and use web search. This is the 'before' state.",
+      "showInPortal": null,
+      "duration": "5 min",
+      "automated": false
+    },
+    {
+      "step": 1,
+      "title": "Guardrail #1 — Block sensitive prompts",
+      "talkTrack": "Now we activate DLP for Copilot. When a user types a prompt containing a Social Security Number, credit card, or medical information, Copilot blocks the response with a clear policy message. The user knows exactly why — no black box.",
+      "showInPortal": [
+        "DLP policy: Copilot Prompt SIT Block",
+        "Copilot prompt with SSN → blocked response",
+        "Copilot prompt with credit card → blocked response",
+        "Copilot prompt with PHI → blocked response"
+      ],
+      "duration": "20 min",
+      "automated": true,
+      "policyName": "PVCopilotDLP-Copilot Prompt SIT Block"
+    },
+    {
+      "step": 2,
+      "title": "Guardrail #2 — Block Copilot from labeled files",
+      "talkTrack": "Next, we protect files by their sensitivity label. Content labeled 'Highly Confidential — Restricted' or 'Regulated Data' cannot be summarized, referenced, or reasoned over by Copilot. The label is the boundary — it travels with the document.",
+      "showInPortal": [
+        "DLP policy: Copilot Labeled Content Block",
+        "Labeled file on SharePoint",
+        "Copilot attempt to summarize labeled file → blocked",
+        "Copilot attempt with unlabeled file → allowed"
+      ],
+      "duration": "20 min",
+      "automated": true,
+      "policyName": "PVCopilotDLP-Copilot Labeled Content Block",
+      "expertCallout": "SIT + label conditions cannot be mixed in the same DLP rule. Use separate rules in one policy, or separate policies. This is a great credibility moment with technical audiences."
+    },
+    {
+      "step": 3,
+      "title": "Guardrail #3 — Stop Copilot web search with sensitive data",
+      "talkTrack": "Even if Copilot could answer the question by searching the web, Purview decides it shouldn't — because the prompt contains sensitive data that would leave the compliance boundary. This is currently in Private Preview.",
+      "showInPortal": [
+        "DLP policy creation walkthrough (web search location)",
+        "Expected behavior explanation"
+      ],
+      "duration": "15 min",
+      "automated": false,
+      "previewStatus": "Private Preview"
+    },
+    {
+      "step": 4,
+      "title": "Evidence & investigations",
+      "talkTrack": "Every Copilot DLP event creates a full audit trail. Security teams can see which prompt was blocked, which file was excluded, and which policy was responsible. This is defensible AI governance.",
+      "showInPortal": [
+        "Audit log search: CopilotInteraction events",
+        "Audit log search: DlpRuleMatch events",
+        "eDiscovery case: Copilot-DLP-Incident-Review",
+        "DLP alert dashboard"
+      ],
+      "duration": "15 min",
+      "automated": true
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "S1",
+      "name": "Sensitive Prompt Block",
+      "description": "Demonstrate Copilot refusing to process prompts containing PII, PCI, or PHI",
+      "steps": [
+        "Open Microsoft 365 Copilot",
+        "Type a prompt containing a test SSN (078-05-1120)",
+        "Observe Copilot blocking the response with policy message",
+        "Repeat with a credit card number (4532-8721-0034-6619)",
+        "Repeat with medical terms (diabetes mellitus, hypertension)",
+        "Type a clean prompt — Copilot responds normally",
+        "Show audit trail in Purview for each blocked event"
+      ],
+      "expectedOutcome": "Audience sees Copilot fail safely with clear policy messaging — not a generic error",
+      "automatedArtifacts": ["DLP policy: Copilot Prompt SIT Block", "3 SIT-specific rules", "Test emails with sample data"],
+      "manualPrep": ["Copilot license assigned to demo user"]
+    },
+    {
+      "id": "S2",
+      "name": "Labeled File Protection",
+      "description": "Show Copilot refusing to summarize or reference sensitivity-labeled content",
+      "steps": [
+        "Show a labeled file on SharePoint (Highly Confidential > Restricted)",
+        "Ask Copilot to summarize the file",
+        "Copilot refuses — shows policy-driven message",
+        "Show that Copilot does not suggest workarounds (copy/paste, relabel)",
+        "Show an unlabeled file — Copilot summarizes it normally",
+        "Apply a label to the unlabeled file",
+        "Ask Copilot again — now blocked"
+      ],
+      "expectedOutcome": "Audience sees label-based protection in real time with before/after contrast",
+      "automatedArtifacts": ["DLP policy: Copilot Labeled Content Block", "Sensitivity labels deployed", "Test documents uploaded"],
+      "manualPrep": ["Files labeled in SharePoint", "Auto-label policy propagated"]
+    },
+    {
+      "id": "S3",
+      "name": "Web Search Prevention",
+      "description": "Explain and demonstrate (if preview-enabled) how DLP prevents Copilot from using sensitive data in web search queries",
+      "steps": [
+        "Explain the control: inline DLP for Copilot web search",
+        "Walk through the policy creation in the portal",
+        "If preview-enabled: demonstrate with a prompt that triggers web search with sensitive context",
+        "Show expected behavior: Copilot blocks the web search",
+        "Key message: 'Even if Copilot could answer, Purview decides it shouldn't'"
+      ],
+      "expectedOutcome": "Audience understands the web search boundary even if not yet enforceable in their tenant",
+      "automatedArtifacts": [],
+      "manualPrep": ["Preview enrollment (optional)", "Portal walkthrough prepared"]
+    },
+    {
+      "id": "S4",
+      "name": "Audit & Investigation",
+      "description": "Show the full audit trail and investigation workflow for Copilot DLP events",
+      "steps": [
+        "Navigate to Microsoft Purview > Audit > Search",
+        "Run pre-configured Copilot DLP audit searches",
+        "Show DLP policy hits tied to Copilot interactions",
+        "Show audit records: prompt blocked, file excluded, policy responsible",
+        "Open eDiscovery case: Copilot-DLP-Incident-Review",
+        "Show hold query and search results",
+        "Tie back to defensible AI use and compliance posture"
+      ],
+      "expectedOutcome": "Audience sees complete evidence chain from Copilot interaction to compliance record",
+      "automatedArtifacts": ["3 audit searches", "eDiscovery case with hold and search queries"],
+      "manualPrep": ["Generate some DLP alerts before demo for audit data"]
+    }
+  ],
+  "userExperienceTable": [
+    {
+      "scenario": "Prompt contains SSN",
+      "copilotBehavior": "Copilot blocks response"
+    },
+    {
+      "scenario": "Prompt contains credit card number",
+      "copilotBehavior": "Copilot blocks response"
+    },
+    {
+      "scenario": "Prompt contains PHI/medical terms",
+      "copilotBehavior": "Copilot blocks response"
+    },
+    {
+      "scenario": "File labeled Highly Confidential",
+      "copilotBehavior": "Copilot ignores file — cannot summarize or reference"
+    },
+    {
+      "scenario": "Attempted web-backed answer using sensitive data",
+      "copilotBehavior": "Copilot blocked (preview)"
+    },
+    {
+      "scenario": "Clean prompt, no sensitive data or labeled files",
+      "copilotBehavior": "Normal response"
+    },
+    {
+      "scenario": "Admin review",
+      "copilotBehavior": "Full audit trail in Purview"
+    }
+  ]
+}

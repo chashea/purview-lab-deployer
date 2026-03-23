@@ -517,19 +517,22 @@ function Deploy-DLP {
             }
 
             if ($PSCmdlet.ShouldProcess($ruleName, 'Create DLP rule')) {
-                $sitArray = @()
-                foreach ($sit in $rule.sensitiveInfoTypes) {
-                    $sitArray += @{
-                        name     = $sit
-                        minCount = [string]$rule.minCount
-                    }
+                $baseRuleParams = @{
+                    Name        = $ruleName
+                    Policy      = $policyName
+                    ErrorAction = 'Stop'
                 }
 
-                $baseRuleParams = @{
-                    Name                              = $ruleName
-                    Policy                            = $policyName
-                    ContentContainsSensitiveInformation = $sitArray
-                    ErrorAction                       = 'Stop'
+                $hasSensitiveInfoTypes = ($rule.PSObject.Properties['sensitiveInfoTypes'] -and @($rule.sensitiveInfoTypes).Count -gt 0)
+                if ($hasSensitiveInfoTypes) {
+                    $sitArray = @()
+                    foreach ($sit in $rule.sensitiveInfoTypes) {
+                        $sitArray += @{
+                            name     = $sit
+                            minCount = [string]$rule.minCount
+                        }
+                    }
+                    $baseRuleParams['ContentContainsSensitiveInformation'] = $sitArray
                 }
 
                 # Adaptive Protection: insider risk level condition

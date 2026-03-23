@@ -70,8 +70,9 @@ $ErrorActionPreference = 'Stop'
 
 # Profile-to-config resolution
 $profileConfigMap = @{
-    'basic-lab' = 'basic-lab-demo.json'
-    'shadow-ai' = 'shadow-ai-demo.json'
+    'basic-lab'   = 'basic-lab-demo.json'
+    'shadow-ai'   = 'shadow-ai-demo.json'
+    'copilot-dlp' = 'copilot-dlp-demo.json'
 }
 
 if (-not [string]::IsNullOrWhiteSpace($LabProfile) -and -not [string]::IsNullOrWhiteSpace($ConfigPath)) {

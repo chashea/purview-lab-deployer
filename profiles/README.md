@@ -38,3 +38,17 @@ Shadow AI profiles are documentation/scenario metadata and do not replace cloud 
 # GCC
 ./Deploy-Lab.ps1 -Cloud gcc -LabProfile shadow-ai -TenantId <tenant-guid>
 ```
+
+## Copilot DLP profiles
+
+- `commercial/copilot-dlp/README.md` - Copilot DLP guardrails deployment guide (commercial)
+- `commercial/copilot-dlp/RUNBOOK.md` - Post-deploy manual steps and demo preparation
+- `commercial/copilot-dlp/demo-scenarios.json` - 4-phase demo flow
+- `commercial/copilot-dlp/talk-track.md` - Full presenter talk track
+
+Demonstrates how Purview DLP enforces data boundaries for M365 Copilot prompts, files, and AI-driven actions.
+
+```powershell
+# Commercial
+./Deploy-Lab.ps1 -Cloud commercial -LabProfile copilot-dlp -TenantId <tenant-guid>
+```
