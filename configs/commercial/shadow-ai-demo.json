@@ -326,7 +326,7 @@
           ],
           "rules": [
             {
-              "name": "Detect Medical Terms in AI Upload Attempts - Elevated Risk",
+              "name": "Medical Terms in AI Upload - Elevated Risk",
               "sensitiveInfoTypes": [
                 "All Medical Terms And Conditions"
               ],
@@ -349,7 +349,7 @@
               "insiderRiskLevel": "Elevated"
             },
             {
-              "name": "Detect Medical Terms in AI Upload Attempts - Moderate Risk",
+              "name": "Medical Terms in AI Upload - Moderate Risk",
               "sensitiveInfoTypes": [
                 "All Medical Terms And Conditions"
               ],
@@ -368,7 +368,7 @@
               "insiderRiskLevel": "Moderate"
             },
             {
-              "name": "Detect Medical Terms in AI Upload Attempts - Minor Risk",
+              "name": "Medical Terms in AI Upload - Minor Risk",
               "sensitiveInfoTypes": [
                 "All Medical Terms And Conditions"
               ],
@@ -383,7 +383,7 @@
               "insiderRiskLevel": "Minor"
             },
             {
-              "name": "Detect Credit Cards in External AI Sharing - Elevated Risk",
+              "name": "Credit Cards in AI Sharing - Elevated Risk",
               "sensitiveInfoTypes": [
                 "Credit Card Number"
               ],
@@ -406,7 +406,7 @@
               "insiderRiskLevel": "Elevated"
             },
             {
-              "name": "Detect Credit Cards in External AI Sharing - Moderate Risk",
+              "name": "Credit Cards in AI Sharing - Moderate Risk",
               "sensitiveInfoTypes": [
                 "Credit Card Number"
               ],
@@ -425,7 +425,7 @@
               "insiderRiskLevel": "Moderate"
             },
             {
-              "name": "Detect Credit Cards in External AI Sharing - Minor Risk",
+              "name": "Credit Cards in AI Sharing - Minor Risk",
               "sensitiveInfoTypes": [
                 "Credit Card Number"
               ],
@@ -457,7 +457,7 @@
           ],
           "rules": [
             {
-              "name": "Restrict Labeled Data in AI Destinations - Elevated Risk",
+              "name": "Labeled Data AI Restriction - Elevated Risk",
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)"
               ],
@@ -484,7 +484,7 @@
               "insiderRiskLevel": "Elevated"
             },
             {
-              "name": "Restrict Labeled Data in AI Destinations - Moderate Risk",
+              "name": "Labeled Data AI Restriction - Moderate Risk",
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)"
               ],
@@ -507,7 +507,7 @@
               "insiderRiskLevel": "Moderate"
             },
             {
-              "name": "Restrict Labeled Data in AI Destinations - Minor Risk",
+              "name": "Labeled Data AI Restriction - Minor Risk",
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)"
               ],
@@ -548,7 +548,7 @@
           },
           "rules": [
             {
-              "name": "Block Sensitive Data Upload to AI Sites - Elevated Risk",
+              "name": "Block Data Upload to AI Sites - Elevated Risk",
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)",
                 "Credit Card Number"
@@ -572,7 +572,7 @@
               "insiderRiskLevel": "Elevated"
             },
             {
-              "name": "Block Sensitive Data Upload to AI Sites - Moderate Risk",
+              "name": "Block Data Upload to AI Sites - Moderate Risk",
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)",
                 "Credit Card Number"
@@ -626,7 +626,7 @@
           ],
           "rules": [
             {
-              "name": "Restrict Copilot access to labeled documents and emails",
+              "name": "Restrict Copilot for Labeled Content",
               "labels": [
                 "PVShadowAI-Highly-Confidential-All-Employees",
                 "PVShadowAI-Highly-Confidential-AI-Internal-Use",

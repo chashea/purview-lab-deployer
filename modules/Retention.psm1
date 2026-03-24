@@ -112,8 +112,13 @@ function Deploy-Retention {
                     # Publish the label via a label policy
                     $publishPolicyName = "$labelName-publish"
                     $publishParams = @{
-                        Name                = $publishPolicyName
-                        PublishComplianceTag = $labelName
+                        Name = $publishPolicyName
+                    }
+
+                    # Use PublishComplianceTag if available, otherwise create policy without it
+                    $policyCmdInfo = Get-Command New-RetentionCompliancePolicy -ErrorAction SilentlyContinue
+                    if ($policyCmdInfo -and $policyCmdInfo.Parameters.ContainsKey('PublishComplianceTag')) {
+                        $publishParams['PublishComplianceTag'] = $labelName
                     }
 
                     foreach ($location in $label.locations) {
@@ -128,11 +133,15 @@ function Deploy-Retention {
                     Write-LabLog "Created label publish policy: $publishPolicyName" -Level Success
 
                     $publishRuleName = "$labelName-publish-rule"
-                    New-RetentionComplianceRule `
-                        -Policy $publishPolicyName `
-                        -Name $publishRuleName `
-                        -PublishComplianceTag $labelName `
-                        -ErrorAction Stop | Out-Null
+                    $ruleCmdInfo = Get-Command New-RetentionComplianceRule -ErrorAction SilentlyContinue
+                    $ruleParams = @{
+                        Policy = $publishPolicyName
+                        Name   = $publishRuleName
+                    }
+                    if ($ruleCmdInfo -and $ruleCmdInfo.Parameters.ContainsKey('PublishComplianceTag')) {
+                        $ruleParams['PublishComplianceTag'] = $labelName
+                    }
+                    New-RetentionComplianceRule @ruleParams -ErrorAction Stop | Out-Null
 
                     Write-LabLog "Created label publish rule: $publishRuleName" -Level Success
                 }
