@@ -342,11 +342,14 @@ try {
                     }
                 }
 
-                if (($enforcement.PSObject.Properties.Name -contains 'userNotification') -and $null -ne $enforcement.userNotification -and [bool]$enforcement.userNotification.enabled) {
-                    $notifySupport = Get-LabSupportedParameterName -Commands $ruleCommands -CandidateNames @('NotifyUser', 'UserNotificationEnabled')
-                    if (-not $notifySupport) {
-                        $dlpPreflightWarnings.Add("Rule '$ruleName' requests user notifications, but no supported notify parameter exists.")
-                    }
+                # User notifications default to enabled when enforcement exists
+                $notifySupport = Get-LabSupportedParameterName -Commands $ruleCommands -CandidateNames @('NotifyUser', 'UserNotificationEnabled')
+                if (-not $notifySupport) {
+                    $dlpPreflightWarnings.Add("Rule '$ruleName' has enforcement configured, but no supported notify parameter exists.")
+                }
+                $policyTipSupport = Get-LabSupportedParameterName -Commands $ruleCommands -CandidateNames @('NotifyPolicyTipCustomText', 'PolicyTipCustomText')
+                if (-not $policyTipSupport) {
+                    $dlpPreflightWarnings.Add("Rule '$ruleName' has enforcement configured, but no supported policy tip parameter exists.")
                 }
 
                 if (($enforcement.PSObject.Properties.Name -contains 'alert') -and $null -ne $enforcement.alert -and [bool]$enforcement.alert.enabled) {
@@ -441,12 +444,6 @@ try {
             Deploy-TestUsers -Config $Config -WhatIf:$WhatIfPreference
         }
     } else { Write-LabLog -Message 'testUsers workload is disabled, skipping.' -Level Info }
-
-    if ($Config.workloads.PSObject.Properties['customSensitiveInfoTypes'] -and $Config.workloads.customSensitiveInfoTypes.enabled) {
-        Invoke-Workload -Name 'customSensitiveInfoTypes' -Step 'CustomSensitiveInfoTypes' -Description 'Deploying custom sensitive information types' -Action {
-            Deploy-CustomSensitiveInfoTypes -Config $Config -WhatIf:$WhatIfPreference
-        }
-    }
 
     if ($Config.workloads.sensitivityLabels.enabled) {
         Invoke-Workload -Name 'sensitivityLabels' -Step 'SensitivityLabels' -Description 'Deploying sensitivity labels' -Action {

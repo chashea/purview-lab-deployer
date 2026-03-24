@@ -419,6 +419,41 @@
                   }
                 }
               }
+            },
+            "labels": {
+              "type": "array",
+              "description": "Retention labels (ComplianceTags) published to locations for item-level application",
+              "items": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "retentionDays",
+                  "retentionAction",
+                  "locations"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "retentionDays": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "retentionAction": {
+                    "type": "string",
+                    "enum": [
+                      "retainAndDelete",
+                      "retainOnly"
+                    ]
+                  },
+                  "locations": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
             }
           }
         },
@@ -472,39 +507,13 @@
               "items": {
                 "type": "object",
                 "required": [
-                  "name",
-                  "reviewers",
-                  "supervisedUsers",
-                  "direction",
-                  "condition"
+                  "name"
                 ],
                 "properties": {
                   "name": {
                     "type": "string"
                   },
-                  "reviewers": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
-                    "description": "Array of UPNs"
-                  },
-                  "supervisedUsers": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
-                    "description": "Array of UPNs"
-                  },
-                  "direction": {
-                    "type": "string",
-                    "enum": [
-                      "Inbound",
-                      "Outbound",
-                      "Both"
-                    ]
-                  },
-                  "condition": {
+                  "description": {
                     "type": "string"
                   }
                 }

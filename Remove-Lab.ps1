@@ -237,14 +237,7 @@ try {
         Write-LabLog -Message 'dlp workload is disabled, skipping.' -Level Info
     }
 
-    # 6. Custom Sensitive Info Types
-    if ($Config.workloads.PSObject.Properties['customSensitiveInfoTypes'] -and $Config.workloads.customSensitiveInfoTypes.enabled) {
-        Write-LabStep -StepName 'CustomSensitiveInfoTypes' -Description 'Removing custom sensitive information types'
-        Remove-CustomSensitiveInfoTypes -Config $Config -Manifest (Get-WorkloadManifest -WorkloadName 'customSensitiveInfoTypes') -WhatIf:$WhatIfPreference
-        Write-LabLog -Message 'Custom sensitive info types removal complete.' -Level Success
-    }
-
-    # 7. Sensitivity Labels
+    # 6. Sensitivity Labels
     if ($Config.workloads.sensitivityLabels.enabled) {
         Write-LabStep -StepName 'SensitivityLabels' -Description 'Removing sensitivity labels'
         Remove-SensitivityLabels -Config $Config -Manifest (Get-WorkloadManifest -WorkloadName 'sensitivityLabels') -WhatIf:$WhatIfPreference

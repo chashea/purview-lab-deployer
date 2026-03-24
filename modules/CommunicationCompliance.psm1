@@ -87,8 +87,6 @@ function Deploy-CommunicationCompliance {
         $manifestPolicies.Add([PSCustomObject]@{
             policyName      = $name
             featureScenario = 'KnowYourData'
-            reviewers       = $policy.reviewers
-            supervisedUsers = $policy.supervisedUsers
         })
     }
 

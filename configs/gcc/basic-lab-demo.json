@@ -356,18 +356,8 @@
       "enabled": true,
       "policies": [
         {
-          "name": "Offensive Language Monitoring",
-          "reviewers": [
-            "rtorres@MngEnvMCAP648165.onmicrosoft.com",
-            "pnair@MngEnvMCAP648165.onmicrosoft.com"
-          ],
-          "supervisedUsers": [
-            "mchen@MngEnvMCAP648165.onmicrosoft.com",
-            "sreeves@MngEnvMCAP648165.onmicrosoft.com",
-            "msullivan@MngEnvMCAP648165.onmicrosoft.com"
-          ],
-          "direction": "Both",
-          "condition": "offensive language"
+          "name": "Offensive Language Collection",
+          "description": "DSPM for AI collection policy — captures AI activity for offensive language compliance review."
         }
       ]
     },

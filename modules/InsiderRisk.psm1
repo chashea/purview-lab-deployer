@@ -58,10 +58,49 @@ function Deploy-InsiderRisk {
             }
 
             if ($PSCmdlet.ShouldProcess($name, "Create Insider Risk policy (scenario: $scenario)")) {
-                New-InsiderRiskPolicy -Name $name `
-                    -InsiderRiskScenario $scenario `
-                    -Enabled $true `
-                    -ErrorAction Stop
+                $policyParams = @{
+                    Name                 = $name
+                    InsiderRiskScenario  = $scenario
+                    Enabled              = $true
+                    ErrorAction          = 'Stop'
+                }
+
+                # Pass indicators if configured
+                if ($policy.PSObject.Properties['indicators'] -and @($policy.indicators).Count -gt 0) {
+                    $indicatorList = @($policy.indicators | ForEach-Object { [string]$_ })
+                    $indicatorParam = $null
+                    try {
+                        $cmdInfo = Get-Command New-InsiderRiskPolicy -ErrorAction SilentlyContinue
+                        if ($cmdInfo -and $cmdInfo.Parameters.ContainsKey('IndicatorsToEnable')) {
+                            $indicatorParam = 'IndicatorsToEnable'
+                        }
+                        elseif ($cmdInfo -and $cmdInfo.Parameters.ContainsKey('Indicators')) {
+                            $indicatorParam = 'Indicators'
+                        }
+                    }
+                    catch { $null = $_ }
+
+                    if ($indicatorParam) {
+                        $policyParams[$indicatorParam] = $indicatorList
+                        Write-LabLog -Message "Enabling indicators for ${name}: $($indicatorList -join ', ')" -Level Info
+                    }
+                    else {
+                        Write-LabLog -Message "Policy '$name' has indicators configured but New-InsiderRiskPolicy does not support indicator parameters. Indicators must be enabled manually in the Purview portal." -Level Warning
+                    }
+                }
+
+                # Pass thresholds if configured
+                if ($policy.PSObject.Properties['thresholds'] -and -not [string]::IsNullOrWhiteSpace([string]$policy.thresholds)) {
+                    try {
+                        $cmdInfo = Get-Command New-InsiderRiskPolicy -ErrorAction SilentlyContinue
+                        if ($cmdInfo -and $cmdInfo.Parameters.ContainsKey('ThresholdType')) {
+                            $policyParams['ThresholdType'] = [string]$policy.thresholds
+                        }
+                    }
+                    catch { $null = $_ }
+                }
+
+                New-InsiderRiskPolicy @policyParams
 
                 Write-LabLog -Message "Created Insider Risk policy: $name (scenario: $scenario)" -Level Success
                 if ($priorityUserGroups.Count -gt 0) {

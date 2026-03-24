@@ -69,29 +69,6 @@
         }
       ]
     },
-    "customSensitiveInfoTypes": {
-      "enabled": true,
-      "types": [
-        {
-          "name": "Contoso Customer ID",
-          "description": "Matches Contoso customer identifiers (CUST-XXXXXX format)",
-          "pattern": "CUST-[0-9]{6}",
-          "confidenceLevel": "High"
-        },
-        {
-          "name": "API Key Pattern",
-          "description": "Detects API keys and tokens (sk-/pk-/api_ prefixed strings)",
-          "pattern": "(sk|pk|api)[-_][A-Za-z0-9]{20,}",
-          "confidenceLevel": "High"
-        },
-        {
-          "name": "Internal Project Code",
-          "description": "Matches internal project codes (PRJ-XXXX format)",
-          "pattern": "PRJ-[A-Z0-9]{4,8}",
-          "confidenceLevel": "Medium"
-        }
-      ]
-    },
     "dlp": {
       "enabled": true,
       "simulationMode": true,
@@ -103,40 +80,118 @@
           ],
           "rules": [
             {
-              "name": "Detect SSNs in AI Prompts",
+              "name": "Detect SSNs in AI Prompts - Elevated Risk",
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)"
               ],
               "minCount": 1,
               "enforcement": {
-                "action": "auditOnly",
+                "action": "block",
                 "userNotification": {
                   "enabled": true,
                   "message": "Social Security Numbers detected in AI interaction. This data is monitored for compliance."
                 },
                 "alert": {
                   "enabled": true,
-                  "severity": "low"
+                  "severity": "high"
+                },
+                "incidentReport": {
+                  "enabled": true,
+                  "severity": "high"
                 }
-              }
+              },
+              "insiderRiskLevel": "Elevated"
             },
             {
-              "name": "Detect Credit Cards in AI Prompts",
+              "name": "Detect SSNs in AI Prompts - Moderate Risk",
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)"
+              ],
+              "minCount": 1,
+              "enforcement": {
+                "action": "allowWithJustification",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Social Security Numbers detected in AI interaction. This data is monitored for compliance."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "medium"
+                }
+              },
+              "insiderRiskLevel": "Moderate"
+            },
+            {
+              "name": "Detect SSNs in AI Prompts - Minor Risk",
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)"
+              ],
+              "minCount": 1,
+              "enforcement": {
+                "action": "auditOnly",
+                "alert": {
+                  "enabled": true,
+                  "severity": "low"
+                }
+              },
+              "insiderRiskLevel": "Minor"
+            },
+            {
+              "name": "Detect Credit Cards in AI Prompts - Elevated Risk",
               "sensitiveInfoTypes": [
                 "Credit Card Number"
               ],
               "minCount": 1,
               "enforcement": {
-                "action": "auditOnly",
+                "action": "block",
                 "userNotification": {
                   "enabled": true,
                   "message": "Credit card numbers detected in AI interaction. This data is monitored for compliance."
                 },
                 "alert": {
                   "enabled": true,
+                  "severity": "high"
+                },
+                "incidentReport": {
+                  "enabled": true,
+                  "severity": "high"
+                }
+              },
+              "insiderRiskLevel": "Elevated"
+            },
+            {
+              "name": "Detect Credit Cards in AI Prompts - Moderate Risk",
+              "sensitiveInfoTypes": [
+                "Credit Card Number"
+              ],
+              "minCount": 1,
+              "enforcement": {
+                "action": "allowWithJustification",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Credit card numbers detected in AI interaction. This data is monitored for compliance."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "medium"
+                }
+              },
+              "insiderRiskLevel": "Moderate"
+            },
+            {
+              "name": "Detect Credit Cards in AI Prompts - Minor Risk",
+              "sensitiveInfoTypes": [
+                "Credit Card Number"
+              ],
+              "minCount": 1,
+              "enforcement": {
+                "action": "auditOnly",
+                "alert": {
+                  "enabled": true,
                   "severity": "low"
                 }
-              }
+              },
+              "insiderRiskLevel": "Minor"
             }
           ],
           "policyMode": "visibility"
@@ -148,7 +203,30 @@
           ],
           "rules": [
             {
-              "name": "Detect Bank Accounts in AI Content",
+              "name": "Detect Bank Accounts in AI Content - Elevated Risk",
+              "sensitiveInfoTypes": [
+                "U.S. Bank Account Number"
+              ],
+              "minCount": 1,
+              "enforcement": {
+                "action": "block",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "You are sharing sensitive data with an AI destination. Provide a business justification to continue."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "high"
+                },
+                "incidentReport": {
+                  "enabled": true,
+                  "severity": "high"
+                }
+              },
+              "insiderRiskLevel": "Elevated"
+            },
+            {
+              "name": "Detect Bank Accounts in AI Content - Moderate Risk",
               "sensitiveInfoTypes": [
                 "U.S. Bank Account Number"
               ],
@@ -163,10 +241,49 @@
                   "enabled": true,
                   "severity": "medium"
                 }
-              }
+              },
+              "insiderRiskLevel": "Moderate"
             },
             {
-              "name": "Detect SSNs in Payroll Discussions",
+              "name": "Detect Bank Accounts in AI Content - Minor Risk",
+              "sensitiveInfoTypes": [
+                "U.S. Bank Account Number"
+              ],
+              "minCount": 1,
+              "enforcement": {
+                "action": "auditOnly",
+                "alert": {
+                  "enabled": true,
+                  "severity": "low"
+                }
+              },
+              "insiderRiskLevel": "Minor"
+            },
+            {
+              "name": "Detect SSNs in Payroll Discussions - Elevated Risk",
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)"
+              ],
+              "minCount": 1,
+              "enforcement": {
+                "action": "block",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "You are sharing sensitive data with an AI destination. Provide a business justification to continue."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "high"
+                },
+                "incidentReport": {
+                  "enabled": true,
+                  "severity": "high"
+                }
+              },
+              "insiderRiskLevel": "Elevated"
+            },
+            {
+              "name": "Detect SSNs in Payroll Discussions - Moderate Risk",
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)"
               ],
@@ -181,7 +298,23 @@
                   "enabled": true,
                   "severity": "medium"
                 }
-              }
+              },
+              "insiderRiskLevel": "Moderate"
+            },
+            {
+              "name": "Detect SSNs in Payroll Discussions - Minor Risk",
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)"
+              ],
+              "minCount": 1,
+              "enforcement": {
+                "action": "auditOnly",
+                "alert": {
+                  "enabled": true,
+                  "severity": "low"
+                }
+              },
+              "insiderRiskLevel": "Minor"
             }
           ],
           "policyMode": "guardrail"
@@ -193,7 +326,7 @@
           ],
           "rules": [
             {
-              "name": "Detect Medical Terms in AI Upload Attempts",
+              "name": "Detect Medical Terms in AI Upload Attempts - Elevated Risk",
               "sensitiveInfoTypes": [
                 "All Medical Terms And Conditions"
               ],
@@ -212,10 +345,45 @@
                   "enabled": true,
                   "severity": "high"
                 }
-              }
+              },
+              "insiderRiskLevel": "Elevated"
             },
             {
-              "name": "Detect Credit Cards in External AI Sharing",
+              "name": "Detect Medical Terms in AI Upload Attempts - Moderate Risk",
+              "sensitiveInfoTypes": [
+                "All Medical Terms And Conditions"
+              ],
+              "minCount": 1,
+              "enforcement": {
+                "action": "allowWithJustification",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Medical data detected. Uploading protected health information to external AI tools violates policy."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "medium"
+                }
+              },
+              "insiderRiskLevel": "Moderate"
+            },
+            {
+              "name": "Detect Medical Terms in AI Upload Attempts - Minor Risk",
+              "sensitiveInfoTypes": [
+                "All Medical Terms And Conditions"
+              ],
+              "minCount": 1,
+              "enforcement": {
+                "action": "auditOnly",
+                "alert": {
+                  "enabled": true,
+                  "severity": "low"
+                }
+              },
+              "insiderRiskLevel": "Minor"
+            },
+            {
+              "name": "Detect Credit Cards in External AI Sharing - Elevated Risk",
               "sensitiveInfoTypes": [
                 "Credit Card Number"
               ],
@@ -234,7 +402,42 @@
                   "enabled": true,
                   "severity": "high"
                 }
-              }
+              },
+              "insiderRiskLevel": "Elevated"
+            },
+            {
+              "name": "Detect Credit Cards in External AI Sharing - Moderate Risk",
+              "sensitiveInfoTypes": [
+                "Credit Card Number"
+              ],
+              "minCount": 1,
+              "enforcement": {
+                "action": "allowWithJustification",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Credit card data detected in external AI sharing. This action is blocked per data protection policy."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "medium"
+                }
+              },
+              "insiderRiskLevel": "Moderate"
+            },
+            {
+              "name": "Detect Credit Cards in External AI Sharing - Minor Risk",
+              "sensitiveInfoTypes": [
+                "Credit Card Number"
+              ],
+              "minCount": 1,
+              "enforcement": {
+                "action": "auditOnly",
+                "alert": {
+                  "enabled": true,
+                  "severity": "low"
+                }
+              },
+              "insiderRiskLevel": "Minor"
             }
           ],
           "policyMode": "highRiskBlock",
@@ -254,7 +457,7 @@
           ],
           "rules": [
             {
-              "name": "Restrict Labeled Data in AI Destinations",
+              "name": "Restrict Labeled Data in AI Destinations - Elevated Risk",
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)"
               ],
@@ -277,7 +480,50 @@
                   "enabled": true,
                   "severity": "high"
                 }
-              }
+              },
+              "insiderRiskLevel": "Elevated"
+            },
+            {
+              "name": "Restrict Labeled Data in AI Destinations - Moderate Risk",
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)"
+              ],
+              "minCount": 1,
+              "labels": [
+                "PVShadowAI-Highly-Confidential-AI-Blocked-from-External-Tools",
+                "PVShadowAI-Highly-Confidential-AI-Regulated-Data"
+              ],
+              "enforcement": {
+                "action": "allowWithJustification",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "This content has a sensitivity label that restricts AI usage. Use approved tools only."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "medium"
+                }
+              },
+              "insiderRiskLevel": "Moderate"
+            },
+            {
+              "name": "Restrict Labeled Data in AI Destinations - Minor Risk",
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)"
+              ],
+              "minCount": 1,
+              "labels": [
+                "PVShadowAI-Highly-Confidential-AI-Blocked-from-External-Tools",
+                "PVShadowAI-Highly-Confidential-AI-Regulated-Data"
+              ],
+              "enforcement": {
+                "action": "auditOnly",
+                "alert": {
+                  "enabled": true,
+                  "severity": "low"
+                }
+              },
+              "insiderRiskLevel": "Minor"
             }
           ]
         },
@@ -302,7 +548,7 @@
           },
           "rules": [
             {
-              "name": "Block Sensitive Data Upload to AI Sites",
+              "name": "Block Sensitive Data Upload to AI Sites - Elevated Risk",
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)",
                 "Credit Card Number"
@@ -313,6 +559,88 @@
                 "userNotification": {
                   "enabled": true,
                   "message": "Uploading sensitive data to external AI tools is prohibited. Use Microsoft Copilot for AI-assisted tasks with organizational data protection."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "high"
+                },
+                "incidentReport": {
+                  "enabled": true,
+                  "severity": "high"
+                }
+              },
+              "insiderRiskLevel": "Elevated"
+            },
+            {
+              "name": "Block Sensitive Data Upload to AI Sites - Moderate Risk",
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)",
+                "Credit Card Number"
+              ],
+              "minCount": 1,
+              "enforcement": {
+                "action": "allowWithJustification",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Uploading sensitive data to external AI tools is prohibited. Use Microsoft Copilot for AI-assisted tasks with organizational data protection."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "medium"
+                }
+              },
+              "insiderRiskLevel": "Moderate"
+            },
+            {
+              "name": "Block Sensitive Data Upload to AI Sites - Minor Risk",
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)",
+                "Credit Card Number"
+              ],
+              "minCount": 1,
+              "enforcement": {
+                "action": "auditOnly",
+                "alert": {
+                  "enabled": true,
+                  "severity": "low"
+                }
+              },
+              "insiderRiskLevel": "Minor"
+            }
+          ]
+        },
+        {
+          "name": "DSPM for AI - Protect sensitive data from Copilot processing",
+          "policyMode": "labelRestriction",
+          "locations": [
+            "Copilot"
+          ],
+          "labels": [
+            "PVShadowAI-Highly-Confidential-All-Employees",
+            "PVShadowAI-Highly-Confidential-AI-Internal-Use",
+            "PVShadowAI-Highly-Confidential-AI-Restricted-Recipients",
+            "PVShadowAI-Highly-Confidential-AI-Blocked-from-External-Tools",
+            "PVShadowAI-Highly-Confidential-AI-Regulated-Data",
+            "PVShadowAI-Confidential-AI-Blocked-from-External-Tools",
+            "PVShadowAI-Confidential-AI-Regulated-Data"
+          ],
+          "rules": [
+            {
+              "name": "Restrict Copilot access to labeled documents and emails",
+              "labels": [
+                "PVShadowAI-Highly-Confidential-All-Employees",
+                "PVShadowAI-Highly-Confidential-AI-Internal-Use",
+                "PVShadowAI-Highly-Confidential-AI-Restricted-Recipients",
+                "PVShadowAI-Highly-Confidential-AI-Blocked-from-External-Tools",
+                "PVShadowAI-Highly-Confidential-AI-Regulated-Data",
+                "PVShadowAI-Confidential-AI-Blocked-from-External-Tools",
+                "PVShadowAI-Confidential-AI-Regulated-Data"
+              ],
+              "enforcement": {
+                "action": "block",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Copilot cannot process this content because it has a sensitivity label that restricts AI processing. Remove or downgrade the label if Copilot access is required."
                 },
                 "alert": {
                   "enabled": true,
@@ -539,6 +867,28 @@
             "OneDrive"
           ]
         }
+      ],
+      "labels": [
+        {
+          "name": "AI Interaction Evidence",
+          "retentionDays": 365,
+          "retentionAction": "retainOnly",
+          "locations": [
+            "Exchange",
+            "SharePoint",
+            "OneDrive"
+          ]
+        },
+        {
+          "name": "AI Incident Record",
+          "retentionDays": 1095,
+          "retentionAction": "retainAndDelete",
+          "locations": [
+            "Exchange",
+            "SharePoint",
+            "OneDrive"
+          ]
+        }
       ]
     },
     "eDiscovery": {
@@ -561,44 +911,8 @@
       "enabled": true,
       "policies": [
         {
-          "name": "External AI Prompt Sharing Monitoring",
-          "reviewers": [
-            "pdesai"
-          ],
-          "supervisedUsers": [
-            "aharper",
-            "vcho",
-            "etran"
-          ],
-          "direction": "Both",
-          "condition": "data sharing"
-        },
-        {
-          "name": "Sensitive Business Data in AI Prompts",
-          "reviewers": [
-            "lramirez"
-          ],
-          "supervisedUsers": [
-            "vcho",
-            "pdesai",
-            "etran"
-          ],
-          "direction": "Both",
-          "condition": "sensitive business data"
-        },
-        {
-          "name": "Compliance Violations in AI Content",
-          "reviewers": [
-            "etran"
-          ],
-          "supervisedUsers": [
-            "aharper",
-            "vcho",
-            "lramirez",
-            "etran"
-          ],
-          "direction": "Both",
-          "condition": "compliance violations"
+          "name": "Shadow AI Activity Collection",
+          "description": "DSPM for AI collection policy — captures AI prompt and response activity across Copilot experiences for compliance review."
         }
       ]
     },
@@ -627,6 +941,19 @@
           "priorityUserGroups": [
             "PVShadowAI-AI-Governance",
             "PVShadowAI-Privileged-Data-Owners"
+          ]
+        },
+        {
+          "name": "DSPM for AI - Detect risky AI usage",
+          "template": "Risky AI usage",
+          "thresholds": "BuiltIn",
+          "indicators": [
+            "BrowsedToGenerativeAISites",
+            "EnteringRiskyPromptInCopilot",
+            "ReceivingSensitiveResponseFromCopilot",
+            "EnteringRiskyPromptInEnterpriseAIApps",
+            "ReceivingSensitiveResponseFromEnterpriseAIApps",
+            "EnteringRiskyPromptInOtherAIApps"
           ]
         }
       ]
@@ -670,19 +997,19 @@
           "from": "vcho",
           "to": "aharper",
           "subject": "RE: Quick way to summarize campaign data",
-          "body": "That sounds useful but be careful \u2014 I heard the security team is cracking down on external AI tools. I tried to upload a forecast to one of those chatbot sites last week and the browser blocked it. Maybe stick to Copilot for now?"
+          "body": "That sounds useful but be careful — I heard the security team is cracking down on external AI tools. I tried to upload a forecast to one of those chatbot sites last week and the browser blocked it. Maybe stick to Copilot for now?"
         },
         {
           "from": "aharper",
           "to": "vcho",
           "subject": "RE: RE: Quick way to summarize campaign data",
-          "body": "Good call. I already used the external AI service to paste the customer data export though \u2014 it generated a great segmentation analysis. Hopefully that is fine since it was just names and IDs, nothing too sensitive."
+          "body": "Good call. I already used the external AI service to paste the customer data export though — it generated a great segmentation analysis. Hopefully that is fine since it was just names and IDs, nothing too sensitive."
         },
         {
           "from": "etran",
           "to": "pdesai",
           "subject": "DLP alert - potential data exposure via external AI",
-          "body": "Priya, we got a DLP alert this morning. Looks like someone in Marketing tried to paste sensitive customer data into a public AI chatbot. The content included PII fields \u2014 customer names and ID numbers. I have placed a hold on the mailbox. Can you review and advise on next steps?"
+          "body": "Priya, we got a DLP alert this morning. Looks like someone in Marketing tried to paste sensitive customer data into a public AI chatbot. The content included PII fields — customer names and ID numbers. I have placed a hold on the mailbox. Can you review and advise on next steps?"
         },
         {
           "from": "pdesai",

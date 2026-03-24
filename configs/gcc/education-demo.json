@@ -133,23 +133,23 @@
       "labels": [
         {
           "name": "FERPA Protected",
-          "tooltip": "Student education records protected under FERPA (20 U.S.C. \u00a71232g)",
+          "tooltip": "Student education records protected under FERPA (20 U.S.C. §1232g)",
           "color": "#D13438",
           "sublabels": [
             {
               "name": "Education Records",
-              "tooltip": "Student education records \u2014 disclosure restricted under FERPA",
+              "tooltip": "Student education records — disclosure restricted under FERPA",
               "encryption": false,
               "contentMarking": {
-                "footerText": "FERPA: Contains student education records \u2014 disclosure restricted under 20 U.S.C. \u00a71232g"
+                "footerText": "FERPA: Contains student education records — disclosure restricted under 20 U.S.C. §1232g"
               }
             },
             {
               "name": "Restricted PII",
-              "tooltip": "Encrypted student PII \u2014 requires written consent or qualifying exception",
+              "tooltip": "Encrypted student PII — requires written consent or qualifying exception",
               "encryption": true,
               "contentMarking": {
-                "headerText": "FERPA RESTRICTED \u2014 Student PII",
+                "headerText": "FERPA RESTRICTED — Student PII",
                 "footerText": "Do not disclose without written consent or qualifying FERPA exception"
               }
             }
@@ -165,7 +165,7 @@
               "tooltip": "De-identified research data approved under IRB protocol",
               "encryption": false,
               "contentMarking": {
-                "footerText": "Research data \u2014 IRB approved protocol, de-identified per FERPA"
+                "footerText": "Research data — IRB approved protocol, de-identified per FERPA"
               }
             },
             {
@@ -173,8 +173,8 @@
               "tooltip": "Encrypted research data containing student-identifiable information",
               "encryption": true,
               "contentMarking": {
-                "headerText": "RESEARCH \u2014 Contains Student-Identifiable Data",
-                "footerText": "FERPA consent required \u2014 contact IRB before sharing"
+                "headerText": "RESEARCH — Contains Student-Identifiable Data",
+                "footerText": "FERPA consent required — contact IRB before sharing"
               }
             }
           ]
@@ -236,16 +236,8 @@
       "enabled": true,
       "policies": [
         {
-          "name": "Student Data Handling Monitoring",
-          "reviewers": [
-            "dchen@MngEnvMCAP648165.onmicrosoft.com"
-          ],
-          "supervisedUsers": [
-            "mtorres@MngEnvMCAP648165.onmicrosoft.com",
-            "jpark@MngEnvMCAP648165.onmicrosoft.com"
-          ],
-          "direction": "Both",
-          "condition": "offensive language"
+          "name": "Student Data Handling Collection",
+          "description": "DSPM for AI collection policy — captures AI activity for student data compliance review."
         }
       ]
     },
@@ -268,7 +260,7 @@
           "from": "mtorres",
           "to": "hcartwright",
           "subject": "Grade Change Request - Student ID 2024-38571",
-          "body": "Dr. Cartwright, we received a grade change request for student ID 2024-38571. The student's SSN on file is 341-82-6754 and their current cumulative GPA is 3.47. The request is to change BIO-301 from a C+ to a B based on a grading error identified by the instructor. The student's FERPA directory information flag is set to restricted \u2014 no disclosure without written consent. Please approve or deny in the academic records system."
+          "body": "Dr. Cartwright, we received a grade change request for student ID 2024-38571. The student's SSN on file is 341-82-6754 and their current cumulative GPA is 3.47. The request is to change BIO-301 from a C+ to a B based on a grading error identified by the instructor. The student's FERPA directory information flag is set to restricted — no disclosure without written consent. Please approve or deny in the academic records system."
         },
         {
           "from": "jpark",
@@ -286,7 +278,7 @@
           "from": "sokonkwo",
           "to": "mtorres",
           "subject": "FERPA Complaint - Unauthorized Grade Disclosure",
-          "body": "Michael, we received a FERPA complaint from a student (age 19, eligible student under FERPA) alleging that a faculty member disclosed their grades to their parent without authorization. Under FERPA, once a student turns 18 or attends a postsecondary institution, rights transfer to the student \u2014 parental access requires written consent. The parent called the department directly and was given the student's semester grades. We need to investigate which faculty member disclosed and document the incident for our FERPA compliance file."
+          "body": "Michael, we received a FERPA complaint from a student (age 19, eligible student under FERPA) alleging that a faculty member disclosed their grades to their parent without authorization. Under FERPA, once a student turns 18 or attends a postsecondary institution, rights transfer to the student — parental access requires written consent. The parent called the department directly and was given the student's semester grades. We need to investigate which faculty member disclosed and document the incident for our FERPA compliance file."
         }
       ]
     }

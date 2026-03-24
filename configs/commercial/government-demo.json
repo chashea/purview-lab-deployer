@@ -138,39 +138,39 @@
           "sublabels": [
             {
               "name": "Basic",
-              "tooltip": "CUI Basic \u2014 standard handling requirements",
+              "tooltip": "CUI Basic — standard handling requirements",
               "encryption": false,
               "contentMarking": {
-                "footerText": "CUI \u2014 Handle in accordance with 32 CFR Part 2002"
+                "footerText": "CUI — Handle in accordance with 32 CFR Part 2002"
               }
             },
             {
               "name": "Specified",
-              "tooltip": "CUI Specified \u2014 export controlled, additional handling required",
+              "tooltip": "CUI Specified — export controlled, additional handling required",
               "encryption": true,
               "contentMarking": {
-                "headerText": "CUI//SP-EXPT \u2014 Export Controlled",
-                "footerText": "Dissemination restricted per ITAR/EAR \u2014 authorized personnel only"
+                "headerText": "CUI//SP-EXPT — Export Controlled",
+                "footerText": "Dissemination restricted per ITAR/EAR — authorized personnel only"
               }
             }
           ]
         },
         {
           "name": "FOUO",
-          "tooltip": "For Official Use Only \u2014 not for public release",
+          "tooltip": "For Official Use Only — not for public release",
           "color": "#0078D4",
           "sublabels": [
             {
               "name": "Standard",
-              "tooltip": "FOUO Standard \u2014 official use only",
+              "tooltip": "FOUO Standard — official use only",
               "encryption": false,
               "contentMarking": {
-                "footerText": "FOR OFFICIAL USE ONLY \u2014 Not for public release"
+                "footerText": "FOR OFFICIAL USE ONLY — Not for public release"
               }
             },
             {
               "name": "Law Enforcement Sensitive",
-              "tooltip": "FOUO/LES \u2014 restricted to law enforcement personnel",
+              "tooltip": "FOUO/LES — restricted to law enforcement personnel",
               "encryption": true,
               "contentMarking": {
                 "headerText": "FOUO//LES",
@@ -236,16 +236,8 @@
       "enabled": true,
       "policies": [
         {
-          "name": "Sensitive Communications Monitoring",
-          "reviewers": [
-            "cwells@MngEnvMCAP648165.onmicrosoft.com"
-          ],
-          "supervisedUsers": [
-            "bcalloway@MngEnvMCAP648165.onmicrosoft.com",
-            "psharma@MngEnvMCAP648165.onmicrosoft.com"
-          ],
-          "direction": "Both",
-          "condition": "offensive language"
+          "name": "Sensitive Communications Collection",
+          "description": "DSPM for AI collection policy — captures AI activity for government communications compliance review."
         }
       ]
     },

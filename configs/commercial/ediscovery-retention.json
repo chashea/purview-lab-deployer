@@ -42,20 +42,20 @@
         {
           "name": "Financial Records Retention",
           "retentionDays": 2555,
-          "action": "retainAndDelete",
           "locations": [
             "Exchange",
             "SharePoint"
-          ]
+          ],
+          "retentionAction": "retainAndDelete"
         },
         {
           "name": "Legal Hold Policy",
           "retentionDays": 365,
-          "action": "retainOnly",
           "locations": [
             "Exchange",
             "OneDrive"
-          ]
+          ],
+          "retentionAction": "retainOnly"
         }
       ]
     },

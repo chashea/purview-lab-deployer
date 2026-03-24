@@ -24,7 +24,6 @@ Each profile is a self-contained deployment with its own prefix, config, and lif
 | Module | Automation | What it does |
 |--------|------------|--------------|
 | TestUsers | Full | Entra ID users and groups |
-| CustomSensitiveInfoTypes | Full | Custom SIT patterns |
 | SensitivityLabels | Full | Labels and auto-label policies |
 | DLP | Full | Policies and rules with enforcement config |
 | Retention | Full | Retention policies |

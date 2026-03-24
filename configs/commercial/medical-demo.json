@@ -201,7 +201,7 @@
           "sublabels": [
             {
               "name": "Internal Clinical",
-              "tooltip": "PHI for internal clinical use \u2014 no encryption applied",
+              "tooltip": "PHI for internal clinical use — no encryption applied",
               "encryption": false,
               "contentMarking": {
                 "footerText": "Classification: PHI - Internal Clinical Use Only"
@@ -209,7 +209,7 @@
             },
             {
               "name": "Restricted",
-              "tooltip": "Encrypted PHI \u2014 restricted to authorized care team members",
+              "tooltip": "Encrypted PHI — restricted to authorized care team members",
               "encryption": true,
               "contentMarking": {
                 "headerText": "PROTECTED HEALTH INFORMATION - Restricted",
@@ -301,18 +301,8 @@
       "enabled": true,
       "policies": [
         {
-          "name": "Clinical Communication Monitoring",
-          "reviewers": [
-            "ldrummond@MngEnvMCAP648165.onmicrosoft.com",
-            "nbennett@MngEnvMCAP648165.onmicrosoft.com"
-          ],
-          "supervisedUsers": [
-            "spatel@MngEnvMCAP648165.onmicrosoft.com",
-            "knakamura@MngEnvMCAP648165.onmicrosoft.com",
-            "ayusuf@MngEnvMCAP648165.onmicrosoft.com"
-          ],
-          "direction": "Both",
-          "condition": "offensive language"
+          "name": "Clinical Communication Collection",
+          "description": "DSPM for AI collection policy — captures AI activity for clinical communication compliance review."
         }
       ]
     },
@@ -347,13 +337,13 @@
           "from": "spatel",
           "to": "rfeng",
           "subject": "Clinical Trial Data Transfer",
-          "body": "Robert, we need to transfer the Phase II clinical trial dataset to the research partner at Metro University. The dataset includes 847 patient records with identifiers \u2014 names, DOBs, and treatment outcomes. IRB protocol #CT-2026-0142 covers this transfer but we need a signed BAA from Metro before proceeding. Can you coordinate with legal on the data sharing agreement?"
+          "body": "Robert, we need to transfer the Phase II clinical trial dataset to the research partner at Metro University. The dataset includes 847 patient records with identifiers — names, DOBs, and treatment outcomes. IRB protocol #CT-2026-0142 covers this transfer but we need a signed BAA from Metro before proceeding. Can you coordinate with legal on the data sharing agreement?"
         },
         {
           "from": "ldrummond",
           "to": "spatel",
           "subject": "HIPAA Audit Finding - Potential PHI Exposure",
-          "body": "Dr. Patel, during our quarterly HIPAA audit we identified unauthorized access to the EHR system. Between March 1-8, an account accessed 312 patient records outside normal workflow patterns. The access originated from the radiology department terminal. This constitutes a potential breach under HIPAA \u00a7164.402. We need to initiate the breach investigation protocol and assess whether patient notification is required under the 60-day rule. Please schedule a meeting with the incident response team this week."
+          "body": "Dr. Patel, during our quarterly HIPAA audit we identified unauthorized access to the EHR system. Between March 1-8, an account accessed 312 patient records outside normal workflow patterns. The access originated from the radiology department terminal. This constitutes a potential breach under HIPAA §164.402. We need to initiate the breach investigation protocol and assess whether patient notification is required under the 60-day rule. Please schedule a meeting with the incident response team this week."
         },
         {
           "from": "ayusuf",

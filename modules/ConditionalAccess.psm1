@@ -55,6 +55,9 @@ function Deploy-ConditionalAccess {
             elseif ($policy.action -eq 'mfa') {
                 $grantControls['BuiltInControls'] = @('mfa')
             }
+            elseif ($policy.action -eq 'compliantDevice') {
+                $grantControls['BuiltInControls'] = @('compliantDevice')
+            }
 
             # Use report-only mode for lab safety
             $state = if ($policy.PSObject.Properties['state'] -and $policy.state) {

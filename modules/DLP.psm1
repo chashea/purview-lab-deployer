@@ -277,29 +277,47 @@ function Get-LabDlpRuleOptionalParameters {
         }
     }
 
+    # User notifications — default to enabled when enforcement exists
+    $notificationEnabled = $false
+    $notificationMessage = $null
     if (($enforcement.PSObject.Properties.Name -contains 'userNotification') -and $null -ne $enforcement.userNotification) {
         $notification = $enforcement.userNotification
-        if (($notification.PSObject.Properties.Name -contains 'enabled') -and [bool]$notification.enabled) {
-            $notifyParam = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('NotifyUser', 'UserNotificationEnabled')
-            if ($notifyParam) {
-                $optionalParams[$notifyParam] = $true
-            }
-            $message = if (($notification.PSObject.Properties.Name -contains 'message') -and -not [string]::IsNullOrWhiteSpace([string]$notification.message)) {
-                [string]$notification.message
-            }
-            else {
-                $null
-            }
-            if ($message) {
-                $messageParam = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('NotifyUserMessage', 'UserNotificationText', 'PolicyTipCustomText')
-                if ($messageParam) {
-                    $optionalParams[$messageParam] = $message
-                }
-                else {
-                    Write-LabLog -Message "Rule '$RuleName' requested user notification text, but '$($CommandInfo.Name)' has no supported message parameter." -Level Warning
-                }
-            }
+        $notificationEnabled = -not (($notification.PSObject.Properties.Name -contains 'enabled') -and -not [bool]$notification.enabled)
+        if (($notification.PSObject.Properties.Name -contains 'message') -and -not [string]::IsNullOrWhiteSpace([string]$notification.message)) {
+            $notificationMessage = [string]$notification.message
         }
+    }
+    else {
+        # Default: enable notifications when enforcement is configured
+        $notificationEnabled = $true
+    }
+
+    $defaultPolicyTip = 'This content matches a DLP policy. Contact your compliance team if you believe this is in error.'
+    if (-not $notificationMessage) {
+        $notificationMessage = $defaultPolicyTip
+    }
+
+    if ($notificationEnabled) {
+        $notifyParam = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('NotifyUser', 'UserNotificationEnabled')
+        if ($notifyParam) {
+            $optionalParams[$notifyParam] = $true
+        }
+        $messageParam = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('NotifyUserMessage', 'UserNotificationText')
+        if ($messageParam) {
+            $optionalParams[$messageParam] = $notificationMessage
+        }
+    }
+
+    # Policy tip — set separately from email notification
+    $policyTipText = if (($enforcement.PSObject.Properties.Name -contains 'policyTip') -and -not [string]::IsNullOrWhiteSpace([string]$enforcement.policyTip)) {
+        [string]$enforcement.policyTip
+    }
+    else {
+        $notificationMessage
+    }
+    $policyTipParam = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('NotifyPolicyTipCustomText', 'PolicyTipCustomText')
+    if ($policyTipParam) {
+        $optionalParams[$policyTipParam] = $policyTipText
     }
 
     if (($enforcement.PSObject.Properties.Name -contains 'alert') -and $null -ne $enforcement.alert) {
