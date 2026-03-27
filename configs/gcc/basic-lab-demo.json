@@ -2,7 +2,7 @@
   "$schema": "./_schema.json",
   "labName": "Basic Purview Lab",
   "prefix": "PVLab",
-  "domain": "MngEnvMCAP648165.onmicrosoft.com",
+  "domain": "MngEnvMCAP659995.onmicrosoft.com",
   "workloads": {
     "testUsers": {
       "enabled": true,
@@ -342,10 +342,10 @@
           "name": "Data-Breach-Investigation",
           "description": "Investigation into potential data breach involving unauthorized access to confidential financial records and PII",
           "custodians": [
-            "mchen@MngEnvMCAP648165.onmicrosoft.com",
-            "jblake@MngEnvMCAP648165.onmicrosoft.com",
-            "pnair@MngEnvMCAP648165.onmicrosoft.com",
-            "msullivan@MngEnvMCAP648165.onmicrosoft.com"
+            "mchen@MngEnvMCAP659995.onmicrosoft.com",
+            "jblake@MngEnvMCAP659995.onmicrosoft.com",
+            "pnair@MngEnvMCAP659995.onmicrosoft.com",
+            "msullivan@MngEnvMCAP659995.onmicrosoft.com"
           ],
           "holdQuery": "confidential OR classified",
           "searchQuery": "breach OR incident"

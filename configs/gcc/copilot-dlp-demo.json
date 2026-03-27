@@ -2,7 +2,7 @@
   "$schema": "./_schema.json",
   "labName": "Copilot DLP Guardrails Demo",
   "prefix": "PVCopilotDLP",
-  "domain": "MngEnvMCAP648165.onmicrosoft.com",
+  "domain": "MngEnvMCAP659995.onmicrosoft.com",
   "workloads": {
     "testUsers": {
       "enabled": true,

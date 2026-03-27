@@ -2,7 +2,7 @@
   "$schema": "./_schema.json",
   "labName": "Shadow AI Prevention Demo",
   "prefix": "PVShadowAI",
-  "domain": "MngEnvMCAP648165.onmicrosoft.com",
+  "domain": "MngEnvMCAP659995.onmicrosoft.com",
   "workloads": {
     "testUsers": {
       "enabled": true,
@@ -326,7 +326,7 @@
           ],
           "rules": [
             {
-              "name": "Detect Medical Terms in AI Upload Attempts - Elevated Risk",
+              "name": "Medical in AI Upload - Elevated",
               "sensitiveInfoTypes": [
                 "All Medical Terms And Conditions"
               ],
@@ -349,7 +349,7 @@
               "insiderRiskLevel": "Elevated"
             },
             {
-              "name": "Detect Medical Terms in AI Upload Attempts - Moderate Risk",
+              "name": "Medical in AI Upload - Moderate",
               "sensitiveInfoTypes": [
                 "All Medical Terms And Conditions"
               ],
@@ -368,7 +368,7 @@
               "insiderRiskLevel": "Moderate"
             },
             {
-              "name": "Detect Medical Terms in AI Upload Attempts - Minor Risk",
+              "name": "Medical in AI Upload - Minor",
               "sensitiveInfoTypes": [
                 "All Medical Terms And Conditions"
               ],
@@ -383,7 +383,7 @@
               "insiderRiskLevel": "Minor"
             },
             {
-              "name": "Detect Credit Cards in External AI Sharing - Elevated Risk",
+              "name": "CC in AI Sharing - Elevated",
               "sensitiveInfoTypes": [
                 "Credit Card Number"
               ],
@@ -406,7 +406,7 @@
               "insiderRiskLevel": "Elevated"
             },
             {
-              "name": "Detect Credit Cards in External AI Sharing - Moderate Risk",
+              "name": "CC in AI Sharing - Moderate",
               "sensitiveInfoTypes": [
                 "Credit Card Number"
               ],
@@ -425,7 +425,7 @@
               "insiderRiskLevel": "Moderate"
             },
             {
-              "name": "Detect Credit Cards in External AI Sharing - Minor Risk",
+              "name": "CC in AI Sharing - Minor",
               "sensitiveInfoTypes": [
                 "Credit Card Number"
               ],
@@ -457,7 +457,7 @@
           ],
           "rules": [
             {
-              "name": "Restrict Labeled Data in AI Destinations - Elevated Risk",
+              "name": "Labeled Data AI - Elevated",
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)"
               ],
@@ -484,7 +484,7 @@
               "insiderRiskLevel": "Elevated"
             },
             {
-              "name": "Restrict Labeled Data in AI Destinations - Moderate Risk",
+              "name": "Labeled Data AI - Moderate",
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)"
               ],
@@ -507,7 +507,7 @@
               "insiderRiskLevel": "Moderate"
             },
             {
-              "name": "Restrict Labeled Data in AI Destinations - Minor Risk",
+              "name": "Labeled Data AI - Minor",
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)"
               ],
@@ -548,7 +548,7 @@
           },
           "rules": [
             {
-              "name": "Block Sensitive Data Upload to AI Sites - Elevated Risk",
+              "name": "Block AI Upload - Elevated",
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)",
                 "Credit Card Number"
@@ -572,7 +572,7 @@
               "insiderRiskLevel": "Elevated"
             },
             {
-              "name": "Block Sensitive Data Upload to AI Sites - Moderate Risk",
+              "name": "Block AI Upload - Moderate",
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)",
                 "Credit Card Number"
@@ -610,7 +610,7 @@
           ]
         },
         {
-          "name": "DSPM for AI - Protect sensitive data from Copilot processing",
+          "name": "DSPM AI - Copilot Data Protection",
           "policyMode": "labelRestriction",
           "locations": [
             "Copilot"
@@ -626,7 +626,7 @@
           ],
           "rules": [
             {
-              "name": "Restrict Copilot access to labeled documents and emails",
+              "name": "Restrict Copilot Labeled Content",
               "labels": [
                 "PVShadowAI-Highly-Confidential-All-Employees",
                 "PVShadowAI-Highly-Confidential-AI-Internal-Use",
@@ -833,7 +833,7 @@
       ],
       "autoLabelPolicies": [
         {
-          "name": "Auto-label SSN as Highly Confidential AI Regulated Data",
+          "name": "Auto-label SSN as HC Regulated",
           "labelName": "Highly Confidential\\AI Regulated Data",
           "sensitiveInfoTypes": [
             "U.S. Social Security Number (SSN)"
@@ -903,7 +903,26 @@
             "pdesai"
           ],
           "holdQuery": "\"AI\" OR \"copilot\" OR \"chatbot\" OR \"prompt\"",
-          "searchQuery": "\"public AI\" OR \"external AI\" OR \"paste\" OR \"upload\""
+          "searchQuery": "\"public AI\" OR \"external AI\" OR \"paste\" OR \"upload\"",
+          "searches": [
+            {
+              "name": "AI Tool Activity Search",
+              "contentQuery": "\"public AI\" OR \"external AI\" OR \"paste\" OR \"upload\"",
+              "dataSourceScopes": "allCaseContent"
+            },
+            {
+              "name": "Sensitive Data in AI Prompts",
+              "contentQuery": "\"SSN\" OR \"social security\" OR \"credit card\" OR \"api key\" OR \"password\"",
+              "dataSourceScopes": "allCaseContent"
+            }
+          ],
+          "reviewSets": [
+            {
+              "name": "Shadow AI Evidence Collection",
+              "description": "Evidence of sensitive data exposure through unapproved AI tool usage",
+              "sourceSearch": "AI Tool Activity Search"
+            }
+          ]
         }
       ]
     },

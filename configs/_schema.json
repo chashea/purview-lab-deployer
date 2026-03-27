@@ -486,10 +486,64 @@
                     "description": "Array of UPNs"
                   },
                   "holdQuery": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Legacy field — in Premium mode, custodians are placed on hold directly. This value is preserved for reference."
                   },
                   "searchQuery": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Default KQL search query. Used as fallback if no searches array is provided."
+                  },
+                  "searches": {
+                    "type": "array",
+                    "description": "eDiscovery Premium searches to create within the case",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "name",
+                        "contentQuery"
+                      ],
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "contentQuery": {
+                          "type": "string",
+                          "description": "KQL query for the search"
+                        },
+                        "dataSourceScopes": {
+                          "type": "string",
+                          "enum": [
+                            "allTenantSources",
+                            "allCaseContent",
+                            "allCaseCustodians"
+                          ],
+                          "default": "allCaseContent",
+                          "description": "Scope of data sources to search"
+                        }
+                      }
+                    }
+                  },
+                  "reviewSets": {
+                    "type": "array",
+                    "description": "eDiscovery Premium review sets to create within the case",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "name"
+                      ],
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string"
+                        },
+                        "sourceSearch": {
+                          "type": "string",
+                          "description": "Name of a search in this case whose results are automatically added to this review set"
+                        }
+                      }
+                    }
                   }
                 }
               }

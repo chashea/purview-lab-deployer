@@ -14,10 +14,12 @@ Three deployment profiles: basic-lab, shadow-ai, copilot-dlp — each with comme
 - ExchangeOnlineManagement >= 3.0
 - Microsoft.Graph SDK (Users, Groups, Authentication)
 
-## Tenant
+## Tenants
 
-- ID: `f1b92d41-6d54-4102-9dd9-4208451314df`
-- Domain: `MngEnvMCAP648165.onmicrosoft.com`
+| Environment | Tenant ID | Domain |
+|---|---|---|
+| **Commercial** | `f1b92d41-6d54-4102-9dd9-4208451314df` | `MngEnvMCAP648165.onmicrosoft.com` |
+| **GCC** | `119e9fe0-c9d3-4a9d-be8b-c82d03fd0cd4` | `MngEnvMCAP659995.onmicrosoft.com` |
 
 ## Commands
 

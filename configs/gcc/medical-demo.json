@@ -2,7 +2,7 @@
   "$schema": "./_schema.json",
   "labName": "Medical Compliance Demo",
   "prefix": "PVMed",
-  "domain": "MngEnvMCAP648165.onmicrosoft.com",
+  "domain": "MngEnvMCAP659995.onmicrosoft.com",
   "workloads": {
     "testUsers": {
       "enabled": true,
@@ -287,10 +287,10 @@
           "name": "Patient-Data-Breach-Investigation",
           "description": "Investigation into unauthorized access to patient medical records and PHI",
           "custodians": [
-            "evasquez@MngEnvMCAP648165.onmicrosoft.com",
-            "knakamura@MngEnvMCAP648165.onmicrosoft.com",
-            "ayusuf@MngEnvMCAP648165.onmicrosoft.com",
-            "nbennett@MngEnvMCAP648165.onmicrosoft.com"
+            "evasquez@MngEnvMCAP659995.onmicrosoft.com",
+            "knakamura@MngEnvMCAP659995.onmicrosoft.com",
+            "ayusuf@MngEnvMCAP659995.onmicrosoft.com",
+            "nbennett@MngEnvMCAP659995.onmicrosoft.com"
           ],
           "holdQuery": "\"patient record\" OR \"medical history\" OR PHI",
           "searchQuery": "\"unauthorized access\" OR breach OR HIPAA"

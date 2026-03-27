@@ -1,7 +1,7 @@
 {
   "labName": "eDiscovery & Retention Demo",
   "prefix": "PVLab",
-  "domain": "MngEnvMCAP648165.onmicrosoft.com",
+  "domain": "MngEnvMCAP659995.onmicrosoft.com",
   "workloads": {
     "testUsers": {
       "enabled": true,
@@ -66,8 +66,8 @@
           "name": "Data-Breach-Investigation",
           "description": "Investigation into potential data breach involving financial records",
           "custodians": [
-            "pvlab.emily@MngEnvMCAP648165.onmicrosoft.com",
-            "pvlab.robert@MngEnvMCAP648165.onmicrosoft.com"
+            "pvlab.emily@MngEnvMCAP659995.onmicrosoft.com",
+            "pvlab.robert@MngEnvMCAP659995.onmicrosoft.com"
           ],
           "holdQuery": "confidential OR classified OR \"data breach\"",
           "searchQuery": "breach OR incident OR unauthorized OR \"data loss\""

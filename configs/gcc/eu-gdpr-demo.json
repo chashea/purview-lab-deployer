@@ -2,7 +2,7 @@
   "$schema": "./_schema.json",
   "labName": "EU GDPR Compliance Demo",
   "prefix": "PVEU",
-  "domain": "MngEnvMCAP648165.onmicrosoft.com",
+  "domain": "MngEnvMCAP659995.onmicrosoft.com",
   "workloads": {
     "testUsers": {
       "enabled": true,
@@ -223,8 +223,8 @@
           "name": "DSAR-Cross-Border-Transfer",
           "description": "Data subject access request involving cross-border transfer of EU personal data to third-party processor",
           "custodians": [
-            "klindstrom@MngEnvMCAP648165.onmicrosoft.com",
-            "arodrigues@MngEnvMCAP648165.onmicrosoft.com"
+            "klindstrom@MngEnvMCAP659995.onmicrosoft.com",
+            "arodrigues@MngEnvMCAP659995.onmicrosoft.com"
           ],
           "holdQuery": "\"personal data\" OR \"data subject\" OR GDPR",
           "searchQuery": "\"data transfer\" OR \"third party\" OR \"processor agreement\""

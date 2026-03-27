@@ -589,21 +589,23 @@ function Deploy-SensitivityLabels {
                 }
 
                 $labelFound = $false
-                for ($attempt = 1; $attempt -le 3; $attempt++) {
+                $maxAttempts = 12
+                $waitSeconds = 30
+                for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
                     try {
                         Get-Label -Identity $targetLabel -ErrorAction Stop | Out-Null
                         $labelFound = $true
                         break
                     }
                     catch {
-                        if ($attempt -lt 3) {
-                            Write-LabLog "Label '$targetLabel' not yet available (attempt $attempt/3). Waiting 10 seconds..." -Level Info
-                            Start-Sleep -Seconds 10
+                        if ($attempt -lt $maxAttempts) {
+                            Write-LabLog "Label '$targetLabel' not yet available (attempt $attempt/$maxAttempts). Waiting $waitSeconds seconds..." -Level Info
+                            Start-Sleep -Seconds $waitSeconds
                         }
                     }
                 }
                 if (-not $labelFound) {
-                    Write-LabLog "Skipping auto-label policy '$policyName': target label '$targetLabel' not found after 3 attempts." -Level Warning
+                    Write-LabLog "Skipping auto-label policy '$policyName': target label '$targetLabel' not found after $maxAttempts attempts ($([math]::Round($maxAttempts * $waitSeconds / 60)) min)." -Level Warning
                     continue
                 }
 

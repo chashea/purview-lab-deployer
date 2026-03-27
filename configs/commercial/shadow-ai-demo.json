@@ -203,7 +203,7 @@
           ],
           "rules": [
             {
-              "name": "Detect Bank Accounts in AI Content - Elevated Risk",
+              "name": "Bank Acct in AI - Elevated",
               "sensitiveInfoTypes": [
                 "U.S. Bank Account Number"
               ],
@@ -226,7 +226,7 @@
               "insiderRiskLevel": "Elevated"
             },
             {
-              "name": "Detect Bank Accounts in AI Content - Moderate Risk",
+              "name": "Bank Acct in AI - Moderate",
               "sensitiveInfoTypes": [
                 "U.S. Bank Account Number"
               ],
@@ -245,7 +245,7 @@
               "insiderRiskLevel": "Moderate"
             },
             {
-              "name": "Detect Bank Accounts in AI Content - Minor Risk",
+              "name": "Bank Acct in AI - Minor",
               "sensitiveInfoTypes": [
                 "U.S. Bank Account Number"
               ],
@@ -260,7 +260,7 @@
               "insiderRiskLevel": "Minor"
             },
             {
-              "name": "Detect SSNs in Payroll Discussions - Elevated Risk",
+              "name": "SSN in Payroll - Elevated",
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)"
               ],
@@ -283,7 +283,7 @@
               "insiderRiskLevel": "Elevated"
             },
             {
-              "name": "Detect SSNs in Payroll Discussions - Moderate Risk",
+              "name": "SSN in Payroll - Moderate",
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)"
               ],
@@ -302,7 +302,7 @@
               "insiderRiskLevel": "Moderate"
             },
             {
-              "name": "Detect SSNs in Payroll Discussions - Minor Risk",
+              "name": "SSN in Payroll - Minor",
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)"
               ],
@@ -592,7 +592,7 @@
               "insiderRiskLevel": "Moderate"
             },
             {
-              "name": "Block Sensitive Data Upload to AI Sites - Minor Risk",
+              "name": "Block AI Upload - Minor",
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)",
                 "Credit Card Number"
@@ -610,7 +610,7 @@
           ]
         },
         {
-          "name": "DSPM for AI - Protect sensitive data from Copilot processing",
+          "name": "DSPM AI - Copilot Data Protection",
           "policyMode": "labelRestriction",
           "locations": [
             "Copilot"
@@ -1013,7 +1013,7 @@
       ],
       "autoLabelPolicies": [
         {
-          "name": "Auto-label SSN as Highly Confidential AI Regulated Data",
+          "name": "Auto-label SSN as HC Regulated",
           "labelName": "Highly Confidential\\AI Regulated Data",
           "sensitiveInfoTypes": [
             "U.S. Social Security Number (SSN)"
@@ -1025,7 +1025,7 @@
           ]
         },
         {
-          "name": "Auto-label General PII as Confidential AI Internal Use",
+          "name": "Auto-label PII as Conf Internal",
           "labelName": "Confidential\\AI Internal Use",
           "sensitiveInfoTypes": [
             "All Full Names",
@@ -1039,7 +1039,7 @@
           ]
         },
         {
-          "name": "Auto-label Financial and Network Data as Confidential AI Regulated Data",
+          "name": "Auto-label Financial as Conf Regulated",
           "labelName": "Confidential\\AI Regulated Data",
           "sensitiveInfoTypes": [
             "Credit Card Number",
@@ -1122,7 +1122,26 @@
             "pdesai"
           ],
           "holdQuery": "\"AI\" OR \"copilot\" OR \"chatbot\" OR \"prompt\"",
-          "searchQuery": "\"public AI\" OR \"external AI\" OR \"paste\" OR \"upload\""
+          "searchQuery": "\"public AI\" OR \"external AI\" OR \"paste\" OR \"upload\"",
+          "searches": [
+            {
+              "name": "AI Tool Activity Search",
+              "contentQuery": "\"public AI\" OR \"external AI\" OR \"paste\" OR \"upload\"",
+              "dataSourceScopes": "allCaseContent"
+            },
+            {
+              "name": "Sensitive Data in AI Prompts",
+              "contentQuery": "\"SSN\" OR \"social security\" OR \"credit card\" OR \"api key\" OR \"password\"",
+              "dataSourceScopes": "allCaseContent"
+            }
+          ],
+          "reviewSets": [
+            {
+              "name": "Shadow AI Evidence Collection",
+              "description": "Evidence of sensitive data exposure through unapproved AI tool usage",
+              "sourceSearch": "AI Tool Activity Search"
+            }
+          ]
         },
         {
           "name": "AI-Data-Exfiltration-Investigation",
@@ -1132,7 +1151,26 @@
             "vcho"
           ],
           "holdQuery": "\"upload\" OR \"paste\" OR \"AI\" OR \"chatgpt\" OR \"copilot\"",
-          "searchQuery": "\"SSN\" OR \"credit card\" OR \"bank account\" OR \"confidential\" OR \"api key\""
+          "searchQuery": "\"SSN\" OR \"credit card\" OR \"bank account\" OR \"confidential\" OR \"api key\"",
+          "searches": [
+            {
+              "name": "Exfiltrated Data Search",
+              "contentQuery": "\"SSN\" OR \"credit card\" OR \"bank account\" OR \"confidential\" OR \"api key\"",
+              "dataSourceScopes": "allCaseContent"
+            },
+            {
+              "name": "File Upload Evidence",
+              "contentQuery": "\"upload\" OR \"paste\" OR \"chatgpt\" OR \"claude\" OR \"gemini\" OR \"external AI\"",
+              "dataSourceScopes": "allCaseContent"
+            }
+          ],
+          "reviewSets": [
+            {
+              "name": "Data Exfiltration Evidence",
+              "description": "Evidence of sensitive data exfiltration via AI tools including file uploads and prompt history",
+              "sourceSearch": "Exfiltrated Data Search"
+            }
+          ]
         },
         {
           "name": "Prompt-Injection-Investigation",
@@ -1142,7 +1180,21 @@
             "pdesai"
           ],
           "holdQuery": "\"jailbreak\" OR \"ignore instructions\" OR \"bypass\" OR \"prompt injection\"",
-          "searchQuery": "\"ignore previous\" OR \"act as\" OR \"pretend\" OR \"override\" OR \"system prompt\""
+          "searchQuery": "\"ignore previous\" OR \"act as\" OR \"pretend\" OR \"override\" OR \"system prompt\"",
+          "searches": [
+            {
+              "name": "Prompt Injection Attempts",
+              "contentQuery": "\"ignore previous\" OR \"act as\" OR \"pretend\" OR \"override\" OR \"system prompt\" OR \"jailbreak\"",
+              "dataSourceScopes": "allCaseContent"
+            }
+          ],
+          "reviewSets": [
+            {
+              "name": "Prompt Injection Evidence",
+              "description": "Evidence of prompt injection or jailbreak attempts targeting enterprise AI services",
+              "sourceSearch": "Prompt Injection Attempts"
+            }
+          ]
         }
       ]
     },

@@ -2,7 +2,7 @@
   "$schema": "./_schema.json",
   "labName": "Education FERPA Compliance Demo",
   "prefix": "PVEdu",
-  "domain": "MngEnvMCAP648165.onmicrosoft.com",
+  "domain": "MngEnvMCAP659995.onmicrosoft.com",
   "workloads": {
     "testUsers": {
       "enabled": true,
@@ -224,8 +224,8 @@
           "name": "Student-Data-Breach-Investigation",
           "description": "Investigation into unauthorized access to student education records and financial aid data",
           "custodians": [
-            "mtorres@MngEnvMCAP648165.onmicrosoft.com",
-            "jpark@MngEnvMCAP648165.onmicrosoft.com"
+            "mtorres@MngEnvMCAP659995.onmicrosoft.com",
+            "jpark@MngEnvMCAP659995.onmicrosoft.com"
           ],
           "holdQuery": "\"student record\" OR \"education record\" OR \"financial aid\" OR FERPA",
           "searchQuery": "\"unauthorized access\" OR breach OR \"data exposure\" OR \"third party\""

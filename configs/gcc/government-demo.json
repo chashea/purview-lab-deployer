@@ -2,7 +2,7 @@
   "$schema": "./_schema.json",
   "labName": "Government CUI Compliance Demo",
   "prefix": "PVGov",
-  "domain": "MngEnvMCAP648165.onmicrosoft.com",
+  "domain": "MngEnvMCAP659995.onmicrosoft.com",
   "workloads": {
     "testUsers": {
       "enabled": true,
@@ -224,8 +224,8 @@
           "name": "Classified-Document-Leak-Investigation",
           "description": "Investigation into unauthorized disclosure of CUI and export-controlled technical data",
           "custodians": [
-            "bcalloway@MngEnvMCAP648165.onmicrosoft.com",
-            "mgrant@MngEnvMCAP648165.onmicrosoft.com"
+            "bcalloway@MngEnvMCAP659995.onmicrosoft.com",
+            "mgrant@MngEnvMCAP659995.onmicrosoft.com"
           ],
           "holdQuery": "CUI OR classified OR \"export controlled\" OR ITAR",
           "searchQuery": "\"unauthorized disclosure\" OR leak OR \"spillage\" OR \"data exfiltration\""

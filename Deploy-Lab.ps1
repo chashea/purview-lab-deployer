@@ -720,8 +720,9 @@ try {
 
                 $caseExists = Test-DeployedEntityExists -EntityType 'eDiscovery case' -EntityName $targetCaseName -CheckAction {
                     param($name)
-                    $case = Get-ComplianceCase -Identity $name -ErrorAction Stop
-                    return [bool]$case
+                    $filter = "displayName eq '$($name -replace "'","''")'"
+                    $response = Invoke-MgGraphRequest -Method GET -Uri "/v1.0/security/cases/ediscoveryCases?`$filter=$filter" -ErrorAction Stop
+                    return ($response.value.Count -gt 0)
                 }
 
                 if (-not $caseExists) {

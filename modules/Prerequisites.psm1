@@ -57,6 +57,7 @@ function Connect-LabServices {
         'Mail.Send'
         'Organization.Read.All'
         'Policy.ReadWrite.ConditionalAccess'
+        'eDiscovery.ReadWrite.All'
     )
 
     Write-Verbose "Connecting to Security & Compliance PowerShell (tenant: $TenantId)..."
