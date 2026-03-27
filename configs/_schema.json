@@ -513,11 +513,12 @@
                         "dataSourceScopes": {
                           "type": "string",
                           "enum": [
-                            "allTenantSources",
-                            "allCaseContent",
-                            "allCaseCustodians"
+                            "allTenantMailboxes",
+                            "allTenantSites",
+                            "allCaseCustodians",
+                            "allCaseNoncustodialDataSources"
                           ],
-                          "default": "allCaseContent",
+                          "default": "allCaseCustodians",
                           "description": "Scope of data sources to search"
                         }
                       }

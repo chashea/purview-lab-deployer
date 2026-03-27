@@ -1127,12 +1127,12 @@
             {
               "name": "AI Tool Activity Search",
               "contentQuery": "\"public AI\" OR \"external AI\" OR \"paste\" OR \"upload\"",
-              "dataSourceScopes": "allCaseContent"
+              "dataSourceScopes": "allCaseCustodians"
             },
             {
               "name": "Sensitive Data in AI Prompts",
               "contentQuery": "\"SSN\" OR \"social security\" OR \"credit card\" OR \"api key\" OR \"password\"",
-              "dataSourceScopes": "allCaseContent"
+              "dataSourceScopes": "allCaseCustodians"
             }
           ],
           "reviewSets": [
@@ -1156,12 +1156,12 @@
             {
               "name": "Exfiltrated Data Search",
               "contentQuery": "\"SSN\" OR \"credit card\" OR \"bank account\" OR \"confidential\" OR \"api key\"",
-              "dataSourceScopes": "allCaseContent"
+              "dataSourceScopes": "allCaseCustodians"
             },
             {
               "name": "File Upload Evidence",
               "contentQuery": "\"upload\" OR \"paste\" OR \"chatgpt\" OR \"claude\" OR \"gemini\" OR \"external AI\"",
-              "dataSourceScopes": "allCaseContent"
+              "dataSourceScopes": "allCaseCustodians"
             }
           ],
           "reviewSets": [
@@ -1185,7 +1185,7 @@
             {
               "name": "Prompt Injection Attempts",
               "contentQuery": "\"ignore previous\" OR \"act as\" OR \"pretend\" OR \"override\" OR \"system prompt\" OR \"jailbreak\"",
-              "dataSourceScopes": "allCaseContent"
+              "dataSourceScopes": "allCaseCustodians"
             }
           ],
           "reviewSets": [

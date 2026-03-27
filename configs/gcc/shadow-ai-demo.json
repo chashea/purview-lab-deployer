@@ -908,12 +908,12 @@
             {
               "name": "AI Tool Activity Search",
               "contentQuery": "\"public AI\" OR \"external AI\" OR \"paste\" OR \"upload\"",
-              "dataSourceScopes": "allCaseContent"
+              "dataSourceScopes": "allCaseCustodians"
             },
             {
               "name": "Sensitive Data in AI Prompts",
               "contentQuery": "\"SSN\" OR \"social security\" OR \"credit card\" OR \"api key\" OR \"password\"",
-              "dataSourceScopes": "allCaseContent"
+              "dataSourceScopes": "allCaseCustodians"
             }
           ],
           "reviewSets": [

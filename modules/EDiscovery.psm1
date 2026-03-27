@@ -206,7 +206,7 @@ function Deploy-EDiscovery {
                     [PSCustomObject]@{
                         name             = "$displayName-Search"
                         contentQuery     = [string]$case.searchQuery
-                        dataSourceScopes = 'allCaseContent'
+                        dataSourceScopes = 'allCaseCustodians'
                     }
                 )
             }
@@ -232,7 +232,7 @@ function Deploy-EDiscovery {
                     if ($PSCmdlet.ShouldProcess($searchDisplayName, 'Create eDiscovery search')) {
                         try {
                             Write-LabLog -Message "Creating eDiscovery search: $searchDisplayName" -Level Info
-                            $scope = if ($searchDef.dataSourceScopes) { [string]$searchDef.dataSourceScopes } else { 'allCaseContent' }
+                            $scope = if ($searchDef.dataSourceScopes) { [string]$searchDef.dataSourceScopes } else { 'allCaseCustodians' }
                             $searchBody = @{
                                 displayName      = $searchDisplayName
                                 contentQuery     = [string]$searchDef.contentQuery
