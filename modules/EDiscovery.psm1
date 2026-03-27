@@ -6,7 +6,7 @@
     Uses Microsoft Graph API (/v1.0/security/cases/ediscoveryCases).
 #>
 
-$script:EdiscoveryBaseUri = '/v1.0/security/cases/ediscoveryCases'
+$script:EDiscBaseUri = '/v1.0/security/cases/ediscoveryCases'
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -17,7 +17,7 @@ function Get-EdiscoveryCaseByName {
         [string]$DisplayName
     )
     $filter = "displayName eq '$($DisplayName -replace "'","''")'"
-    $response = Invoke-MgGraphRequest -Method GET -Uri "$script:EdiscoveryBaseUri?`$filter=$filter" -ErrorAction Stop
+    $response = Invoke-MgGraphRequest -Method GET -Uri "$($script:EDiscBaseUri)?`$filter=$filter" -ErrorAction Stop
     return ($response.value | Select-Object -First 1)
 }
 
@@ -116,7 +116,7 @@ function Deploy-EDiscovery {
                     description = [string]$case.description
                     externalId  = $Config.prefix
                 }
-                $created = Invoke-MgGraphRequest -Method POST -Uri $script:EdiscoveryBaseUri `
+                $created = Invoke-MgGraphRequest -Method POST -Uri $script:EDiscBaseUri `
                     -Body ($caseBody | ConvertTo-Json -Depth 5) `
                     -ContentType 'application/json' -ErrorAction Stop
                 $caseId = $created.id
@@ -127,7 +127,7 @@ function Deploy-EDiscovery {
             $caseId = $existingCase.id
         }
 
-        $caseUri = "$script:EdiscoveryBaseUri/$caseId"
+        $caseUri = "$($script:EDiscBaseUri)/$caseId"
         $manifestCustodians = [System.Collections.Generic.List[PSCustomObject]]::new()
         $manifestSearches = [System.Collections.Generic.List[PSCustomObject]]::new()
         $manifestReviewSets = [System.Collections.Generic.List[PSCustomObject]]::new()
@@ -392,7 +392,7 @@ function Remove-EDiscovery {
             }
         }
 
-        $caseUri = "$script:EdiscoveryBaseUri/$caseId"
+        $caseUri = "$($script:EDiscBaseUri)/$caseId"
         Write-LabLog -Message "Removing eDiscovery Premium resources for case: $displayName ($caseId)" -Level Info
 
         # ── Release custodian holds ─────────────────────────────────────
