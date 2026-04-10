@@ -74,465 +74,11 @@
       "simulationMode": true,
       "policies": [
         {
-          "name": "GenAI Prompt PII Protection",
+          "name": "Shadow AI - Endpoint Protection",
+          "policyMode": "endpointProtection",
           "locations": [
             "Devices"
           ],
-          "rules": [
-            {
-              "name": "Detect SSNs in AI Prompts - Elevated Risk",
-              "sensitiveInfoTypes": [
-                "U.S. Social Security Number (SSN)"
-              ],
-              "minCount": 1,
-              "enforcement": {
-                "action": "block",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "Social Security Numbers detected in AI interaction. This data is monitored for compliance."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "high"
-                },
-                "incidentReport": {
-                  "enabled": true,
-                  "severity": "high"
-                }
-              },
-              "insiderRiskLevel": "Elevated"
-            },
-            {
-              "name": "Detect SSNs in AI Prompts - Moderate Risk",
-              "sensitiveInfoTypes": [
-                "U.S. Social Security Number (SSN)"
-              ],
-              "minCount": 1,
-              "enforcement": {
-                "action": "allowWithJustification",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "Social Security Numbers detected in AI interaction. This data is monitored for compliance."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "medium"
-                }
-              },
-              "insiderRiskLevel": "Moderate"
-            },
-            {
-              "name": "Detect SSNs in AI Prompts - Minor Risk",
-              "sensitiveInfoTypes": [
-                "U.S. Social Security Number (SSN)"
-              ],
-              "minCount": 1,
-              "enforcement": {
-                "action": "auditOnly",
-                "alert": {
-                  "enabled": true,
-                  "severity": "low"
-                }
-              },
-              "insiderRiskLevel": "Minor"
-            },
-            {
-              "name": "Detect Credit Cards in AI Prompts - Elevated Risk",
-              "sensitiveInfoTypes": [
-                "Credit Card Number"
-              ],
-              "minCount": 1,
-              "enforcement": {
-                "action": "block",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "Credit card numbers detected in AI interaction. This data is monitored for compliance."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "high"
-                },
-                "incidentReport": {
-                  "enabled": true,
-                  "severity": "high"
-                }
-              },
-              "insiderRiskLevel": "Elevated"
-            },
-            {
-              "name": "Detect Credit Cards in AI Prompts - Moderate Risk",
-              "sensitiveInfoTypes": [
-                "Credit Card Number"
-              ],
-              "minCount": 1,
-              "enforcement": {
-                "action": "allowWithJustification",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "Credit card numbers detected in AI interaction. This data is monitored for compliance."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "medium"
-                }
-              },
-              "insiderRiskLevel": "Moderate"
-            },
-            {
-              "name": "Detect Credit Cards in AI Prompts - Minor Risk",
-              "sensitiveInfoTypes": [
-                "Credit Card Number"
-              ],
-              "minCount": 1,
-              "enforcement": {
-                "action": "auditOnly",
-                "alert": {
-                  "enabled": true,
-                  "severity": "low"
-                }
-              },
-              "insiderRiskLevel": "Minor"
-            }
-          ],
-          "policyMode": "visibility"
-        },
-        {
-          "name": "GenAI Financial and Payroll Guardrail",
-          "locations": [
-            "Devices"
-          ],
-          "rules": [
-            {
-              "name": "Bank Acct in AI - Elevated",
-              "sensitiveInfoTypes": [
-                "U.S. Bank Account Number"
-              ],
-              "minCount": 1,
-              "enforcement": {
-                "action": "block",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "You are sharing sensitive data with an AI destination. Provide a business justification to continue."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "high"
-                },
-                "incidentReport": {
-                  "enabled": true,
-                  "severity": "high"
-                }
-              },
-              "insiderRiskLevel": "Elevated"
-            },
-            {
-              "name": "Bank Acct in AI - Moderate",
-              "sensitiveInfoTypes": [
-                "U.S. Bank Account Number"
-              ],
-              "minCount": 1,
-              "enforcement": {
-                "action": "allowWithJustification",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "You are sharing sensitive data with an AI destination. Provide a business justification to continue."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "medium"
-                }
-              },
-              "insiderRiskLevel": "Moderate"
-            },
-            {
-              "name": "Bank Acct in AI - Minor",
-              "sensitiveInfoTypes": [
-                "U.S. Bank Account Number"
-              ],
-              "minCount": 1,
-              "enforcement": {
-                "action": "auditOnly",
-                "alert": {
-                  "enabled": true,
-                  "severity": "low"
-                }
-              },
-              "insiderRiskLevel": "Minor"
-            },
-            {
-              "name": "SSN in Payroll - Elevated",
-              "sensitiveInfoTypes": [
-                "U.S. Social Security Number (SSN)"
-              ],
-              "minCount": 1,
-              "enforcement": {
-                "action": "block",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "You are sharing sensitive data with an AI destination. Provide a business justification to continue."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "high"
-                },
-                "incidentReport": {
-                  "enabled": true,
-                  "severity": "high"
-                }
-              },
-              "insiderRiskLevel": "Elevated"
-            },
-            {
-              "name": "SSN in Payroll - Moderate",
-              "sensitiveInfoTypes": [
-                "U.S. Social Security Number (SSN)"
-              ],
-              "minCount": 1,
-              "enforcement": {
-                "action": "allowWithJustification",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "You are sharing sensitive data with an AI destination. Provide a business justification to continue."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "medium"
-                }
-              },
-              "insiderRiskLevel": "Moderate"
-            },
-            {
-              "name": "SSN in Payroll - Minor",
-              "sensitiveInfoTypes": [
-                "U.S. Social Security Number (SSN)"
-              ],
-              "minCount": 1,
-              "enforcement": {
-                "action": "auditOnly",
-                "alert": {
-                  "enabled": true,
-                  "severity": "low"
-                }
-              },
-              "insiderRiskLevel": "Minor"
-            }
-          ],
-          "policyMode": "guardrail"
-        },
-        {
-          "name": "External AI Upload Risk Signals",
-          "locations": [
-            "Copilot"
-          ],
-          "rules": [
-            {
-              "name": "Medical Terms in AI Upload - Elevated Risk",
-              "sensitiveInfoTypes": [
-                "All Medical Terms And Conditions"
-              ],
-              "minCount": 1,
-              "enforcement": {
-                "action": "block",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "Medical data detected. Uploading protected health information to external AI tools violates policy."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "high"
-                },
-                "incidentReport": {
-                  "enabled": true,
-                  "severity": "high"
-                }
-              },
-              "insiderRiskLevel": "Elevated"
-            },
-            {
-              "name": "Medical Terms in AI Upload - Moderate Risk",
-              "sensitiveInfoTypes": [
-                "All Medical Terms And Conditions"
-              ],
-              "minCount": 1,
-              "enforcement": {
-                "action": "allowWithJustification",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "Medical data detected. Uploading protected health information to external AI tools violates policy."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "medium"
-                }
-              },
-              "insiderRiskLevel": "Moderate"
-            },
-            {
-              "name": "Medical Terms in AI Upload - Minor Risk",
-              "sensitiveInfoTypes": [
-                "All Medical Terms And Conditions"
-              ],
-              "minCount": 1,
-              "enforcement": {
-                "action": "auditOnly",
-                "alert": {
-                  "enabled": true,
-                  "severity": "low"
-                }
-              },
-              "insiderRiskLevel": "Minor"
-            },
-            {
-              "name": "Credit Cards in AI Sharing - Elevated Risk",
-              "sensitiveInfoTypes": [
-                "Credit Card Number"
-              ],
-              "minCount": 1,
-              "enforcement": {
-                "action": "block",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "Credit card data detected in external AI sharing. This action is blocked per data protection policy."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "high"
-                },
-                "incidentReport": {
-                  "enabled": true,
-                  "severity": "high"
-                }
-              },
-              "insiderRiskLevel": "Elevated"
-            },
-            {
-              "name": "Credit Cards in AI Sharing - Moderate Risk",
-              "sensitiveInfoTypes": [
-                "Credit Card Number"
-              ],
-              "minCount": 1,
-              "enforcement": {
-                "action": "allowWithJustification",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "Credit card data detected in external AI sharing. This action is blocked per data protection policy."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "medium"
-                }
-              },
-              "insiderRiskLevel": "Moderate"
-            },
-            {
-              "name": "Credit Cards in AI Sharing - Minor Risk",
-              "sensitiveInfoTypes": [
-                "Credit Card Number"
-              ],
-              "minCount": 1,
-              "enforcement": {
-                "action": "auditOnly",
-                "alert": {
-                  "enabled": true,
-                  "severity": "low"
-                }
-              },
-              "insiderRiskLevel": "Minor"
-            }
-          ],
-          "policyMode": "highRiskBlock",
-          "appliesToGroups": [
-            "PVShadowAI-Privileged-Data-Owners"
-          ]
-        },
-        {
-          "name": "Labeled Data AI Restriction",
-          "policyMode": "labelRestriction",
-          "locations": [
-            "Copilot"
-          ],
-          "labels": [
-            "PVShadowAI-Highly-Confidential-AI-Blocked-from-External-Tools",
-            "PVShadowAI-Highly-Confidential-AI-Regulated-Data"
-          ],
-          "rules": [
-            {
-              "name": "Labeled Data AI Restriction - Elevated Risk",
-              "sensitiveInfoTypes": [
-                "U.S. Social Security Number (SSN)"
-              ],
-              "minCount": 1,
-              "labels": [
-                "PVShadowAI-Highly-Confidential-AI-Blocked-from-External-Tools",
-                "PVShadowAI-Highly-Confidential-AI-Regulated-Data"
-              ],
-              "enforcement": {
-                "action": "block",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "This content has a sensitivity label that restricts AI usage. Use approved tools only."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "high"
-                },
-                "incidentReport": {
-                  "enabled": true,
-                  "severity": "high"
-                }
-              },
-              "insiderRiskLevel": "Elevated"
-            },
-            {
-              "name": "Labeled Data AI Restriction - Moderate Risk",
-              "sensitiveInfoTypes": [
-                "U.S. Social Security Number (SSN)"
-              ],
-              "minCount": 1,
-              "labels": [
-                "PVShadowAI-Highly-Confidential-AI-Blocked-from-External-Tools",
-                "PVShadowAI-Highly-Confidential-AI-Regulated-Data"
-              ],
-              "enforcement": {
-                "action": "allowWithJustification",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "This content has a sensitivity label that restricts AI usage. Use approved tools only."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "medium"
-                }
-              },
-              "insiderRiskLevel": "Moderate"
-            },
-            {
-              "name": "Labeled Data AI Restriction - Minor Risk",
-              "sensitiveInfoTypes": [
-                "U.S. Social Security Number (SSN)"
-              ],
-              "minCount": 1,
-              "labels": [
-                "PVShadowAI-Highly-Confidential-AI-Blocked-from-External-Tools",
-                "PVShadowAI-Highly-Confidential-AI-Regulated-Data"
-              ],
-              "enforcement": {
-                "action": "auditOnly",
-                "alert": {
-                  "enabled": true,
-                  "severity": "low"
-                }
-              },
-              "insiderRiskLevel": "Minor"
-            }
-          ]
-        },
-        {
-          "name": "Endpoint AI Site Restrictions",
-          "locations": [
-            "Devices"
-          ],
-          "policyMode": "highRiskBlock",
           "endpointDlpBrowserRestrictions": {
             "blockedUrls": [
               "chat.openai.com",
@@ -548,17 +94,20 @@
           },
           "rules": [
             {
-              "name": "Block Data Upload to AI Sites - Elevated Risk",
+              "name": "Endpoint AI Block - Elevated Risk",
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)",
-                "Credit Card Number"
+                "Credit Card Number",
+                "U.S. Bank Account Number",
+                "All Medical Terms And Conditions"
               ],
               "minCount": 1,
+              "insiderRiskLevel": "Elevated",
               "enforcement": {
                 "action": "block",
                 "userNotification": {
                   "enabled": true,
-                  "message": "Uploading sensitive data to external AI tools is prohibited. Use Microsoft Copilot for AI-assisted tasks with organizational data protection."
+                  "message": "Sensitive data detected. Uploading or pasting to external AI tools is blocked. Use Microsoft Copilot for AI-assisted tasks with organizational data protection."
                 },
                 "alert": {
                   "enabled": true,
@@ -568,52 +117,280 @@
                   "enabled": true,
                   "severity": "high"
                 }
-              },
-              "insiderRiskLevel": "Elevated"
+              }
             },
             {
-              "name": "Block Data Upload to AI Sites - Moderate Risk",
+              "name": "Endpoint AI Warn - Moderate Risk",
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)",
-                "Credit Card Number"
+                "Credit Card Number",
+                "U.S. Bank Account Number",
+                "All Medical Terms And Conditions"
               ],
               "minCount": 1,
+              "insiderRiskLevel": "Moderate",
               "enforcement": {
                 "action": "allowWithJustification",
                 "userNotification": {
                   "enabled": true,
-                  "message": "Uploading sensitive data to external AI tools is prohibited. Use Microsoft Copilot for AI-assisted tasks with organizational data protection."
+                  "message": "Sensitive data detected. Provide a business justification to continue sharing with this AI tool, or use Microsoft Copilot instead."
                 },
                 "alert": {
                   "enabled": true,
                   "severity": "medium"
                 }
-              },
-              "insiderRiskLevel": "Moderate"
+              }
             },
             {
-              "name": "Block AI Upload - Minor",
+              "name": "Endpoint AI Audit - Minor Risk",
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)",
-                "Credit Card Number"
+                "Credit Card Number",
+                "U.S. Bank Account Number",
+                "All Medical Terms And Conditions"
               ],
               "minCount": 1,
+              "insiderRiskLevel": "Minor",
               "enforcement": {
                 "action": "auditOnly",
                 "alert": {
                   "enabled": true,
                   "severity": "low"
                 }
-              },
-              "insiderRiskLevel": "Minor"
+              }
             }
           ]
         },
         {
-          "name": "DSPM AI - Copilot Data Protection",
-          "policyMode": "labelRestriction",
+          "name": "Shadow AI - Browser Prompt Protection",
+          "policyMode": "browserProtection",
           "locations": [
-            "Copilot"
+            "Browser"
+          ],
+          "rules": [
+            {
+              "name": "Browser Prompt Block - Elevated Risk",
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)",
+                "Credit Card Number",
+                "U.S. Bank Account Number",
+                "All Medical Terms And Conditions"
+              ],
+              "minCount": 1,
+              "insiderRiskLevel": "Elevated",
+              "enforcement": {
+                "action": "block",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Sensitive data detected in your AI prompt. This submission has been blocked. Use Microsoft Copilot for AI-assisted tasks with organizational data protection."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "high"
+                },
+                "incidentReport": {
+                  "enabled": true,
+                  "severity": "high"
+                }
+              }
+            },
+            {
+              "name": "Browser Prompt Warn - Moderate Risk",
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)",
+                "Credit Card Number",
+                "U.S. Bank Account Number",
+                "All Medical Terms And Conditions"
+              ],
+              "minCount": 1,
+              "insiderRiskLevel": "Moderate",
+              "enforcement": {
+                "action": "allowWithJustification",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Sensitive data detected in your AI prompt. Provide a business justification to continue, or use Microsoft Copilot instead."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "medium"
+                }
+              }
+            },
+            {
+              "name": "Browser Prompt Audit - Minor Risk",
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)",
+                "Credit Card Number",
+                "U.S. Bank Account Number",
+                "All Medical Terms And Conditions"
+              ],
+              "minCount": 1,
+              "insiderRiskLevel": "Minor",
+              "enforcement": {
+                "action": "auditOnly",
+                "alert": {
+                  "enabled": true,
+                  "severity": "low"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Shadow AI - Network AI Traffic",
+          "policyMode": "networkProtection",
+          "locations": [
+            "Network"
+          ],
+          "rules": [
+            {
+              "name": "Network AI Block - Elevated Risk",
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)",
+                "Credit Card Number",
+                "U.S. Bank Account Number",
+                "All Medical Terms And Conditions"
+              ],
+              "minCount": 1,
+              "insiderRiskLevel": "Elevated",
+              "enforcement": {
+                "action": "block",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Sensitive data detected in outbound AI traffic. This transmission has been blocked per data protection policy."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "high"
+                },
+                "incidentReport": {
+                  "enabled": true,
+                  "severity": "high"
+                }
+              }
+            },
+            {
+              "name": "Network AI Warn - Moderate Risk",
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)",
+                "Credit Card Number",
+                "U.S. Bank Account Number",
+                "All Medical Terms And Conditions"
+              ],
+              "minCount": 1,
+              "insiderRiskLevel": "Moderate",
+              "enforcement": {
+                "action": "allowWithJustification",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Sensitive data detected in outbound AI traffic. Provide a business justification to continue."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "medium"
+                }
+              }
+            },
+            {
+              "name": "Network AI Audit - Minor Risk",
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)",
+                "Credit Card Number",
+                "U.S. Bank Account Number",
+                "All Medical Terms And Conditions"
+              ],
+              "minCount": 1,
+              "insiderRiskLevel": "Minor",
+              "enforcement": {
+                "action": "auditOnly",
+                "alert": {
+                  "enabled": true,
+                  "severity": "low"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Shadow AI - Enterprise AI Prompt Protection",
+          "policyMode": "enterpriseAIProtection",
+          "locations": [
+            "EnterpriseAI"
+          ],
+          "rules": [
+            {
+              "name": "Enterprise AI Block - Elevated Risk",
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)",
+                "Credit Card Number",
+                "U.S. Bank Account Number",
+                "All Medical Terms And Conditions"
+              ],
+              "minCount": 1,
+              "insiderRiskLevel": "Elevated",
+              "enforcement": {
+                "action": "block",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Copilot cannot process this request. Sensitive data was detected in your prompt, which violates data protection policy."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "high"
+                },
+                "incidentReport": {
+                  "enabled": true,
+                  "severity": "high"
+                }
+              }
+            },
+            {
+              "name": "Enterprise AI Warn - Moderate Risk",
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)",
+                "Credit Card Number",
+                "U.S. Bank Account Number",
+                "All Medical Terms And Conditions"
+              ],
+              "minCount": 1,
+              "insiderRiskLevel": "Moderate",
+              "enforcement": {
+                "action": "allowWithJustification",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Sensitive data detected in your Copilot prompt. Provide a business justification to continue."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "medium"
+                }
+              }
+            },
+            {
+              "name": "Enterprise AI Audit - Minor Risk",
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)",
+                "Credit Card Number",
+                "U.S. Bank Account Number",
+                "All Medical Terms And Conditions"
+              ],
+              "minCount": 1,
+              "insiderRiskLevel": "Minor",
+              "enforcement": {
+                "action": "auditOnly",
+                "alert": {
+                  "enabled": true,
+                  "severity": "low"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Shadow AI - Enterprise AI Label Protection",
+          "policyMode": "labelProtection",
+          "locations": [
+            "EnterpriseAI"
           ],
           "labels": [
             "PVShadowAI-Highly-Confidential-All-Employees",
@@ -626,7 +403,7 @@
           ],
           "rules": [
             {
-              "name": "Restrict Copilot for Labeled Content",
+              "name": "Block Copilot from Labeled Content",
               "labels": [
                 "PVShadowAI-Highly-Confidential-All-Employees",
                 "PVShadowAI-Highly-Confidential-AI-Internal-Use",
@@ -640,7 +417,7 @@
                 "action": "block",
                 "userNotification": {
                   "enabled": true,
-                  "message": "Copilot cannot process this content because it has a sensitivity label that restricts AI processing. Remove or downgrade the label if Copilot access is required."
+                  "message": "Copilot cannot process this content. It has a sensitivity label that restricts AI processing. Remove or downgrade the label if Copilot access is required."
                 },
                 "alert": {
                   "enabled": true,
@@ -649,254 +426,6 @@
                 "incidentReport": {
                   "enabled": true,
                   "severity": "high"
-                }
-              }
-            }
-          ]
-        },
-        {
-          "name": "Copilot Response Sensitive Data Monitor",
-          "locations": [
-            "Copilot"
-          ],
-          "policyMode": "visibility",
-          "rules": [
-            {
-              "name": "SSN in Copilot Response - Elevated Risk",
-              "sensitiveInfoTypes": [
-                "U.S. Social Security Number (SSN)"
-              ],
-              "minCount": 1,
-              "enforcement": {
-                "action": "block",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "Copilot returned content containing Social Security Numbers. This response has been blocked per data protection policy."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "high"
-                },
-                "incidentReport": {
-                  "enabled": true,
-                  "severity": "high"
-                }
-              },
-              "insiderRiskLevel": "Elevated"
-            },
-            {
-              "name": "SSN in Copilot Response - Moderate Risk",
-              "sensitiveInfoTypes": [
-                "U.S. Social Security Number (SSN)"
-              ],
-              "minCount": 1,
-              "enforcement": {
-                "action": "allowWithJustification",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "Copilot returned content containing Social Security Numbers. This response is monitored for compliance."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "medium"
-                }
-              },
-              "insiderRiskLevel": "Moderate"
-            },
-            {
-              "name": "SSN in Copilot Response - Minor Risk",
-              "sensitiveInfoTypes": [
-                "U.S. Social Security Number (SSN)"
-              ],
-              "minCount": 1,
-              "enforcement": {
-                "action": "auditOnly",
-                "alert": {
-                  "enabled": true,
-                  "severity": "low"
-                }
-              },
-              "insiderRiskLevel": "Minor"
-            },
-            {
-              "name": "Credit Card in Copilot Response - Elevated Risk",
-              "sensitiveInfoTypes": [
-                "Credit Card Number"
-              ],
-              "minCount": 1,
-              "enforcement": {
-                "action": "block",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "Copilot returned content containing credit card numbers. This response has been blocked per data protection policy."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "high"
-                },
-                "incidentReport": {
-                  "enabled": true,
-                  "severity": "high"
-                }
-              },
-              "insiderRiskLevel": "Elevated"
-            },
-            {
-              "name": "Credit Card in Copilot Response - Moderate Risk",
-              "sensitiveInfoTypes": [
-                "Credit Card Number"
-              ],
-              "minCount": 1,
-              "enforcement": {
-                "action": "allowWithJustification",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "Copilot returned content containing credit card numbers. This response is monitored for compliance."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "medium"
-                }
-              },
-              "insiderRiskLevel": "Moderate"
-            },
-            {
-              "name": "Credit Card in Copilot Response - Minor Risk",
-              "sensitiveInfoTypes": [
-                "Credit Card Number"
-              ],
-              "minCount": 1,
-              "enforcement": {
-                "action": "auditOnly",
-                "alert": {
-                  "enabled": true,
-                  "severity": "low"
-                }
-              },
-              "insiderRiskLevel": "Minor"
-            },
-            {
-              "name": "Bank Account in Copilot Response - Elevated Risk",
-              "sensitiveInfoTypes": [
-                "U.S. Bank Account Number"
-              ],
-              "minCount": 1,
-              "enforcement": {
-                "action": "block",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "Copilot returned content containing bank account numbers. This response has been blocked per data protection policy."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "high"
-                },
-                "incidentReport": {
-                  "enabled": true,
-                  "severity": "high"
-                }
-              },
-              "insiderRiskLevel": "Elevated"
-            },
-            {
-              "name": "Bank Account in Copilot Response - Moderate Risk",
-              "sensitiveInfoTypes": [
-                "U.S. Bank Account Number"
-              ],
-              "minCount": 1,
-              "enforcement": {
-                "action": "allowWithJustification",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "Copilot returned content containing bank account numbers. This response is monitored for compliance."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "medium"
-                }
-              },
-              "insiderRiskLevel": "Moderate"
-            },
-            {
-              "name": "Bank Account in Copilot Response - Minor Risk",
-              "sensitiveInfoTypes": [
-                "U.S. Bank Account Number"
-              ],
-              "minCount": 1,
-              "enforcement": {
-                "action": "auditOnly",
-                "alert": {
-                  "enabled": true,
-                  "severity": "low"
-                }
-              },
-              "insiderRiskLevel": "Minor"
-            }
-          ]
-        },
-        {
-          "name": "Adaptive AI Protection by Risk Level",
-          "locations": [
-            "Copilot"
-          ],
-          "policyMode": "adaptiveProtection",
-          "rules": [
-            {
-              "name": "Block AI for Elevated Risk Users",
-              "sensitiveInfoTypes": [
-                "U.S. Social Security Number (SSN)",
-                "Credit Card Number"
-              ],
-              "minCount": 1,
-              "insiderRiskLevel": "Elevated",
-              "enforcement": {
-                "action": "block",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "Your access to AI tools is restricted due to elevated risk level. Contact your compliance team."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "high"
-                },
-                "incidentReport": {
-                  "enabled": true,
-                  "severity": "high"
-                }
-              }
-            },
-            {
-              "name": "Warn AI for Moderate Risk Users",
-              "sensitiveInfoTypes": [
-                "U.S. Social Security Number (SSN)",
-                "Credit Card Number"
-              ],
-              "minCount": 1,
-              "insiderRiskLevel": "Moderate",
-              "enforcement": {
-                "action": "allowWithJustification",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "Moderate risk detected. Provide justification for sharing sensitive data with AI tools."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "medium"
-                }
-              }
-            },
-            {
-              "name": "Audit AI for Minor Risk Users",
-              "sensitiveInfoTypes": [
-                "U.S. Social Security Number (SSN)"
-              ],
-              "minCount": 1,
-              "insiderRiskLevel": "Minor",
-              "enforcement": {
-                "action": "auditOnly",
-                "alert": {
-                  "enabled": true,
-                  "severity": "low"
                 }
               }
             }

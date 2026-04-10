@@ -13,6 +13,9 @@ $script:LocationParamCandidates = @{
     'Devices'             = @('EndpointDlpLocation', 'DevicesLocation', 'DeviceLocation')
     'Copilot'             = @('CopilotLocation', 'M365CopilotLocation', 'ThirdPartyAppDlpLocation')
     'CopilotExperiences'  = @('CopilotLocation', 'M365CopilotLocation')
+    'Browser'             = @('ThirdPartyAppDlpLocation', 'BrowserDlpLocation', 'BrowserLocation')
+    'Network'             = @('NetworkDlpLocation', 'NetworkLocation')
+    'EnterpriseAI'        = @('CopilotLocation', 'M365CopilotLocation')
 }
 
 # Fixed GUID for "Microsoft 365 Copilot and Copilot Chat" in the -Locations JSON payload.

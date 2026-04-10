@@ -156,7 +156,11 @@
                         "OneDrive",
                         "Teams",
                         "Devices",
-                        "Copilot"
+                        "Copilot",
+                        "CopilotExperiences",
+                        "Browser",
+                        "Network",
+                        "EnterpriseAI"
                       ]
                     }
                   },
@@ -256,7 +260,15 @@
                       "guardrail",
                       "highRiskBlock",
                       "labelRestriction",
-                      "endpointExfil"
+                      "endpointExfil",
+                      "endpointProtection",
+                      "browserProtection",
+                      "networkProtection",
+                      "enterpriseAIProtection",
+                      "labelProtection",
+                      "copilotPromptBlock",
+                      "copilotLabelBlock",
+                      "adaptiveProtection"
                     ],
                     "description": "Optional Shadow AI DLP policy intent classification."
                   },
