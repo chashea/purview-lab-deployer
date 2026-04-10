@@ -37,6 +37,18 @@
     "testData": {
       "status": "available",
       "note": "Graph sendMail test seeding available in GCC."
+    },
+    "auditConfig": {
+      "status": "available",
+      "note": "Unified audit log configuration available in GCC."
+    },
+    "conditionalAccess": {
+      "status": "available",
+      "note": "Conditional Access policy automation via Graph API available in GCC."
+    },
+    "foundry": {
+      "status": "limited",
+      "note": "Microsoft Foundry runs on commercial Azure (not Azure Government). Foundry resources provision in a commercial Azure subscription regardless of the GCC M365 tenant. Validate Azure region and subscription access separately."
     }
   }
 }

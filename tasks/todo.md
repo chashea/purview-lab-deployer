@@ -27,3 +27,16 @@
 - [x] Additional configs (dlp-only.json, ediscovery-retention.json)
 - [x] GitHub Actions validation workflow
 - [x] README.md finalized
+
+## Phase 6: Microsoft Foundry + AI Governance
+- [x] modules/Foundry.psm1 — ARM provisioning (account, model, project, agents) + teardown
+- [x] Prerequisites.psm1 — Az.Accounts check (gated on foundry enabled + not SkipAuth)
+- [x] Deploy-Lab.ps1 — foundry workload dispatch (step 8, after InsiderRisk)
+- [x] Remove-Lab.ps1 — foundry removal (before InsiderRisk, reverse order)
+- [x] configs/commercial/_schema.json — foundry workload block
+- [x] configs/gcc/_schema.json — foundry workload block
+- [x] profiles/commercial/capabilities.json — foundry available; auditConfig + conditionalAccess entries
+- [x] profiles/gcc/capabilities.json — foundry limited; auditConfig + conditionalAccess entries
+- [x] configs/commercial/foundry-demo.json — full Foundry AI governance demo config
+- [x] Lint clean (PSScriptAnalyzer zero warnings)
+- [x] Dry run verified (-SkipAuth -WhatIf passes)

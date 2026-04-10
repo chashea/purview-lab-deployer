@@ -13,10 +13,17 @@ $script:RequiredModules = @(
     'Microsoft.Graph.Identity.SignIns'
 )
 
+$script:RequiredModulesFoundry = @(
+    'Az.Accounts'
+)
+
 function Test-LabPrerequisites {
     [CmdletBinding()]
     [OutputType([bool])]
-    param()
+    param(
+        [Parameter()]
+        [switch]$IncludeFoundry
+    )
 
     $allPassed = $true
 
@@ -41,6 +48,20 @@ function Test-LabPrerequisites {
         }
     }
 
+    # Check Foundry-specific modules when the foundry workload is enabled
+    if ($IncludeFoundry) {
+        foreach ($moduleName in $script:RequiredModulesFoundry) {
+            $module = Get-Module -ListAvailable -Name $moduleName | Select-Object -First 1
+            if (-not $module) {
+                Write-Warning "Required module for Foundry workload not installed: $moduleName. Install with: Install-Module $moduleName -Scope CurrentUser"
+                $allPassed = $false
+            }
+            else {
+                Write-Verbose "Module found: $moduleName ($($module.Version))"
+            }
+        }
+    }
+
     return $allPassed
 }
 
@@ -48,7 +69,13 @@ function Connect-LabServices {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
-        [string]$TenantId
+        [string]$TenantId,
+
+        [Parameter()]
+        [switch]$ConnectAzure,
+
+        [Parameter()]
+        [string]$AzureSubscriptionId
     )
 
     $graphScopes = @(
@@ -72,6 +99,16 @@ function Connect-LabServices {
     $graphContext = Get-MgContext
     if (-not $graphContext -or [string]::IsNullOrWhiteSpace($graphContext.Account)) {
         throw 'Microsoft Graph authentication did not produce a usable context.'
+    }
+
+    if ($ConnectAzure) {
+        Write-Verbose "Connecting to Azure (tenant: $TenantId)..."
+        Connect-AzAccount -TenantId $TenantId -ErrorAction Stop | Out-Null
+
+        if (-not [string]::IsNullOrWhiteSpace($AzureSubscriptionId)) {
+            Set-AzContext -SubscriptionId $AzureSubscriptionId -ErrorAction Stop | Out-Null
+            Write-Verbose "Azure context set to subscription: $AzureSubscriptionId"
+        }
     }
 }
 
