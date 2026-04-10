@@ -57,6 +57,8 @@ function Connect-LabServices {
         'Mail.Send'
         'Organization.Read.All'
         'Policy.ReadWrite.ConditionalAccess'
+        'Policy.Read.All'
+        'Application.Read.All'
         'eDiscovery.ReadWrite.All'
     )
 

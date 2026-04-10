@@ -17,6 +17,17 @@ function Deploy-ConditionalAccess {
 
     $createdPolicies = [System.Collections.Generic.List[hashtable]]::new()
 
+    # Validate Graph scopes before attempting CA policy operations
+    $context = Get-MgContext -ErrorAction SilentlyContinue
+    $grantedScopes = @($context.Scopes)
+    $requiredScopes = @('Policy.ReadWrite.ConditionalAccess', 'Policy.Read.All')
+    $missingScopes = @($requiredScopes | Where-Object { $_ -notin $grantedScopes })
+    if ($missingScopes.Count -gt 0) {
+        Write-LabLog -Message "Conditional Access requires Graph scopes not in current token: $($missingScopes -join ', '). Disconnect and reconnect with: Connect-MgGraph -Scopes 'Policy.ReadWrite.ConditionalAccess','Policy.Read.All','Application.Read.All'" -Level Warning
+        Write-LabLog -Message "Skipping all Conditional Access policies due to missing scopes." -Level Warning
+        return @{ policies = @() }
+    }
+
     foreach ($policy in $Config.workloads.conditionalAccess.policies) {
         $name = "$($Config.prefix)-$($policy.name)"
 

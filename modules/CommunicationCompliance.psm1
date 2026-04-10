@@ -43,7 +43,7 @@ function Deploy-CommunicationCompliance {
                     Activities         = @('UploadText', 'DownloadText')
                     SensitiveTypeIds   = @('All')
                     IsIngestionEnabled = $true
-                    EnforcementPlanes  = @('EnterpriseAI')
+                    EnforcementPlanes  = @('copilotexperiences')
                 } | ConvertTo-Json -Compress
 
                 $locationsArray = @(

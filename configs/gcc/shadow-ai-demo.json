@@ -1024,8 +1024,8 @@
             "high"
           ],
           "targetAppIds": [
-            "00000000-0000-0000-0000-000000000001",
-            "00000000-0000-0000-0000-000000000002"
+            "fb8d773d-7ef8-4ec0-a117-179f88add510",
+            "2f01223e-2aca-4de5-8265-0776cbf3cabc"
           ],
           "state": "enabledForReportingButNotEnforced"
         },
@@ -1033,8 +1033,8 @@
           "name": "Require MFA for AI App Access",
           "action": "mfa",
           "targetAppIds": [
-            "00000000-0000-0000-0000-000000000001",
-            "00000000-0000-0000-0000-000000000002"
+            "fb8d773d-7ef8-4ec0-a117-179f88add510",
+            "2f01223e-2aca-4de5-8265-0776cbf3cabc"
           ],
           "state": "enabledForReportingButNotEnforced"
         }
