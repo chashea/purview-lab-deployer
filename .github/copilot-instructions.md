@@ -43,7 +43,8 @@ root/
 │   ├── commercial/
 │   │   ├── capabilities.json             # Commercial workload capabilities
 │   │   ├── basic-lab/                    # Basic lab scenario profile + guide
-│   │   └── shadow-ai/                    # Shadow AI scenario profile + guide
+│   │   ├── shadow-ai/                    # Shadow AI scenario profile + guide
+│   │   └── copilot-dlp/                  # Copilot DLP profile + runbook + demo
 │   ├── gcc/
 │   │   ├── capabilities.json             # GCC workload capabilities
 │   │   └── shadow-ai/                    # Shadow AI scenario profile + guide
@@ -77,15 +78,27 @@ root/
 - Core shared infrastructure:
   - `modules/Prerequisites.psm1`: prerequisites, auth, config, cloud profile, workload compatibility, manifest I/O
   - `modules/Logging.psm1`: transcript-backed structured logging into `logs/`
-  - workload modules (`DLP`, `SensitivityLabels`, `Retention`, `EDiscovery`, `CommunicationCompliance`, `InsiderRisk`, `TestUsers`, `TestData`)
+  - workload modules (`DLP`, `SensitivityLabels`, `Retention`, `EDiscovery`, `CommunicationCompliance`, `InsiderRisk`, `ConditionalAccess`, `TestUsers`, `TestData`, `AuditConfig`)
+
+- Error isolation via `Invoke-Workload` wrapper:
+  - failure in one workload does not halt deployment
+  - manifest is built with partial data from successful workloads
+  - summary of successes/failures logged at end
+
+- Authentication flow (handled by `Prerequisites.psm1`):
+  - `Connect-ExchangeOnline` for compliance cmdlets (DLP, retention, eDiscovery, etc.)
+  - `Connect-MgGraph` for Entra ID operations (users, groups, conditional access)
+  - Required modules: `ExchangeOnlineManagement >= 3.0`, `Microsoft.Graph.Authentication`, `Microsoft.Graph.Users`, `Microsoft.Graph.Groups`, `Microsoft.Graph.Identity.SignIns`
+  - Required Entra ID roles: Compliance Administrator, User Administrator, eDiscovery Administrator
 
 ## Deployment tracks
 
 - **Basic lab** (baseline): `configs/<cloud>/basic-lab-demo.json` — core compliance workloads, prefix `PVLab`
 - **Shadow AI** (separate): `configs/commercial/shadow-ai-demo.json` — AI-focused DLP/labels/retention/eDiscovery/IRM, prefix `PVShadowAI`
+- **Copilot DLP** (M365 Copilot guardrails): `configs/<cloud>/copilot-dlp-demo.json` — Copilot-specific DLP rules, labeled content protection, prompt blocking, prefix `PVLab`. Has a manual demo runbook at `profiles/commercial/copilot-dlp/RUNBOOK.md`.
 - **Scenario configs**: `dlp-only.json`, `education-demo.json`, `eu-gdpr-demo.json`, etc.
 
-Shadow AI is intentionally separated from baseline basic-lab. Different prefix, different config, independent deploy/remove lifecycle.
+Shadow AI is intentionally separated from baseline basic-lab. Different prefix, different config, independent deploy/remove lifecycle. Copilot DLP shares the `PVLab` prefix with basic-lab.
 
 ## Key conventions
 
@@ -97,7 +110,7 @@ Shadow AI is intentionally separated from baseline basic-lab. Different prefix, 
 - Config and cloud conventions:
   - config files are cloud-scoped under `configs/commercial/` and `configs/gcc/`
   - no root-level config files (removed during reorg)
-  - cloud can come from `-Cloud`, config `cloud`, or defaults to `commercial`
+  - cloud resolution order: `-Cloud` param → config `cloud` field → `$env:PURVIEW_CLOUD` → default `commercial`
   - `PURVIEW_TENANT_ID` and `PURVIEW_CLOUD` are first-class runtime inputs
 
 - Naming/teardown strategy:
@@ -108,10 +121,15 @@ Shadow AI is intentionally separated from baseline basic-lab. Different prefix, 
   - workload support status (`available`, `limited`, `delayed`, `unavailable`) is data-driven from capability profiles
   - deploy treats `unavailable` as a blocker; remove treats it as warning context
 
-- DLP enforcement config:
+- DLP runtime adaptation (`modules/DLP.psm1`):
   - optional `policyMode`, `enforcement`, `appliesToGroups`, and `labels` fields in config
-  - `modules/DLP.psm1` dynamically detects supported cmdlet parameters at runtime
-  - unsupported enforcement params degrade gracefully to audit with warnings
+  - dynamically detects supported cmdlet parameters at runtime to handle EXO version differences:
+    - locations: `ExchangeLocation` vs `ExchangeSenderMemberOf` vs `UserScope`
+    - enforcement: `BlockAccess` vs `Mode` vs `EnforcementMode`
+    - labels: `SensitivityLabels` vs `Labels`
+    - overrides: `AllowOverrideWithJustification` vs `AllowOverride` vs `UserCanOverride`
+  - unsupported params degrade gracefully to audit mode with warnings
+  - this is the most complex module — read the detection logic before modifying DLP functions
 
 ## Git and release workflow
 

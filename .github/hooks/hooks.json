@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "type": "command",
+        "bash": ".github/hooks/scripts/guard-generated-dirs.sh",
+        "cwd": ".",
+        "timeoutSec": 5
+      }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "bash": ".github/hooks/scripts/lint-after-edit.sh",
+        "cwd": ".",
+        "timeoutSec": 30
+      }
+    ]
+  }
+}
