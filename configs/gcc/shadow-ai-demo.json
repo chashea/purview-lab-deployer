@@ -1018,23 +1018,21 @@
       "enabled": true,
       "policies": [
         {
-          "name": "Block AI Apps High Sign-In Risk",
+          "name": "Block All Apps High Sign-In Risk",
           "action": "block",
           "signInRiskLevels": [
             "high"
           ],
           "targetAppIds": [
-            "fb8d773d-7ef8-4ec0-a117-179f88add510",
-            "2f01223e-2aca-4de5-8265-0776cbf3cabc"
+            "All"
           ],
           "state": "enabledForReportingButNotEnforced"
         },
         {
-          "name": "Require MFA for AI App Access",
+          "name": "Require MFA for M365 Services",
           "action": "mfa",
           "targetAppIds": [
-            "fb8d773d-7ef8-4ec0-a117-179f88add510",
-            "2f01223e-2aca-4de5-8265-0776cbf3cabc"
+            "00000002-0000-0ff1-ce00-000000000000"
           ],
           "state": "enabledForReportingButNotEnforced"
         }

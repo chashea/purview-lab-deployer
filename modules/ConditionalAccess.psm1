@@ -51,6 +51,11 @@ function Deploy-ConditionalAccess {
                 Users        = @{ IncludeUsers = @('All') }
             }
 
+            # Support excludeAppIds
+            if ($policy.PSObject.Properties['excludeAppIds'] -and $policy.excludeAppIds) {
+                $conditions.Applications['ExcludeApplications'] = @($policy.excludeAppIds)
+            }
+
             if ($policy.PSObject.Properties['signInRiskLevels'] -and $policy.signInRiskLevels) {
                 $conditions['SignInRiskLevels'] = @($policy.signInRiskLevels)
             }
