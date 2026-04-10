@@ -1221,6 +1221,15 @@
             "PVShadowAI-AI-Governance",
             "PVShadowAI-Privileged-Data-Owners",
             "PVShadowAI-Business-Users"
+          ],
+          "indicators": [
+            "BrowsedToGenerativeAISites",
+            "EnteringRiskyPromptInCopilot",
+            "ReceivingSensitiveResponseFromCopilot",
+            "EnteringRiskyPromptInOtherAIApps"
+          ],
+          "triggeringEvents": [
+            "DlpPolicyViolation"
           ]
         },
         {
@@ -1228,6 +1237,16 @@
           "template": "Data leaks",
           "priorityUserGroups": [
             "PVShadowAI-Business-Users"
+          ],
+          "indicators": [
+            "FileSharedExternally",
+            "UploadToCloudService",
+            "EmailSentExternally",
+            "BrowsedToGenerativeAISites",
+            "EnteringRiskyPromptInCopilot"
+          ],
+          "triggeringEvents": [
+            "DlpPolicyViolation"
           ]
         },
         {
@@ -1236,12 +1255,27 @@
           "priorityUserGroups": [
             "PVShadowAI-AI-Governance",
             "PVShadowAI-Privileged-Data-Owners"
+          ],
+          "indicators": [
+            "FileSharedExternally",
+            "UploadToCloudService",
+            "EmailSentExternally",
+            "FileDownloadedFromSharePoint",
+            "BrowsedToGenerativeAISites"
+          ],
+          "triggeringEvents": [
+            "HrConnectorNotification"
           ]
         },
         {
           "name": "DSPM for AI - Detect risky AI usage",
           "template": "Risky AI usage",
           "thresholds": "BuiltIn",
+          "priorityUserGroups": [
+            "PVShadowAI-AI-Governance",
+            "PVShadowAI-Privileged-Data-Owners",
+            "PVShadowAI-Business-Users"
+          ],
           "indicators": [
             "BrowsedToGenerativeAISites",
             "EnteringRiskyPromptInCopilot",
@@ -1249,6 +1283,9 @@
             "EnteringRiskyPromptInEnterpriseAIApps",
             "ReceivingSensitiveResponseFromEnterpriseAIApps",
             "EnteringRiskyPromptInOtherAIApps"
+          ],
+          "triggeringEvents": [
+            "DlpPolicyViolation"
           ]
         },
         {
@@ -1262,6 +1299,9 @@
             "BrowsedToGenerativeAISites",
             "EnteringRiskyPromptInCopilot",
             "EnteringRiskyPromptInOtherAIApps"
+          ],
+          "triggeringEvents": [
+            "DlpPolicyViolation"
           ]
         },
         {
@@ -1275,6 +1315,9 @@
             "EnteringRiskyPromptInCopilot",
             "ReceivingSensitiveResponseFromCopilot",
             "BrowsedToGenerativeAISites"
+          ],
+          "triggeringEvents": [
+            "DlpPolicyViolation"
           ]
         }
       ]
