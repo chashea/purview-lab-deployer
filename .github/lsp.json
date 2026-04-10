@@ -1,0 +1,13 @@
+{
+  "lspServers": {
+    "powershell": {
+      "command": "pwsh",
+      "args": ["-NoProfile", "-Command", "Import-Module PowerShellEditorServices; Start-EditorServices -HostName copilot -HostProfileId copilot -HostVersion 1.0.0 -BundledModulesPath (Split-Path (Get-Module PowerShellEditorServices).Path) -Stdio -LogPath /tmp/pses.log -LogLevel Warning -SessionDetailsPath /tmp/pses-session.json"],
+      "fileExtensions": {
+        ".ps1": "powershell",
+        ".psm1": "powershell",
+        ".psd1": "powershell"
+      }
+    }
+  }
+}
