@@ -21,14 +21,19 @@ function Get-FoundryArmToken {
     [CmdletBinding()]
     [OutputType([string])]
     param()
-    return (Get-AzAccessToken -ResourceUrl 'https://management.azure.com' -ErrorAction Stop).Token
+    $tok = (Get-AzAccessToken -ResourceUrl 'https://management.azure.com' -ErrorAction Stop).Token
+    # Az.Accounts 3.x+ returns a SecureString; convert to plain text for HTTP headers
+    if ($tok -is [System.Security.SecureString]) { return $tok | ConvertFrom-SecureString -AsPlainText }
+    return $tok
 }
 
 function Get-FoundryDataToken {
     [CmdletBinding()]
     [OutputType([string])]
     param()
-    return (Get-AzAccessToken -ResourceUrl 'https://cognitiveservices.azure.com' -ErrorAction Stop).Token
+    $tok = (Get-AzAccessToken -ResourceUrl 'https://cognitiveservices.azure.com' -ErrorAction Stop).Token
+    if ($tok -is [System.Security.SecureString]) { return $tok | ConvertFrom-SecureString -AsPlainText }
+    return $tok
 }
 
 function Invoke-ArmGet {
@@ -162,6 +167,14 @@ function Wait-ArmAsyncOperation {
             -SkipHttpErrorCheck -ErrorAction Stop
         $opBody = try { $opResponse.Content | ConvertFrom-Json } catch { $null }
 
+        $httpStatus = [int]$opResponse.StatusCode
+
+        # For Location-header style polling: 200/204 with no status body = operation complete
+        if ($httpStatus -in @(200, 204) -and (-not $opBody -or (-not $opBody.PSObject.Properties['status'] -and -not $opBody.PSObject.Properties['provisioningState']))) {
+            Write-LabLog -Message "ARM async polling... status: Succeeded (HTTP $httpStatus, attempt $i/$maxAttempts)" -Level Info
+            return
+        }
+
         $status = if ($opBody) {
             if ($opBody.PSObject.Properties['status']) {
                 [string]$opBody.status
@@ -233,6 +246,11 @@ function Deploy-Foundry {
         return $manifest
     }
 
+    # Re-assert Az context with the target subscription before acquiring tokens.
+    # The Purview workloads run for 10-30 min before Foundry; re-setting context
+    # ensures Get-AzAccessToken issues a fresh token for the correct subscription.
+    Set-AzContext -SubscriptionId $subscriptionId -ErrorAction Stop | Out-Null
+
     $armToken  = Get-FoundryArmToken
     $dataToken = Get-FoundryDataToken
 
@@ -272,6 +290,7 @@ function Deploy-Foundry {
             properties = @{
                 allowProjectManagement = $true
                 publicNetworkAccess    = 'Enabled'
+                customSubDomainName    = $accountName   # Required for Foundry project creation
             }
         } | ConvertTo-Json -Depth 5 -Compress
 
@@ -452,6 +471,8 @@ function Remove-Foundry {
     if (-not $PSCmdlet.ShouldProcess("Foundry lab '$($Config.prefix)'", 'Remove Foundry agents, project, and account')) {
         return
     }
+
+    Set-AzContext -SubscriptionId $subscriptionId -ErrorAction Stop | Out-Null
 
     $armToken  = Get-FoundryArmToken
     $dataToken = Get-FoundryDataToken
