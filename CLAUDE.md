@@ -64,9 +64,9 @@ No Pester test suite. CI validation is PSScriptAnalyzer lint only (`.github/work
 
 ### Deployment Order (dependency-driven)
 
-1. TestUsers → 2. SensitivityLabels → 3. DLP → 4. Retention → 5. EDiscovery → 6. CommunicationCompliance → 7. InsiderRisk → 8. ConditionalAccess → 9. TestData → 10. AuditConfig
+1. Foundry → 2. TestUsers → 3. SensitivityLabels → 4. DLP → 5. Retention → 6. EDiscovery → 7. CommunicationCompliance → 8. InsiderRisk → 9. ConditionalAccess → 10. TestData → 11. AuditConfig
 
-Removal is the exact reverse. TestData removal is a no-op (sent emails cannot be recalled).
+Foundry deploys first so agents exist before Purview policies that govern them. Removal is the exact reverse (Foundry last). TestData removal is a no-op (sent emails cannot be recalled).
 
 ### Module Contract
 

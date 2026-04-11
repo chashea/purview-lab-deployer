@@ -192,16 +192,6 @@ try {
     Write-LabStep -StepName 'TestData' -Description 'Test data removal'
     Write-LabLog -Message 'TestData: skipped. Sent emails and uploaded files cannot be recalled.' -Level Warning
 
-    # Foundry — remove before InsiderRisk (Azure resources, reverse of deploy order)
-    if ($foundryEnabled) {
-        Write-LabStep -StepName 'Foundry' -Description 'Removing Microsoft Foundry agents, project, and account'
-        Remove-Foundry -Config $Config -Manifest (Get-WorkloadManifest -WorkloadName 'foundry') -WhatIf:$WhatIfPreference
-        Write-LabLog -Message 'Foundry removal complete.' -Level Success
-    }
-    else {
-        Write-LabLog -Message 'foundry workload is disabled, skipping.' -Level Info
-    }
-
     # 1. Insider Risk
     if ($Config.workloads.insiderRisk.enabled) {
         Write-LabStep -StepName 'InsiderRisk' -Description 'Removing insider risk management policies'
@@ -269,7 +259,7 @@ try {
         Write-LabLog -Message 'sensitivityLabels workload is disabled, skipping.' -Level Info
     }
 
-    # 8. Test Users
+    # Test Users
     if ($Config.workloads.testUsers.enabled) {
         Write-LabStep -StepName 'TestUsers' -Description 'Removing test users'
         Remove-TestUsers -Config $Config -Manifest (Get-WorkloadManifest -WorkloadName 'testUsers') -WhatIf:$WhatIfPreference
@@ -277,6 +267,16 @@ try {
     }
     else {
         Write-LabLog -Message 'testUsers workload is disabled, skipping.' -Level Info
+    }
+
+    # Foundry — removed last (reverse of deploy order: Foundry deploys first)
+    if ($foundryEnabled) {
+        Write-LabStep -StepName 'Foundry' -Description 'Removing Microsoft Foundry agents, project, and account'
+        Remove-Foundry -Config $Config -Manifest (Get-WorkloadManifest -WorkloadName 'foundry') -WhatIf:$WhatIfPreference
+        Write-LabLog -Message 'Foundry removal complete.' -Level Success
+    }
+    else {
+        Write-LabLog -Message 'foundry workload is disabled, skipping.' -Level Info
     }
 
     # Summary

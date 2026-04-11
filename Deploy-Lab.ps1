@@ -453,6 +453,14 @@ try {
     }
 
     # Deploy workloads in dependency order
+    # Foundry deploys first — agents must exist before Purview policies that govern them
+    if ($foundryEnabled) {
+        Invoke-Workload -Name 'foundry' -Step 'Foundry' -Description 'Deploying Microsoft Foundry account, project, and agents' -Action {
+            Deploy-Foundry -Config $Config -WhatIf:$WhatIfPreference
+        }
+    }
+    else { Write-LabLog -Message 'foundry workload is disabled, skipping.' -Level Info }
+
     if ($Config.workloads.testUsers.enabled) {
         Invoke-Workload -Name 'testUsers' -Step 'TestUsers' -Description 'Deploying test users' -Action {
             Deploy-TestUsers -Config $Config -WhatIf:$WhatIfPreference
@@ -494,13 +502,6 @@ try {
             Deploy-InsiderRisk -Config $Config -WhatIf:$WhatIfPreference
         }
     } else { Write-LabLog -Message 'insiderRisk workload is disabled, skipping.' -Level Info }
-
-    if ($foundryEnabled) {
-        Invoke-Workload -Name 'foundry' -Step 'Foundry' -Description 'Deploying Microsoft Foundry account, project, and agents' -Action {
-            Deploy-Foundry -Config $Config -WhatIf:$WhatIfPreference
-        }
-    }
-    else { Write-LabLog -Message 'foundry workload is disabled, skipping.' -Level Info }
 
     if ($Config.workloads.PSObject.Properties['conditionalAccess'] -and $Config.workloads.conditionalAccess.enabled) {
         Invoke-Workload -Name 'conditionalAccess' -Step 'ConditionalAccess' -Description 'Deploying Conditional Access policies' -Action {
