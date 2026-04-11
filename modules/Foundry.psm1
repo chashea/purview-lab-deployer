@@ -318,7 +318,7 @@ namespace Foundry {
 }
 
 function New-FoundryAgentPackage {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess)]
     param(
         [Parameter(Mandatory)]
         [PSCustomObject]$Agent,
@@ -1489,7 +1489,7 @@ function Deploy-Foundry {
                 $agent | Add-Member -NotePropertyName 'baseUrl' -NotePropertyValue ([string]$appResult.properties.baseUrl) -Force
                 continue
             }
-        } catch { }
+        } catch { Write-Verbose "App lookup skipped: $_" }
 
         $appBody = @{
             properties = @{
