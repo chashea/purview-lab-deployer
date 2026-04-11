@@ -30,6 +30,8 @@ function Initialize-LabLogging {
     Start-Transcript -Path $script:LogFile -Append | Out-Null
 
     Write-LabLog -Message "Logging initialized. Log file: $($script:LogFile)" -Level Info
+
+    Clear-LabOldLogs -LogDirectory $LogDirectory
 }
 
 function Write-LabLog {
@@ -74,6 +76,31 @@ function Write-LabStep {
     Write-Host ''
 }
 
+function Clear-LabOldLogs {
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter()]
+        [string]$LogDirectory = (Join-Path $PSScriptRoot '..' 'logs'),
+
+        [Parameter()]
+        [int]$RetentionDays = 30
+    )
+
+    if (-not (Test-Path $LogDirectory)) {
+        return
+    }
+
+    $cutoff = (Get-Date).AddDays(-$RetentionDays)
+    Get-ChildItem -Path $LogDirectory -Filter '*.log' -ErrorAction SilentlyContinue |
+        Where-Object { $_.LastWriteTime -lt $cutoff } |
+        ForEach-Object {
+            if ($PSCmdlet.ShouldProcess($_.FullName, 'Remove old log file')) {
+                Remove-Item $_.FullName -Force
+                Write-Verbose "Removed old log: $($_.Name)"
+            }
+        }
+}
+
 function Complete-LabLogging {
     [CmdletBinding()]
     param()
@@ -93,4 +120,5 @@ Export-ModuleMember -Function @(
     'Write-LabLog'
     'Write-LabStep'
     'Complete-LabLogging'
+    'Clear-LabOldLogs'
 )

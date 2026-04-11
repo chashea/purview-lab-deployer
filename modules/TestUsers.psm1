@@ -84,20 +84,12 @@ function Deploy-TestUsers {
                 }
 
                 New-MgUser @params -ErrorAction Stop | Out-Null
-                $resolvedUser = $null
-                for ($attempt = 1; $attempt -le 6; $attempt++) {
-                    $resolvedUser = Get-LabUserByIdentity -Identity $upn -DefaultDomain $Config.domain
-                    if ($resolvedUser) {
-                        break
+                $resolvedUser = Invoke-LabRetry -MaxAttempts 6 -DelaySeconds 5 -OperationName "confirm user '$upn'" -ScriptBlock {
+                    $found = Get-LabUserByIdentity -Identity $upn -DefaultDomain $Config.domain
+                    if (-not $found) {
+                        throw "User '$upn' not yet available in Microsoft Graph."
                     }
-
-                    if ($attempt -lt 6) {
-                        Start-Sleep -Seconds 5
-                    }
-                }
-
-                if (-not $resolvedUser) {
-                    throw "Created user '$upn' could not be confirmed in Microsoft Graph."
+                    return $found
                 }
 
                 $resolvedUpn = [string]$resolvedUser.UserPrincipalName

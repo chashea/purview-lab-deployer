@@ -52,7 +52,12 @@ Invoke-ScriptAnalyzer -Path . -Recurse -Severity Warning -ExcludeRule PSAvoidUsi
 Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser
 ```
 
-No Pester test suite. CI validation is PSScriptAnalyzer lint only (`.github/workflows/validate.yml`).
+CI runs PSScriptAnalyzer lint, Pester tests (`tests/`), and a smoke test (`.github/workflows/validate.yml`).
+
+```powershell
+# Run Pester tests
+Invoke-Pester tests/ -Output Detailed
+```
 
 ## Architecture
 

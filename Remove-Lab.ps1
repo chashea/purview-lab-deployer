@@ -69,12 +69,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 # Profile-to-config resolution
-$profileConfigMap = @{
-    'basic-lab'   = 'basic-lab-demo.json'
-    'shadow-ai'   = 'shadow-ai-demo.json'
-    'copilot-dlp' = 'copilot-dlp-demo.json'
-    'foundry'     = 'foundry-demo.json'
-}
+$profileConfigMap = Get-ProfileConfigMapping
 
 if (-not [string]::IsNullOrWhiteSpace($LabProfile) -and -not [string]::IsNullOrWhiteSpace($ConfigPath)) {
     throw 'Specify either -LabProfile or -ConfigPath, not both.'

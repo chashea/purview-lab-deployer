@@ -4,6 +4,9 @@ manifests/
 # Generated Teams/Copilot agent packages
 packages/
 
+# Claude Code task artifacts
+tasks/
+
 # Transcripts
 *.log
 

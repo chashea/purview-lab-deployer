@@ -10,6 +10,15 @@
     Requires the Az.Accounts PowerShell module for ARM authentication.
 #>
 
+# ============================================================================
+# Module Structure
+# ============================================================================
+# ARM Operations:     Invoke-ArmGet, Invoke-ArmPut, Invoke-ArmDelete, Wait-ArmAsyncOperation
+# Agent Packaging:    Initialize-PngWriter, New-FoundryAgentPackage, New-BotFunctionZip, Deploy-BotServices, Remove-BotServices
+# Public API:         Deploy-Foundry, Remove-Foundry
+# Token Helpers:      Get-FoundryArmToken, Get-FoundryDataToken, Get-FoundryGraphToken
+# ============================================================================
+
 $script:ArmApiVersion   = '2025-09-01'
 $script:AgentApiVersion = '2025-05-15-preview'
 $script:AppApiVersion   = '2025-10-01-preview'   # accounts/projects/applications (publish agent endpoint)

@@ -71,12 +71,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 # Profile-to-config resolution
-$profileConfigMap = @{
-    'basic-lab'   = 'basic-lab-demo.json'
-    'shadow-ai'   = 'shadow-ai-demo.json'
-    'copilot-dlp' = 'copilot-dlp-demo.json'
-    'foundry'     = 'foundry-demo.json'
-}
+$profileConfigMap = Get-ProfileConfigMapping
 
 if (-not [string]::IsNullOrWhiteSpace($LabProfile) -and -not [string]::IsNullOrWhiteSpace($ConfigPath)) {
     throw 'Specify either -LabProfile or -ConfigPath, not both.'
@@ -108,6 +103,9 @@ try {
     # Load configuration
     Write-LabStep -StepName 'Config' -Description 'Loading lab configuration'
     $Config = Import-LabConfig -ConfigPath $ConfigPath
+    if (-not (Test-LabConfigValidity -Config $Config)) {
+        Write-LabLog -Message 'Configuration has validation warnings. Review above messages.' -Level Warning
+    }
     $resolvedCloud = Resolve-LabCloud -Cloud $Cloud -Config $Config
     $capabilityProfile = Import-LabCloudProfile -Cloud $resolvedCloud -RepositoryRoot $PSScriptRoot
 
@@ -186,97 +184,8 @@ try {
         Write-LabLog -Message 'Skipping authentication (-SkipAuth).' -Level Warning
     }
 
-    function Get-LabStringArray {
-        param(
-            [Parameter()]
-            [object]$Value
-        )
-
-        if ($null -eq $Value) {
-            return [string[]]@()
-        }
-
-        return [string[]]@(
-            @($Value) |
-                ForEach-Object { [string]$_ } |
-                Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
-                ForEach-Object { $_.Trim() } |
-                Sort-Object -Unique
-        )
-    }
-
-    function Get-LabSupportedParameterName {
-        param(
-            [Parameter(Mandatory)]
-            [System.Management.Automation.CommandInfo[]]$Commands,
-
-            [Parameter(Mandatory)]
-            [string[]]$CandidateNames
-        )
-
-        foreach ($command in @($Commands)) {
-            if (-not $command) {
-                continue
-            }
-
-            foreach ($candidate in $CandidateNames) {
-                if ($command.Parameters.ContainsKey($candidate)) {
-                    return [PSCustomObject]@{
-                        commandName = $command.Name
-                        parameter   = $candidate
-                    }
-                }
-            }
-        }
-
-        return $null
-    }
-
-    function Get-LabObjectProperty {
-        param(
-            [Parameter(Mandatory)]
-            [object]$Object,
-
-            [Parameter(Mandatory)]
-            [string[]]$CandidateNames
-        )
-
-        foreach ($candidate in $CandidateNames) {
-            if ($Object.PSObject.Properties.Name -contains $candidate) {
-                return [PSCustomObject]@{
-                    found = $true
-                    name  = $candidate
-                    value = $Object.$candidate
-                }
-            }
-        }
-
-        return [PSCustomObject]@{
-            found = $false
-            name  = $null
-            value = $null
-        }
-    }
-
-    function Get-LabDlpConfiguredLabels {
-        param(
-            [Parameter(Mandatory)]
-            [PSCustomObject]$Policy,
-
-            [Parameter(Mandatory)]
-            [PSCustomObject]$Rule
-        )
-
-        $labels = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
-        foreach ($label in (Get-LabStringArray -Value $Policy.labels)) {
-            $null = $labels.Add($label)
-        }
-        foreach ($label in (Get-LabStringArray -Value $Rule.labels)) {
-            $null = $labels.Add($label)
-        }
-
-        return [string[]]@($labels | Sort-Object -Unique)
-    }
+    # Utility functions (Get-LabStringArray, Get-LabSupportedParameterName,
+    # Get-LabObjectProperty, Get-LabDlpConfiguredLabels) are now in Prerequisites.psm1
 
     if (-not $SkipAuth -and $Config.workloads.dlp.enabled) {
         Write-LabStep -StepName 'DLPPreflight' -Description 'Validating DLP enforcement configuration'
