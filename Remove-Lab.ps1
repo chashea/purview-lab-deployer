@@ -68,6 +68,9 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# Import Prerequisites early for profile resolution
+Import-Module (Join-Path $PSScriptRoot 'modules' 'Prerequisites.psm1') -Force
+
 # Profile-to-config resolution
 $profileConfigMap = Get-ProfileConfigMapping
 

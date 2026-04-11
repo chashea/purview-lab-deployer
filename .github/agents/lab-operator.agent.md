@@ -45,6 +45,7 @@ You are a lab operations specialist for the purview-lab-deployer project. You ru
 | Basic lab | `configs/<cloud>/basic-lab-demo.json` | `PVLab` | Core compliance workloads |
 | Shadow AI | `configs/commercial/shadow-ai-demo.json` | `PVShadowAI` | AI-focused, commercial only, independent lifecycle |
 | Copilot DLP | `configs/<cloud>/copilot-dlp-demo.json` | `PVLab` | M365 Copilot guardrails, has manual runbook |
+| Foundry AI | `configs/commercial/foundry-demo.json` | `PVFoundry` | AI Foundry agents + full Purview governance stack |
 
 Shadow AI and basic lab are separate tracks — different prefix, different config, fully independent.
 
@@ -76,11 +77,13 @@ Tenant ID: `-TenantId` parameter or `$env:PURVIEW_TENANT_ID`.
 
 **Teardown misses**: Without a manifest, removal uses prefix-based lookup which may miss resources with non-standard names. Always prefer manifest-based removal.
 
+**Foundry/Azure failures**: Foundry workload requires `Az.Accounts` module and Azure subscription access. If ARM operations fail, check `Connect-AzAccount` auth and subscription ID in config. Resource group deletion is async — ARM polling may show `Unknown` status before succeeding.
+
 ### Workload dependency order
 
-Deploy: TestUsers → SensitivityLabels → DLP → Retention → EDiscovery → CommunicationCompliance → InsiderRisk → ConditionalAccess → TestData → AuditConfig
+Deploy: Foundry → TestUsers → SensitivityLabels → DLP → Retention → EDiscovery → CommunicationCompliance → InsiderRisk → ConditionalAccess → TestData → AuditConfig
 
-Remove: exact reverse. TestData removal is a no-op (sent emails can't be recalled).
+Remove: exact reverse (Foundry last). TestData removal is a no-op (sent emails can't be recalled).
 
 ## Manifest system
 

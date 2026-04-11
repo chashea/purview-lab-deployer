@@ -23,7 +23,7 @@ The canonical schema is at `configs/_schema.json`. Always validate new configs a
 
 ## Workload shapes
 
-The 10 workloads and their key config properties:
+The 11 workloads and their key config properties:
 
 1. **testUsers** — `mode` (create/existing), `users[]` (displayName, mailNickname, department, jobTitle, usageLocation), `groups[]` (displayName, members[])
 2. **sensitivityLabels** — `labels[]` (name, tooltip, color, parentLabel)
@@ -35,6 +35,7 @@ The 10 workloads and their key config properties:
 8. **conditionalAccess** — `policies[]` (name, description, targetAppIds[], signInRiskLevels[], grantControls)
 9. **testData** — `emails[]` (from, to, subject, body), `files[]` (location, filename, content)
 10. **auditConfig** — `searches[]` (name, operations[], dayRange)
+11. **foundry** — `enabled`, `subscriptionId`, `resourceGroup`, `location`, `accountName`, `projectName`, `modelDeploymentName`, `agents[]` (name, description, instructions, model), `botService` (enabled)
 
 ## DLP Sensitive Information Types
 
@@ -52,6 +53,7 @@ DLP rules reference built-in Microsoft SITs by exact name:
 - Never create root-level config files
 - Naming pattern: `<scenario>-demo.json` (e.g., `medical-demo.json`)
 - Baseline labs use prefix `PVLab`; Shadow AI uses `PVShadowAI`
+- Foundry demo uses prefix `PVFoundry`
 - When creating a GCC variant, check `profiles/gcc/capabilities.json` for workload availability — disable workloads marked `unavailable`
 - Reference existing configs as templates: `basic-lab-demo.json` for full-featured, `dlp-only.json` for minimal
 

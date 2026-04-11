@@ -21,6 +21,7 @@ Remove-<Workload> -Config <hashtable> [-Manifest <hashtable>] [-WhatIf]
 Exceptions:
 - `Prerequisites.psm1` and `Logging.psm1` are utility modules (no Deploy/Remove)
 - `TestData.psm1` exports `Send-TestData` (removal is a no-op — sent emails can't be recalled)
+- `Foundry.psm1` exports `Deploy-Foundry` and `Remove-Foundry`. Uses ARM REST API (not Az cmdlets) for resource provisioning. Internally organized as: token helpers, ARM operations, agent packaging, public API.
 
 Always include `Export-ModuleMember -Function Deploy-*, Remove-*` at the end of workload modules.
 
@@ -66,10 +67,12 @@ When adding a new workload:
 5. Update capability profiles:
    - `profiles/commercial/capabilities.json`
    - `profiles/gcc/capabilities.json`
+6. If the workload needs Azure resources, add early import of `Az.Accounts` and connect via `Connect-LabServices -ConnectAzure`
+7. Add Pester tests to `tests/` for the new module functions
 
 ## Deployment order (dependency-driven)
 
-1. TestUsers → 2. SensitivityLabels → 3. DLP → 4. Retention → 5. EDiscovery → 6. CommunicationCompliance → 7. InsiderRisk → 8. ConditionalAccess → 9. TestData → 10. AuditConfig
+1. Foundry → 2. TestUsers → 3. SensitivityLabels → 4. DLP → 5. Retention → 6. EDiscovery → 7. CommunicationCompliance → 8. InsiderRisk → 9. ConditionalAccess → 10. TestData → 11. AuditConfig
 
 Removal is the exact reverse.
 
@@ -99,3 +102,4 @@ Write-LabLog "Failed to create policy: $_" -Level Error
 1. Lint: `Invoke-ScriptAnalyzer -Path . -Recurse -Severity Warning -ExcludeRule PSAvoidUsingWriteHost,PSUseSingularNouns`
 2. Dry-run deploy: `./Deploy-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -SkipAuth -WhatIf`
 3. Dry-run remove: `./Remove-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -SkipAuth -WhatIf`
+4. Run Pester tests: `Invoke-Pester tests/ -Output Detailed`
