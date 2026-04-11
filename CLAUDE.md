@@ -69,9 +69,11 @@ Invoke-Pester tests/ -Output Detailed
 
 ### Deployment Order (dependency-driven)
 
-1. Foundry → 2. TestUsers → 3. SensitivityLabels → 4. DLP → 5. Retention → 6. EDiscovery → 7. CommunicationCompliance → 8. InsiderRisk → 9. ConditionalAccess → 10. TestData → 11. AuditConfig
+1. TestUsers → 2. SensitivityLabels → 3. DLP → 4. Retention → 5. EDiscovery → 6. CommunicationCompliance → 7. InsiderRisk → 8. ConditionalAccess → 9. TestData → 10. AuditConfig
 
-Foundry deploys first so agents exist before Purview policies that govern them. Removal is the exact reverse (Foundry last). TestData removal is a no-op (sent emails cannot be recalled).
+Removal is the exact reverse. TestData removal is a no-op (sent emails cannot be recalled).
+
+For AI Foundry agent security, see [chashea/ai-agent-security](https://github.com/chashea/ai-agent-security).
 
 ### Module Contract
 
@@ -110,6 +112,8 @@ Two supported clouds with capability profiles at `profiles/<cloud>/capabilities.
 | ConditionalAccess | available | available | |
 | TestData | available | available | |
 | AuditConfig | available | available | |
+
+> For AI Foundry agent security workloads, see [chashea/ai-agent-security](https://github.com/chashea/ai-agent-security).
 
 **Status meanings:** `available` = fully supported, `limited` = functional but feature parity gaps possible, `delayed` = not yet rolled out, `unavailable` = blocked (deploy will refuse).
 

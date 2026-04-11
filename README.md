@@ -12,7 +12,6 @@ Config-driven Microsoft Purview demo lab deployment. PowerShell 7+, modular by w
 | **basic-lab** | Core compliance workloads (DLP, labels, retention, eDiscovery, insider risk) | [profiles/commercial/basic-lab/README.md](profiles/commercial/basic-lab/README.md) |
 | **shadow-ai** | Shadow AI detection and governance (AI app blocking, discovery, session monitoring) | [profiles/commercial/shadow-ai/README.md](profiles/commercial/shadow-ai/README.md) |
 | **copilot-dlp** | Copilot DLP guardrails (prompt blocking, labeled content protection, audit evidence) | [profiles/commercial/copilot-dlp/README.md](profiles/commercial/copilot-dlp/README.md) |
-| **foundry** | Microsoft AI Foundry agents with governance policies | [profiles/commercial/foundry/README.md](profiles/commercial/foundry/README.md) |
 
 Each profile is a self-contained deployment with its own prefix, config, and lifecycle. See the profile README for setup instructions.
 
@@ -27,7 +26,6 @@ Each profile is a self-contained deployment with its own prefix, config, and lif
 
 | Module | Automation | What it does |
 |--------|------------|--------------|
-| Foundry | Full | Azure AI Foundry account, project, agents, and Teams packages |
 | TestUsers | Full | Entra ID users and groups |
 | SensitivityLabels | Full | Labels and auto-label policies |
 | DLP | Full | Policies and rules with enforcement config |

@@ -48,7 +48,7 @@ param(
     [string]$ConfigPath,
 
     [Parameter()]
-    [ValidateSet('basic-lab', 'shadow-ai', 'copilot-dlp', 'foundry')]
+    [ValidateSet('basic-lab', 'shadow-ai', 'copilot-dlp')]
     [string]$LabProfile,
 
     [Parameter()]
@@ -141,8 +141,7 @@ try {
 
     # Test prerequisites
     Write-LabStep -StepName 'Prerequisites' -Description 'Validating prerequisites'
-    $foundryEnabled = $Config.workloads.PSObject.Properties['foundry'] -and $Config.workloads.foundry.enabled
-    if (-not (Test-LabPrerequisites -IncludeFoundry:$foundryEnabled)) {
+    if (-not (Test-LabPrerequisites)) {
         Write-LabLog -Message 'Prerequisites check failed. Exiting.' -Level Error
         exit 1
     }
@@ -155,18 +154,8 @@ try {
         }
 
         Write-LabStep -StepName 'Auth' -Description 'Connecting to cloud services'
-        $azureSubscriptionId = if ($foundryEnabled -and $Config.workloads.foundry.PSObject.Properties['subscriptionId']) {
-            [string]$Config.workloads.foundry.subscriptionId
-        }
-        else { $null }
-        Connect-LabServices -TenantId $TenantId -ConnectAzure:$foundryEnabled -AzureSubscriptionId $azureSubscriptionId
-        $connectMsg = if ($foundryEnabled) {
-            'Connected to Exchange Online, Microsoft Graph, and Azure.'
-        }
-        else {
-            'Connected to Exchange Online and Microsoft Graph.'
-        }
-        Write-LabLog -Message $connectMsg -Level Success
+        Connect-LabServices -TenantId $TenantId
+        Write-LabLog -Message 'Connected to Exchange Online and Microsoft Graph.' -Level Success
 
         $resolvedDomain = Resolve-LabTenantDomain -ConfiguredDomain $Config.domain
         if (-not [string]::Equals($resolvedDomain, [string]$Config.domain, [System.StringComparison]::OrdinalIgnoreCase)) {
@@ -265,16 +254,6 @@ try {
     }
     else {
         Write-LabLog -Message 'testUsers workload is disabled, skipping.' -Level Info
-    }
-
-    # Foundry — removed last (reverse of deploy order: Foundry deploys first)
-    if ($foundryEnabled) {
-        Write-LabStep -StepName 'Foundry' -Description 'Removing Microsoft Foundry agents, project, and account'
-        Remove-Foundry -Config $Config -Manifest (Get-WorkloadManifest -WorkloadName 'foundry') -WhatIf:$WhatIfPreference
-        Write-LabLog -Message 'Foundry removal complete.' -Level Success
-    }
-    else {
-        Write-LabLog -Message 'foundry workload is disabled, skipping.' -Level Info
     }
 
     # Summary

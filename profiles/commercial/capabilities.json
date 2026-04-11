@@ -45,10 +45,6 @@
     "conditionalAccess": {
       "status": "available",
       "note": "Conditional Access policy automation via Graph API supported."
-    },
-    "foundry": {
-      "status": "available",
-      "note": "Microsoft Foundry (CognitiveServices AIServices account + project + agents). Requires Az.Accounts module and an Azure subscription with GPT-4o GlobalStandard quota in the target region."
     }
   }
 }

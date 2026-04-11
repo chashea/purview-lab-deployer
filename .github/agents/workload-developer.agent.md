@@ -21,7 +21,6 @@ Remove-<Workload> -Config <hashtable> [-Manifest <hashtable>] [-WhatIf]
 Exceptions:
 - `Prerequisites.psm1` and `Logging.psm1` are utility modules (no Deploy/Remove)
 - `TestData.psm1` exports `Send-TestData` (removal is a no-op — sent emails can't be recalled)
-- `Foundry.psm1` exports `Deploy-Foundry` and `Remove-Foundry`. Uses ARM REST API (not Az cmdlets) for resource provisioning. Internally organized as: token helpers, ARM operations, agent packaging, public API.
 
 Always include `Export-ModuleMember -Function Deploy-*, Remove-*` at the end of workload modules.
 
@@ -72,7 +71,7 @@ When adding a new workload:
 
 ## Deployment order (dependency-driven)
 
-1. Foundry → 2. TestUsers → 3. SensitivityLabels → 4. DLP → 5. Retention → 6. EDiscovery → 7. CommunicationCompliance → 8. InsiderRisk → 9. ConditionalAccess → 10. TestData → 11. AuditConfig
+1. TestUsers → 2. SensitivityLabels → 3. DLP → 4. Retention → 5. EDiscovery → 6. CommunicationCompliance → 7. InsiderRisk → 8. ConditionalAccess → 9. TestData → 10. AuditConfig
 
 Removal is the exact reverse.
 

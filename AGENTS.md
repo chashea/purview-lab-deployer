@@ -6,14 +6,13 @@ This file provides guidance to AI coding agents (Codex, Jules, OpenCode, Copilot
 
 Automated Microsoft Purview demo lab deployment via PowerShell 7+.
 Config-driven, modular by workload, deploy + teardown symmetry.
-Four deployment profiles: basic-lab, shadow-ai, copilot-dlp, foundry — each with commercial and GCC variants.
+Three deployment profiles: basic-lab, shadow-ai, copilot-dlp — each with commercial and GCC variants.
 
 ## Stack
 
 - PowerShell 7+ (pwsh)
 - ExchangeOnlineManagement >= 3.0
 - Microsoft.Graph SDK (Users, Groups, Authentication)
-- Az.Accounts (for Azure AI Foundry resource provisioning)
 
 ## Commands
 
@@ -52,9 +51,9 @@ CI runs PSScriptAnalyzer lint, Pester tests, and a smoke test (module import + c
 
 ### Deployment Order
 
-1. Foundry → 2. TestUsers → 3. SensitivityLabels → 4. DLP → 5. Retention → 6. EDiscovery → 7. CommunicationCompliance → 8. InsiderRisk → 9. ConditionalAccess → 10. TestData → 11. AuditConfig
+1. TestUsers → 2. SensitivityLabels → 3. DLP → 4. Retention → 5. EDiscovery → 6. CommunicationCompliance → 7. InsiderRisk → 8. ConditionalAccess → 9. TestData → 10. AuditConfig
 
-Removal is the exact reverse (Foundry last). TestData removal is a no-op.
+Removal is the exact reverse. TestData removal is a no-op.
 
 ### Module Contract
 
@@ -64,7 +63,7 @@ Every workload module in `modules/` exports:
 
 Exceptions: `Prerequisites.psm1` and `Logging.psm1` are utility modules. `TestData.psm1` exports `Send-TestData` only.
 
-`Foundry.psm1` exports `Deploy-Foundry` and `Remove-Foundry`. Internally organized as: ARM operations (resource provisioning), agent packaging (Teams manifest and ZIP), and public API entry points.
+For AI Foundry agent security, see [chashea/ai-agent-security](https://github.com/chashea/ai-agent-security).
 
 ## Conventions
 

@@ -46,7 +46,6 @@ function Request-LabProfile {
         @{ Number = 1; Name = 'basic-lab'; Description = 'Basic demo lab' }
         @{ Number = 2; Name = 'shadow-ai'; Description = 'Shadow AI demo' }
         @{ Number = 3; Name = 'copilot-dlp'; Description = 'Copilot DLP guardrails demo' }
-        @{ Number = 4; Name = 'foundry'; Description = 'Microsoft AI Foundry agents' }
     )
 
     $profileNumbers = ($profiles | ForEach-Object { $_.Number }) -join '/'

@@ -47,7 +47,7 @@ param(
     [string]$ConfigPath,
 
     [Parameter()]
-    [ValidateSet('basic-lab', 'shadow-ai', 'copilot-dlp', 'foundry')]
+    [ValidateSet('basic-lab', 'shadow-ai', 'copilot-dlp')]
     [string]$LabProfile,
 
     [Parameter()]
@@ -148,10 +148,7 @@ try {
 
     # Test prerequisites
     Write-LabStep -StepName 'Prerequisites' -Description 'Validating prerequisites'
-    $foundryEnabled = $Config.workloads.PSObject.Properties['foundry'] -and $Config.workloads.foundry.enabled
-    # Only check Az.Accounts when actually connecting — skip during WhatIf/SkipAuth dry runs
-    $checkFoundryModules = $foundryEnabled -and -not $SkipAuth
-    if (-not (Test-LabPrerequisites -IncludeFoundry:$checkFoundryModules)) {
+    if (-not (Test-LabPrerequisites)) {
         Write-LabLog -Message 'Prerequisites check failed. Exiting.' -Level Error
         exit 1
     }
@@ -164,18 +161,8 @@ try {
         }
 
         Write-LabStep -StepName 'Auth' -Description 'Connecting to cloud services'
-        $azureSubscriptionId = if ($foundryEnabled -and $Config.workloads.foundry.PSObject.Properties['subscriptionId']) {
-            [string]$Config.workloads.foundry.subscriptionId
-        }
-        else { $null }
-        Connect-LabServices -TenantId $TenantId -ConnectAzure:$foundryEnabled -AzureSubscriptionId $azureSubscriptionId
-        $connectMsg = if ($foundryEnabled) {
-            'Connected to Exchange Online, Microsoft Graph, and Azure.'
-        }
-        else {
-            'Connected to Exchange Online and Microsoft Graph.'
-        }
-        Write-LabLog -Message $connectMsg -Level Success
+        Connect-LabServices -TenantId $TenantId
+        Write-LabLog -Message 'Connected to Exchange Online and Microsoft Graph.' -Level Success
 
         $resolvedDomain = Resolve-LabTenantDomain -ConfiguredDomain $Config.domain
         if (-not [string]::Equals($resolvedDomain, [string]$Config.domain, [System.StringComparison]::OrdinalIgnoreCase)) {
@@ -365,14 +352,6 @@ try {
     }
 
     # Deploy workloads in dependency order
-    # Foundry deploys first — agents must exist before Purview policies that govern them
-    if ($foundryEnabled) {
-        Invoke-Workload -Name 'foundry' -Step 'Foundry' -Description 'Deploying Microsoft Foundry account, project, and agents' -Action {
-            Deploy-Foundry -Config $Config -WhatIf:$WhatIfPreference
-        }
-    }
-    else { Write-LabLog -Message 'foundry workload is disabled, skipping.' -Level Info }
-
     if ($Config.workloads.testUsers.enabled) {
         Invoke-Workload -Name 'testUsers' -Step 'TestUsers' -Description 'Deploying test users' -Action {
             Deploy-TestUsers -Config $Config -WhatIf:$WhatIfPreference
