@@ -12,6 +12,7 @@
 
 $script:ArmApiVersion   = '2025-09-01'
 $script:AgentApiVersion = '2025-05-15-preview'
+$script:AppApiVersion   = '2025-10-01-preview'   # accounts/projects/applications (publish agent endpoint)
 $script:ArmBase         = 'https://management.azure.com'
 $script:GptModelVersion = '2024-11-20'   # Current GA version of gpt-4o; update if deploying to a region with a newer default
 
@@ -451,6 +452,51 @@ function Deploy-Foundry {
     }
 
     $manifest.agents = $createdAgents.ToArray()
+
+    # ── 7. Publish agents as applications ─────────────────────────────────────
+    Write-LabLog -Message 'Publishing agents as Foundry application endpoints...' -Level Info
+    foreach ($agent in $manifest.agents) {
+        $agentName = [string]$agent.name
+        $appUri    = "$accountPath/projects/$projectName/applications/$agentName`?api-version=$($script:AppApiVersion)"
+
+        # Check if already published
+        try {
+            $existing = Invoke-WebRequest -Uri $appUri -Method Get -Headers @{ Authorization = "Bearer $armToken"; 'Content-Type' = 'application/json' } -SkipHttpErrorCheck -ErrorAction Stop
+            if ([int]$existing.StatusCode -eq 200) {
+                Write-LabLog -Message "Application already exists: $agentName" -Level Info
+                $appResult = $existing.Content | ConvertFrom-Json
+                $agent | Add-Member -NotePropertyName 'baseUrl' -NotePropertyValue ([string]$appResult.properties.baseUrl) -Force
+                continue
+            }
+        } catch { }
+
+        $appBody = @{
+            properties = @{
+                displayName = $agentName
+                agents      = @(@{ agentName = $agentName })
+            }
+        } | ConvertTo-Json -Depth 5 -Compress
+
+        try {
+            $appResp = Invoke-WebRequest -Uri $appUri -Method Put `
+                -Headers @{ Authorization = "Bearer $armToken"; 'Content-Type' = 'application/json' } `
+                -Body $appBody -SkipHttpErrorCheck -ErrorAction Stop
+
+            if ([int]$appResp.StatusCode -lt 400) {
+                $appResult = $appResp.Content | ConvertFrom-Json
+                $baseUrl   = [string]$appResult.properties.baseUrl
+                $agent | Add-Member -NotePropertyName 'baseUrl' -NotePropertyValue $baseUrl -Force
+                Write-LabLog -Message "Published agent: $agentName → $baseUrl" -Level Success
+            }
+            else {
+                Write-LabLog -Message "Publish failed for '$agentName' (HTTP $($appResp.StatusCode)): $($appResp.Content)" -Level Warning
+            }
+        }
+        catch {
+            Write-LabLog -Message "Error publishing agent '$agentName'`: $($_.Exception.Message)" -Level Warning
+        }
+    }
+
     return $manifest
 }
 
@@ -508,7 +554,7 @@ function Remove-Foundry {
     $rgPath      = "$($script:ArmBase)/subscriptions/$subscriptionId/resourceGroups/$resourceGroup"
     $accountPath = "$rgPath/providers/Microsoft.CognitiveServices/accounts/$accountName"
 
-    # ── 1. Delete agents ───────────────────────────────────────────────────────
+    # ── 1. Delete published applications ──────────────────────────────────────
     $agentsToDelete = @()
     if ($Manifest -and $Manifest.PSObject.Properties['agents'] -and $Manifest.agents) {
         $agentsToDelete = @($Manifest.agents)
@@ -516,6 +562,24 @@ function Remove-Foundry {
     else {
         Write-LabLog -Message 'No agent manifest available — delete agents manually in the Foundry portal.' -Level Warning
     }
+
+    $appHeaders = @{ Authorization = "Bearer $armToken"; 'Content-Type' = 'application/json' }
+    foreach ($agent in $agentsToDelete) {
+        $agentName = [string]$agent.name
+        if ([string]::IsNullOrWhiteSpace($agentName)) { continue }
+        $appUri = "$accountPath/projects/$projectName/applications/$agentName`?api-version=$($script:AppApiVersion)"
+        try {
+            $delResp = Invoke-WebRequest -Uri $appUri -Method Delete -Headers $appHeaders -SkipHttpErrorCheck -ErrorAction Stop
+            if ([int]$delResp.StatusCode -lt 400) {
+                Write-LabLog -Message "Unpublished application: $agentName" -Level Success
+            }
+        }
+        catch {
+            Write-LabLog -Message "Error unpublishing application '$agentName'`: $($_.Exception.Message)" -Level Warning
+        }
+    }
+
+    # ── 2. Delete agents ───────────────────────────────────────────────────────
 
     $agentHeaders = @{
         'Authorization' = "Bearer $dataToken"
