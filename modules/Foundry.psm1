@@ -10,7 +10,7 @@
     Requires the Az.Accounts PowerShell module for ARM authentication.
 #>
 
-$script:ArmApiVersion   = '2025-06-01'
+$script:ArmApiVersion   = '2025-09-01'
 $script:AgentApiVersion = '2025-05-01'
 $script:ArmBase         = 'https://management.azure.com'
 $script:GptModelVersion = '2024-11-20'   # Current GA version of gpt-4o; update if deploying to a region with a newer default
@@ -31,7 +31,8 @@ function Get-FoundryDataToken {
     [CmdletBinding()]
     [OutputType([string])]
     param()
-    $tok = (Get-AzAccessToken -ResourceUrl 'https://cognitiveservices.azure.com' -ErrorAction Stop).Token
+    # Foundry agent data-plane (services.ai.azure.com) requires https://ai.azure.com audience
+    $tok = (Get-AzAccessToken -ResourceUrl 'https://ai.azure.com' -ErrorAction Stop).Token
     if ($tok -is [System.Security.SecureString]) { return $tok | ConvertFrom-SecureString -AsPlainText }
     return $tok
 }
@@ -331,6 +332,18 @@ function Deploy-Foundry {
     $projectUri      = "$projectPath`?api-version=$($script:ArmApiVersion)"
     $existingProject = Invoke-ArmGet -Uri $projectUri -Token $armToken
 
+    # Treat a Failed project as non-existent — delete and recreate
+    $projectFailed = $existingProject -and
+        $existingProject.PSObject.Properties['properties'] -and
+        $existingProject.properties.PSObject.Properties['provisioningState'] -and
+        [string]$existingProject.properties.provisioningState -eq 'Failed'
+
+    if ($projectFailed) {
+        Write-LabLog -Message "Foundry project '$projectName' is in Failed state — deleting and recreating." -Level Warning
+        Invoke-ArmDelete -Uri $projectUri -Token $armToken | Out-Null
+        $existingProject = $null
+    }
+
     if ($existingProject) {
         Write-LabLog -Message "Foundry project already exists: $projectName" -Level Info
         $manifest.projectId = [string]$existingProject.id
@@ -338,7 +351,6 @@ function Deploy-Foundry {
     else {
         $projectBody = @{
             location   = $location
-            kind       = 'Project'
             properties = @{
                 description = 'Purview AI governance demo — deployed by purview-lab-deployer'
             }
