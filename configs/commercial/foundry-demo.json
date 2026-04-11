@@ -7,56 +7,24 @@
   "workloads": {
     "testUsers": {
       "enabled": true,
-      "mode": "create",
+      "mode": "existing",
       "users": [
         {
-          "displayName": "Alicia Hernandez",
-          "mailNickname": "ahernandez",
-          "department": "Human Resources",
-          "jobTitle": "HR Manager",
-          "usageLocation": "US"
-        },
-        {
-          "displayName": "Brian Wallace",
-          "mailNickname": "bwallace",
-          "department": "Finance",
-          "jobTitle": "Financial Analyst",
-          "usageLocation": "US"
-        },
-        {
-          "displayName": "Chris Park",
-          "mailNickname": "cpark",
-          "department": "Information Technology",
-          "jobTitle": "IT Support Specialist",
-          "usageLocation": "US"
-        },
-        {
-          "displayName": "Diana Morgan",
-          "mailNickname": "dmorgan",
-          "department": "Sales",
-          "jobTitle": "Sales Representative",
-          "usageLocation": "US"
-        },
-        {
-          "displayName": "Ethan Patel",
-          "mailNickname": "epatel",
-          "department": "Executive",
-          "jobTitle": "VP of Operations",
-          "usageLocation": "US"
+          "identity": "charlesshea@MngEnvMCAP648165.onmicrosoft.com"
         }
       ],
       "groups": [
         {
           "displayName": "PVFoundry-Finance-Team",
-          "members": ["bwallace", "epatel"]
+          "members": ["charlesshea"]
         },
         {
           "displayName": "PVFoundry-IT-Team",
-          "members": ["cpark"]
+          "members": ["charlesshea"]
         },
         {
           "displayName": "PVFoundry-Sales-Team",
-          "members": ["dmorgan", "epatel"]
+          "members": ["charlesshea"]
         }
       ]
     },
@@ -311,10 +279,7 @@
           "name": "AI-Governance-Investigation",
           "description": "Forensic investigation into AI agent interactions and potential data misuse via Microsoft Foundry agents",
           "custodians": [
-            "ahernandez@MngEnvMCAP648165.onmicrosoft.com",
-            "bwallace@MngEnvMCAP648165.onmicrosoft.com",
-            "cpark@MngEnvMCAP648165.onmicrosoft.com",
-            "dmorgan@MngEnvMCAP648165.onmicrosoft.com"
+            "charlesshea@MngEnvMCAP648165.onmicrosoft.com"
           ],
           "holdQuery": "AI OR Copilot OR \"sensitive data\" OR \"blocked prompt\"",
           "searchQuery": "DlpRuleMatch OR AIInteraction OR FoundryAgent"
