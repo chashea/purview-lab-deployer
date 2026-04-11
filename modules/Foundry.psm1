@@ -11,7 +11,7 @@
 #>
 
 $script:ArmApiVersion   = '2025-09-01'
-$script:AgentApiVersion = '2025-05-01'
+$script:AgentApiVersion = '2025-05-15-preview'
 $script:ArmBase         = 'https://management.azure.com'
 $script:GptModelVersion = '2024-11-20'   # Current GA version of gpt-4o; update if deploying to a region with a newer default
 
@@ -396,16 +396,19 @@ function Deploy-Foundry {
         'Authorization' = "Bearer $dataToken"
         'Content-Type'  = 'application/json'
     }
-    $agentsUri = "$projectEndpoint/assistants?api-version=$($script:AgentApiVersion)"
+    $agentsUri = "$projectEndpoint/agents?api-version=$($script:AgentApiVersion)"
 
     foreach ($agentConfig in $Config.workloads.foundry.agents) {
         $agentName = "$($Config.prefix)-$($agentConfig.name)"
         Write-LabLog -Message "Creating agent: $agentName" -Level Info
 
         $agentPayload = [ordered]@{
-            name         = $agentName
-            model        = [string]$agentConfig.model
-            instructions = [string]$agentConfig.instructions
+            name       = $agentName
+            definition = [ordered]@{
+                kind         = 'prompt'
+                model        = [string]$agentConfig.model
+                instructions = [string]$agentConfig.instructions
+            }
         }
         if ($agentConfig.PSObject.Properties['description'] -and
             -not [string]::IsNullOrWhiteSpace([string]$agentConfig.description)) {
@@ -413,8 +416,21 @@ function Deploy-Foundry {
         }
 
         try {
+            # Check if agent already exists (idempotent)
+            $existingAgent = Invoke-WebRequest -Uri "$projectEndpoint/agents/$agentName`?api-version=$($script:AgentApiVersion)" `
+                -Headers $agentHeaders -Method Get -SkipHttpErrorCheck -ErrorAction Stop
+            if ([int]$existingAgent.StatusCode -eq 200) {
+                Write-LabLog -Message "Agent already exists: $agentName" -Level Info
+                $createdAgents.Add([PSCustomObject]@{
+                    id    = $agentName
+                    name  = $agentName
+                    model = [string]$agentConfig.model
+                })
+                continue
+            }
+
             $agentResponse = Invoke-WebRequest -Uri $agentsUri -Method Post -Headers $agentHeaders `
-                -Body ($agentPayload | ConvertTo-Json -Compress) -SkipHttpErrorCheck -ErrorAction Stop
+                -Body ($agentPayload | ConvertTo-Json -Depth 5 -Compress) -SkipHttpErrorCheck -ErrorAction Stop
 
             if ([int]$agentResponse.StatusCode -lt 400) {
                 $agentResult = $agentResponse.Content | ConvertFrom-Json
@@ -512,7 +528,7 @@ function Remove-Foundry {
         if ([string]::IsNullOrWhiteSpace($agentId)) { continue }
 
         try {
-            $deleteUri   = "$projectEndpoint/assistants/$($agentId)?api-version=$($script:AgentApiVersion)"
+            $deleteUri   = "$projectEndpoint/agents/$($agentId)?api-version=$($script:AgentApiVersion)"
             $delResponse = Invoke-WebRequest -Uri $deleteUri -Method Delete -Headers $agentHeaders `
                 -SkipHttpErrorCheck -ErrorAction Stop
 
