@@ -150,6 +150,296 @@ function Invoke-ArmDelete {
     }
 }
 
+function Initialize-PngWriter {
+    if (-not ([System.Management.Automation.PSTypeName]'Foundry.PngWriter').Type) {
+        Add-Type -Language CSharp -TypeDefinition @'
+using System;
+using System.IO;
+using System.IO.Compression;
+
+namespace Foundry {
+    public static class PngWriter {
+        static uint[] _crcTable;
+
+        static PngWriter() {
+            _crcTable = new uint[256];
+            for (uint n = 0; n < 256; n++) {
+                uint c = n;
+                for (int k = 0; k < 8; k++) {
+                    if ((c & 1) != 0) c = 0xEDB88320u ^ (c >> 1);
+                    else c >>= 1;
+                }
+                _crcTable[n] = c;
+            }
+        }
+
+        static uint Crc32(byte[] data, int offset, int length) {
+            uint crc = 0xFFFFFFFFu;
+            for (int i = offset; i < offset + length; i++)
+                crc = _crcTable[(crc ^ data[i]) & 0xFF] ^ (crc >> 8);
+            return crc ^ 0xFFFFFFFFu;
+        }
+
+        static uint Adler32(byte[] data) {
+            uint s1 = 1, s2 = 0;
+            foreach (byte b in data) {
+                s1 = (s1 + b) % 65521;
+                s2 = (s2 + s1) % 65521;
+            }
+            return (s2 << 16) | s1;
+        }
+
+        static byte[] BigEndian4(uint v) {
+            return new byte[] {
+                (byte)(v >> 24), (byte)(v >> 16), (byte)(v >> 8), (byte)v
+            };
+        }
+
+        static void WriteChunk(Stream out_, byte[] type, byte[] data) {
+            byte[] lenBytes = BigEndian4((uint)data.Length);
+            out_.Write(lenBytes, 0, 4);
+            out_.Write(type, 0, 4);
+            out_.Write(data, 0, data.Length);
+
+            byte[] crcInput = new byte[4 + data.Length];
+            Array.Copy(type, 0, crcInput, 0, 4);
+            Array.Copy(data, 0, crcInput, 4, data.Length);
+            byte[] crcBytes = BigEndian4(Crc32(crcInput, 0, crcInput.Length));
+            out_.Write(crcBytes, 0, 4);
+        }
+
+        public static void Write(string path, int size, byte r, byte g, byte b) {
+            // Build raw image: one filter byte (0x00) per scanline + RGB pixels
+            int scanline = 1 + size * 3;
+            byte[] raw = new byte[size * scanline];
+            for (int y = 0; y < size; y++) {
+                int off = y * scanline;
+                raw[off] = 0x00; // filter type None
+                for (int x = 0; x < size; x++) {
+                    raw[off + 1 + x * 3 + 0] = r;
+                    raw[off + 1 + x * 3 + 1] = g;
+                    raw[off + 1 + x * 3 + 2] = b;
+                }
+            }
+
+            // Zlib-compress: 0x78 0x9C + Deflate + Adler-32
+            byte[] compressed;
+            using (var comp = new MemoryStream()) {
+                comp.WriteByte(0x78);
+                comp.WriteByte(0x9C);
+                using (var dfl = new DeflateStream(comp, CompressionLevel.Optimal, true)) {
+                    dfl.Write(raw, 0, raw.Length);
+                }
+                uint adler = Adler32(raw);
+                byte[] adlerBytes = BigEndian4(adler);
+                comp.Write(adlerBytes, 0, 4);
+                compressed = comp.ToArray();
+            }
+
+            // Build IHDR: width, height, bit depth 8, colour type 2 (RGB), compress 0, filter 0, interlace 0
+            byte[] ihdr = new byte[13];
+            byte[] wb = BigEndian4((uint)size); Array.Copy(wb, 0, ihdr, 0, 4);
+            byte[] hb = BigEndian4((uint)size); Array.Copy(hb, 0, ihdr, 4, 4);
+            ihdr[8] = 8; ihdr[9] = 2; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;
+
+            byte[] pngSig = new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 };
+            byte[] typeIHDR = new byte[] { 73, 72, 68, 82 };
+            byte[] typeIDAT = new byte[] { 73, 68, 65, 84 };
+            byte[] typeIEND = new byte[] { 73, 69, 78, 68 };
+
+            using (var fs = File.Open(path, FileMode.Create, FileAccess.Write)) {
+                fs.Write(pngSig, 0, 8);
+                WriteChunk(fs, typeIHDR, ihdr);
+                WriteChunk(fs, typeIDAT, compressed);
+                WriteChunk(fs, typeIEND, new byte[0]);
+            }
+        }
+    }
+}
+'@
+    }
+}
+
+function New-FoundryAgentPackage {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [PSCustomObject]$Agent,
+
+        [Parameter(Mandatory)]
+        [string]$Prefix,
+
+        [Parameter(Mandatory)]
+        [PSCustomObject]$AgentConfig,
+
+        [Parameter(Mandatory)]
+        [string]$OutputDir,
+
+        [Parameter(Mandatory)]
+        [string]$TenantId
+    )
+
+    $agentName   = [string]$Agent.name
+    # Strip prefix: PVFoundry-HR-Helpdesk → HR-Helpdesk
+    $shortName   = $agentName -replace "^$([regex]::Escape($Prefix))-", ''
+    # No hyphens: HR-Helpdesk → HRHelpdesk
+    $shortNameNH = $shortName -replace '-', ''
+
+    $description     = if ($AgentConfig.PSObject.Properties['description'] -and
+                           -not [string]::IsNullOrWhiteSpace([string]$AgentConfig.description)) {
+                           [string]$AgentConfig.description
+                       } else { $shortName }
+    $instructions    = [string]$AgentConfig.instructions
+    $baseUrl         = if ($Agent.PSObject.Properties['baseUrl']) { [string]$Agent.baseUrl } else { '' }
+
+    $descShort = if ($description.Length -le 80) { $description } else { $description.Substring(0, 77) + '...' }
+
+    $pkgDir  = Join-Path $OutputDir $shortName
+    $zipPath = Join-Path $OutputDir "$shortName.zip"
+
+    if (Test-Path $pkgDir) { Remove-Item $pkgDir -Recurse -Force }
+    New-Item -ItemType Directory -Path $pkgDir -Force | Out-Null
+
+    # --- manifest.json ---
+    $teamsManifest = [ordered]@{
+        '$schema'       = 'https://developer.microsoft.com/json-schemas/teams/v1.19/MicrosoftTeams.schema.json'
+        manifestVersion = '1.19'
+        version         = '1.0.0'
+        id              = [string][System.Guid]::NewGuid()
+        developer       = [ordered]@{
+            name           = 'Contoso'
+            websiteUrl     = 'https://contoso.com'
+            privacyUrl     = 'https://contoso.com/privacy'
+            termsOfUseUrl  = 'https://contoso.com/terms'
+        }
+        name            = [ordered]@{
+            short = $shortName
+            full  = "$Prefix $shortName"
+        }
+        description     = [ordered]@{
+            short = $descShort
+            full  = "$description — powered by Microsoft Foundry + Purview AI Governance"
+        }
+        icons           = [ordered]@{ color = 'color.png'; outline = 'outline.png' }
+        accentColor     = '#0078D4'
+        copilotAgents   = [ordered]@{
+            declarativeAgents = @(
+                [ordered]@{ id = $shortNameNH; file = 'declarativeAgent.json' }
+            )
+        }
+    }
+    $teamsManifest | ConvertTo-Json -Depth 10 |
+        Set-Content -Path (Join-Path $pkgDir 'manifest.json') -Encoding UTF8
+
+    # --- declarativeAgent.json ---
+    $declAgent = [ordered]@{
+        '$schema'    = 'https://developer.microsoft.com/json-schemas/copilot/declarative-agent/v1.4/schema.json'
+        version      = 'v1.4'
+        name         = $shortName
+        description  = $description
+        instructions = $instructions
+        actions      = @(
+            [ordered]@{ id = "${shortNameNH}API"; file = 'plugin.json' }
+        )
+    }
+    $declAgent | ConvertTo-Json -Depth 10 |
+        Set-Content -Path (Join-Path $pkgDir 'declarativeAgent.json') -Encoding UTF8
+
+    # --- plugin.json ---
+    $plugin = [ordered]@{
+        schema_version        = 'v2.1'
+        name_for_human        = $shortName
+        name_for_model        = $shortNameNH
+        description_for_human = $description
+        description_for_model = "$description. $instructions"
+        auth                  = [ordered]@{ type = 'none' }
+        api                   = [ordered]@{ type = 'openapi'; url = 'openapi.json' }
+    }
+    $plugin | ConvertTo-Json -Depth 10 |
+        Set-Content -Path (Join-Path $pkgDir 'plugin.json') -Encoding UTF8
+
+    # --- openapi.json ---
+    $authUrl  = "https://login.microsoftonline.com/$TenantId/oauth2/v2.0/authorize"
+    $tokenUrl = "https://login.microsoftonline.com/$TenantId/oauth2/v2.0/token"
+
+    $openapi = [ordered]@{
+        openapi  = '3.0.1'
+        info     = [ordered]@{ title = $shortName; version = '1.0.0' }
+        servers  = @(@{ url = $baseUrl })
+        paths    = [ordered]@{
+            '/responses' = [ordered]@{
+                post = [ordered]@{
+                    operationId = "ask$shortNameNH"
+                    summary     = "Ask $shortName a question"
+                    requestBody = [ordered]@{
+                        required = $true
+                        content  = [ordered]@{
+                            'application/json' = [ordered]@{
+                                schema = [ordered]@{
+                                    type       = 'object'
+                                    required   = @('input')
+                                    properties = [ordered]@{
+                                        input = [ordered]@{ type = 'string'; description = 'User question or prompt' }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    responses   = [ordered]@{
+                        '200' = [ordered]@{
+                            description = 'Successful response'
+                            content     = [ordered]@{
+                                'application/json' = [ordered]@{
+                                    schema = [ordered]@{
+                                        type       = 'object'
+                                        properties = [ordered]@{
+                                            output = [ordered]@{ type = 'array'; items = [ordered]@{ type = 'object' } }
+                                            status = [ordered]@{ type = 'string' }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    security    = @(@{ EntraOAuth = @() })
+                }
+            }
+        }
+        components = [ordered]@{
+            securitySchemes = [ordered]@{
+                EntraOAuth = [ordered]@{
+                    type  = 'oauth2'
+                    flows = [ordered]@{
+                        authorizationCode = [ordered]@{
+                            authorizationUrl = $authUrl
+                            tokenUrl         = $tokenUrl
+                            scopes           = [ordered]@{
+                                'https://cognitiveservices.azure.com/.default' = 'Access Azure AI services'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    $openapi | ConvertTo-Json -Depth 15 |
+        Set-Content -Path (Join-Path $pkgDir 'openapi.json') -Encoding UTF8
+
+    # --- PNG icons ---
+    Initialize-PngWriter
+    [Foundry.PngWriter]::Write((Join-Path $pkgDir 'color.png'),   192,   0, 120, 212)
+    [Foundry.PngWriter]::Write((Join-Path $pkgDir 'outline.png'),  32, 255, 255, 255)
+
+    # --- Zip ---
+    if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
+    Compress-Archive -Path (Join-Path $pkgDir '*') -DestinationPath $zipPath -Force
+
+    # Cleanup staging dir
+    Remove-Item $pkgDir -Recurse -Force
+
+    return $zipPath
+}
+
 function Wait-ArmAsyncOperation {
     [CmdletBinding()]
     param(
@@ -494,6 +784,42 @@ function Deploy-Foundry {
         }
         catch {
             Write-LabLog -Message "Error publishing agent '$agentName'`: $($_.Exception.Message)" -Level Warning
+        }
+    }
+
+    # ── 8. Generate Teams/Copilot declarative agent packages ─────────────────
+    Write-LabLog -Message 'Generating Teams/Copilot declarative agent packages...' -Level Info
+
+    $tenantId  = [string](Get-AzContext).Tenant.Id
+    $packagesDir = Join-Path $PWD 'packages' 'foundry'
+    if (-not (Test-Path $packagesDir)) {
+        New-Item -ItemType Directory -Path $packagesDir -Force | Out-Null
+    }
+
+    foreach ($agent in $manifest.agents) {
+        $agentName   = [string]$agent.name
+        $agentConfig = $Config.workloads.foundry.agents |
+            Where-Object { "$($Config.prefix)-$($_.name)" -eq $agentName } |
+            Select-Object -First 1
+
+        if (-not $agentConfig) {
+            Write-LabLog -Message "Skipping package for '$agentName' — agent config not found." -Level Warning
+            continue
+        }
+
+        try {
+            $zipPath = New-FoundryAgentPackage `
+                -Agent        $agent `
+                -Prefix       ([string]$Config.prefix) `
+                -AgentConfig  $agentConfig `
+                -OutputDir    $packagesDir `
+                -TenantId     $tenantId
+
+            $agent | Add-Member -NotePropertyName 'packagePath' -NotePropertyValue $zipPath -Force
+            Write-LabLog -Message "Package: $zipPath" -Level Success
+        }
+        catch {
+            Write-LabLog -Message "Error generating package for '$agentName'`: $($_.Exception.Message)" -Level Warning
         }
     }
 

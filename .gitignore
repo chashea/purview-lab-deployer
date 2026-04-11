@@ -1,6 +1,9 @@
 # Deployment manifests (contain tenant-specific IDs)
 manifests/
 
+# Generated Teams/Copilot agent packages
+packages/
+
 # Transcripts
 *.log
 
