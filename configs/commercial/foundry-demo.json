@@ -387,7 +387,8 @@
           "instructions": "You are a sales research assistant for Contoso. Help with market analysis, competitive intelligence, and customer prospect research. Handle customer data in accordance with company privacy policy — do not share personally identifiable information or confidential business strategy with external parties.",
           "model": "gpt-4o"
         }
-      ]
+      ],
+      "botService": { "enabled": true }
     }
   }
 }
