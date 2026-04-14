@@ -60,22 +60,20 @@
           "locations": [
             "Devices"
           ],
-          "endpointDlpBrowserRestrictions": {
-            "blockedUrls": [
-              "chat.openai.com",
+          "targetApps": {
+            "unallowedApps": [
               "chatgpt.com",
+              "chat.openai.com",
               "claude.ai",
               "gemini.google.com",
               "bard.google.com",
-              "copilot.microsoft.com",
-              "poe.com",
               "perplexity.ai",
               "huggingface.co/chat"
             ]
           },
           "rules": [
             {
-              "name": "Endpoint AI Block - Elevated Risk",
+              "name": "Endpoint AI Block - Sensitive Data",
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)",
                 "Credit Card Number",
@@ -83,7 +81,6 @@
                 "All Medical Terms And Conditions"
               ],
               "minCount": 1,
-              "insiderRiskLevel": "Elevated",
               "enforcement": {
                 "action": "block",
                 "userNotification": {
@@ -99,58 +96,18 @@
                   "severity": "high"
                 }
               }
-            },
-            {
-              "name": "Endpoint AI Warn - Moderate Risk",
-              "sensitiveInfoTypes": [
-                "U.S. Social Security Number (SSN)",
-                "Credit Card Number",
-                "U.S. Bank Account Number",
-                "All Medical Terms And Conditions"
-              ],
-              "minCount": 1,
-              "insiderRiskLevel": "Moderate",
-              "enforcement": {
-                "action": "allowWithJustification",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "Sensitive data detected. Provide a business justification to continue sharing with this AI tool, or use Microsoft Copilot instead."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "medium"
-                }
-              }
-            },
-            {
-              "name": "Endpoint AI Audit - Minor Risk",
-              "sensitiveInfoTypes": [
-                "U.S. Social Security Number (SSN)",
-                "Credit Card Number",
-                "U.S. Bank Account Number",
-                "All Medical Terms And Conditions"
-              ],
-              "minCount": 1,
-              "insiderRiskLevel": "Minor",
-              "enforcement": {
-                "action": "auditOnly",
-                "alert": {
-                  "enabled": true,
-                  "severity": "low"
-                }
-              }
             }
           ]
         },
         {
-          "name": "Shadow AI - Browser Prompt Protection",
+          "name": "Shadow AI - Browser Prompt Audit",
           "policyMode": "browserProtection",
           "locations": [
             "Browser"
           ],
           "rules": [
             {
-              "name": "Browser Prompt Block - Elevated Risk",
+              "name": "Browser Prompt Audit - Sensitive Data",
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)",
                 "Credit Card Number",
@@ -158,149 +115,25 @@
                 "All Medical Terms And Conditions"
               ],
               "minCount": 1,
-              "insiderRiskLevel": "Elevated",
-              "enforcement": {
-                "action": "block",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "Sensitive data detected in your AI prompt. This submission has been blocked. Use Microsoft Copilot for AI-assisted tasks with organizational data protection."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "high"
-                },
-                "incidentReport": {
-                  "enabled": true,
-                  "severity": "high"
-                }
-              }
-            },
-            {
-              "name": "Browser Prompt Warn - Moderate Risk",
-              "sensitiveInfoTypes": [
-                "U.S. Social Security Number (SSN)",
-                "Credit Card Number",
-                "U.S. Bank Account Number",
-                "All Medical Terms And Conditions"
-              ],
-              "minCount": 1,
-              "insiderRiskLevel": "Moderate",
-              "enforcement": {
-                "action": "allowWithJustification",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "Sensitive data detected in your AI prompt. Provide a business justification to continue, or use Microsoft Copilot instead."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "medium"
-                }
-              }
-            },
-            {
-              "name": "Browser Prompt Audit - Minor Risk",
-              "sensitiveInfoTypes": [
-                "U.S. Social Security Number (SSN)",
-                "Credit Card Number",
-                "U.S. Bank Account Number",
-                "All Medical Terms And Conditions"
-              ],
-              "minCount": 1,
-              "insiderRiskLevel": "Minor",
               "enforcement": {
                 "action": "auditOnly",
                 "alert": {
                   "enabled": true,
-                  "severity": "low"
+                  "severity": "medium"
                 }
               }
             }
           ]
         },
         {
-          "name": "Shadow AI - Network AI Traffic",
-          "policyMode": "networkProtection",
-          "locations": [
-            "Network"
-          ],
-          "rules": [
-            {
-              "name": "Network AI Block - Elevated Risk",
-              "sensitiveInfoTypes": [
-                "U.S. Social Security Number (SSN)",
-                "Credit Card Number",
-                "U.S. Bank Account Number",
-                "All Medical Terms And Conditions"
-              ],
-              "minCount": 1,
-              "insiderRiskLevel": "Elevated",
-              "enforcement": {
-                "action": "block",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "Sensitive data detected in outbound AI traffic. This transmission has been blocked per data protection policy."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "high"
-                },
-                "incidentReport": {
-                  "enabled": true,
-                  "severity": "high"
-                }
-              }
-            },
-            {
-              "name": "Network AI Warn - Moderate Risk",
-              "sensitiveInfoTypes": [
-                "U.S. Social Security Number (SSN)",
-                "Credit Card Number",
-                "U.S. Bank Account Number",
-                "All Medical Terms And Conditions"
-              ],
-              "minCount": 1,
-              "insiderRiskLevel": "Moderate",
-              "enforcement": {
-                "action": "allowWithJustification",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "Sensitive data detected in outbound AI traffic. Provide a business justification to continue."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "medium"
-                }
-              }
-            },
-            {
-              "name": "Network AI Audit - Minor Risk",
-              "sensitiveInfoTypes": [
-                "U.S. Social Security Number (SSN)",
-                "Credit Card Number",
-                "U.S. Bank Account Number",
-                "All Medical Terms And Conditions"
-              ],
-              "minCount": 1,
-              "insiderRiskLevel": "Minor",
-              "enforcement": {
-                "action": "auditOnly",
-                "alert": {
-                  "enabled": true,
-                  "severity": "low"
-                }
-              }
-            }
-          ]
-        },
-        {
-          "name": "Shadow AI - Enterprise AI Prompt Protection",
+          "name": "Shadow AI - Enterprise AI Prompt Audit",
           "policyMode": "enterpriseAIProtection",
           "locations": [
             "EnterpriseAI"
           ],
           "rules": [
             {
-              "name": "Enterprise AI Block - Elevated Risk",
+              "name": "Enterprise AI Audit - Sensitive Data",
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)",
                 "Credit Card Number",
@@ -308,105 +141,11 @@
                 "All Medical Terms And Conditions"
               ],
               "minCount": 1,
-              "insiderRiskLevel": "Elevated",
-              "enforcement": {
-                "action": "block",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "Copilot cannot process this request. Sensitive data was detected in your prompt, which violates data protection policy."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "high"
-                },
-                "incidentReport": {
-                  "enabled": true,
-                  "severity": "high"
-                }
-              }
-            },
-            {
-              "name": "Enterprise AI Warn - Moderate Risk",
-              "sensitiveInfoTypes": [
-                "U.S. Social Security Number (SSN)",
-                "Credit Card Number",
-                "U.S. Bank Account Number",
-                "All Medical Terms And Conditions"
-              ],
-              "minCount": 1,
-              "insiderRiskLevel": "Moderate",
-              "enforcement": {
-                "action": "allowWithJustification",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "Sensitive data detected in your Copilot prompt. Provide a business justification to continue."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "medium"
-                }
-              }
-            },
-            {
-              "name": "Enterprise AI Audit - Minor Risk",
-              "sensitiveInfoTypes": [
-                "U.S. Social Security Number (SSN)",
-                "Credit Card Number",
-                "U.S. Bank Account Number",
-                "All Medical Terms And Conditions"
-              ],
-              "minCount": 1,
-              "insiderRiskLevel": "Minor",
               "enforcement": {
                 "action": "auditOnly",
                 "alert": {
                   "enabled": true,
-                  "severity": "low"
-                }
-              }
-            }
-          ]
-        },
-        {
-          "name": "Shadow AI - Enterprise AI Label Protection",
-          "policyMode": "labelProtection",
-          "locations": [
-            "EnterpriseAI"
-          ],
-          "labels": [
-            "PVShadowAI-Highly-Confidential-All-Employees",
-            "PVShadowAI-Highly-Confidential-AI-Internal-Use",
-            "PVShadowAI-Highly-Confidential-AI-Restricted-Recipients",
-            "PVShadowAI-Highly-Confidential-AI-Blocked-from-External-Tools",
-            "PVShadowAI-Highly-Confidential-AI-Regulated-Data",
-            "PVShadowAI-Confidential-AI-Blocked-from-External-Tools",
-            "PVShadowAI-Confidential-AI-Regulated-Data"
-          ],
-          "rules": [
-            {
-              "name": "Block Copilot from Labeled Content",
-              "labels": [
-                "PVShadowAI-Highly-Confidential-All-Employees",
-                "PVShadowAI-Highly-Confidential-AI-Internal-Use",
-                "PVShadowAI-Highly-Confidential-AI-Restricted-Recipients",
-                "PVShadowAI-Highly-Confidential-AI-Blocked-from-External-Tools",
-                "PVShadowAI-Highly-Confidential-AI-Regulated-Data",
-                "PVShadowAI-Confidential-AI-Blocked-from-External-Tools",
-                "PVShadowAI-Confidential-AI-Regulated-Data"
-              ],
-              "enforcement": {
-                "action": "block",
-                "userNotification": {
-                  "enabled": true,
-                  "message": "Copilot cannot process this content. It has a sensitivity label that restricts AI processing. Remove or downgrade the label if Copilot access is required."
-                },
-                "alert": {
-                  "enabled": true,
-                  "severity": "high"
-                },
-                "incidentReport": {
-                  "enabled": true,
-                  "severity": "high"
+                  "severity": "medium"
                 }
               }
             }
@@ -754,77 +493,6 @@
             "EmailSentExternally",
             "BrowsedToGenerativeAISites",
             "EnteringRiskyPromptInCopilot"
-          ],
-          "triggeringEvents": [
-            "DlpPolicyViolation"
-          ]
-        },
-        {
-          "name": "Departing User AI Risk",
-          "template": "Data theft by departing users",
-          "priorityUserGroups": [
-            "PVShadowAI-AI-Governance",
-            "PVShadowAI-Privileged-Data-Owners"
-          ],
-          "indicators": [
-            "FileSharedExternally",
-            "UploadToCloudService",
-            "EmailSentExternally",
-            "FileDownloadedFromSharePoint",
-            "BrowsedToGenerativeAISites"
-          ],
-          "triggeringEvents": [
-            "HrConnectorNotification"
-          ]
-        },
-        {
-          "name": "DSPM for AI - Detect risky AI usage",
-          "template": "Risky AI usage",
-          "thresholds": "BuiltIn",
-          "priorityUserGroups": [
-            "PVShadowAI-AI-Governance",
-            "PVShadowAI-Privileged-Data-Owners",
-            "PVShadowAI-Business-Users"
-          ],
-          "indicators": [
-            "BrowsedToGenerativeAISites",
-            "EnteringRiskyPromptInCopilot",
-            "ReceivingSensitiveResponseFromCopilot",
-            "EnteringRiskyPromptInEnterpriseAIApps",
-            "ReceivingSensitiveResponseFromEnterpriseAIApps",
-            "EnteringRiskyPromptInOtherAIApps"
-          ],
-          "triggeringEvents": [
-            "DlpPolicyViolation"
-          ]
-        },
-        {
-          "name": "DSPM for AI - Business User AI Risk",
-          "template": "Risky AI usage",
-          "thresholds": "BuiltIn",
-          "priorityUserGroups": [
-            "PVShadowAI-Business-Users"
-          ],
-          "indicators": [
-            "BrowsedToGenerativeAISites",
-            "EnteringRiskyPromptInCopilot",
-            "EnteringRiskyPromptInOtherAIApps"
-          ],
-          "triggeringEvents": [
-            "DlpPolicyViolation"
-          ]
-        },
-        {
-          "name": "DLP Correlated AI Exfiltration",
-          "template": "Data leaks",
-          "thresholds": "BuiltIn",
-          "priorityUserGroups": [
-            "PVShadowAI-Privileged-Data-Owners"
-          ],
-          "indicators": [
-            "EnteringRiskyPromptInCopilot",
-            "ReceivingSensitiveResponseFromCopilot",
-            "BrowsedToGenerativeAISites"
           ],
           "triggeringEvents": [
             "DlpPolicyViolation"
