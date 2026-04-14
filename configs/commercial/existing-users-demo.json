@@ -93,7 +93,33 @@
       "enabled": false
     },
     "testData": {
-      "enabled": false
+      "enabled": true,
+      "emails": [
+        {
+          "from": "mchen",
+          "to": "jblake",
+          "subject": "Q4 Financial Summary - Confidential",
+          "body": "Hi Jonathan, attached is the Q4 financial summary. For reference, the wire transfer was initiated from account 0012345678 (routing 021000021). Please review before the board meeting. This information is strictly confidential."
+        },
+        {
+          "from": "sreeves",
+          "to": "mchen",
+          "subject": "Client Payment Issue",
+          "body": "Marcus, the client provided their credit card for the overdue invoice: 4111-1111-1111-1111, exp 12/27. Can you process this through the payment portal? Let me know if you need additional details."
+        },
+        {
+          "from": "rtorres",
+          "to": "nbrooks",
+          "subject": "Employee Background Check Results",
+          "body": "Natalie, here are the background check results for the new hire. SSN on file: 123-45-6789. Everything came back clean. Please file this with the other onboarding documents and mark as confidential."
+        },
+        {
+          "from": "dokafor",
+          "to": "jblake",
+          "subject": "Suspicious Activity - Insider Trading Concern",
+          "body": "Jonathan, I flagged unusual data access patterns from a departing employee. They downloaded several files related to the upcoming merger, including documents marked classified. This could indicate insider trading risk. We should initiate a breach investigation immediately."
+        }
+      ]
     }
   },
   "cloud": "commercial"

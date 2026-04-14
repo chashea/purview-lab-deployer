@@ -10,6 +10,22 @@ This folder contains Microsoft Purview lab configs for commercial tenants.
 ./Deploy-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -TenantId <tenant-guid> -Cloud commercial
 ```
 
+## Existing-user configs
+
+Use these configs when test users are already licensed in the tenant. Skips user creation, references existing UPNs, and enables test data delivery.
+
+- `basic-lab-existing-demo.json` — Full basic-lab workloads with existing licensed users
+- `shadow-ai-existing-demo.json` — Full shadow-ai workloads remapped to existing licensed users
+- `existing-users-demo.json` — Minimal config (DLP + labels + eDiscovery + test data)
+
+```powershell
+# Deploy basic-lab with existing users
+./Deploy-Lab.ps1 -LabProfile basic-lab-existing -Cloud commercial
+
+# Deploy shadow-ai with existing users
+./Deploy-Lab.ps1 -LabProfile shadow-ai-existing -Cloud commercial
+```
+
 ## Other configs
 
 - `medical-demo.json`

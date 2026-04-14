@@ -10,8 +10,10 @@ Config-driven Microsoft Purview demo lab deployment. PowerShell 7+, modular by w
 | Profile | Description | Guide |
 |---------|-------------|-------|
 | **basic-lab** | Core compliance workloads (DLP, labels, retention, eDiscovery, insider risk) | [profiles/commercial/basic-lab/README.md](profiles/commercial/basic-lab/README.md) |
+| **basic-lab-existing** | Same as basic-lab, using pre-licensed tenant users (no user creation) | [configs/commercial/README.md](configs/commercial/README.md) |
 | **shadow-ai** | Shadow AI detection and governance (AI app blocking, discovery, session monitoring) | [profiles/commercial/shadow-ai/README.md](profiles/commercial/shadow-ai/README.md) |
-| **copilot-dlp** | Copilot DLP guardrails (prompt blocking, labeled content protection, audit evidence) | [profiles/commercial/copilot-dlp/README.md](profiles/commercial/copilot-dlp/README.md) |
+| **shadow-ai-existing** | Same as shadow-ai, remapped to pre-licensed tenant users | [configs/commercial/README.md](configs/commercial/README.md) |
+| **copilot-protection** | Copilot DLP guardrails for Copilot + Copilot Chat (prompt blocking, labeled content protection, web-search boundaries, audit evidence) | [profiles/commercial/copilot-dlp/README.md](profiles/commercial/copilot-dlp/README.md) |
 
 Each profile is a self-contained deployment with its own prefix, config, and lifecycle. See the profile README for setup instructions.
 
@@ -62,6 +64,10 @@ cd purview-lab-deployer
 
 # Or specify directly
 ./Deploy-Lab.ps1 -Cloud commercial -LabProfile shadow-ai -TenantId <tenant-guid>
+
+# Use existing licensed users (skips user creation, test data emails deliver reliably)
+./Deploy-Lab.ps1 -Cloud commercial -LabProfile basic-lab-existing
+./Deploy-Lab.ps1 -Cloud commercial -LabProfile shadow-ai-existing
 ```
 
 ## Supported clouds
