@@ -8,72 +8,49 @@
       "enabled": true,
       "users": [
         {
-          "displayName": "Col. Diana Mercer",
-          "mailNickname": "dmercer",
-          "department": "Operations",
-          "jobTitle": "Director of Operations",
-          "usageLocation": "US"
+          "upn": "rtorres@MngEnvMCAP648165.onmicrosoft.com"
         },
         {
-          "displayName": "Brian Calloway",
-          "mailNickname": "bcalloway",
-          "department": "Intelligence",
-          "jobTitle": "Intelligence Analyst",
-          "usageLocation": "US"
+          "upn": "mchen@MngEnvMCAP648165.onmicrosoft.com"
         },
         {
-          "displayName": "Priya Sharma",
-          "mailNickname": "psharma",
-          "department": "Contracting",
-          "jobTitle": "Contracting Officer",
-          "usageLocation": "US"
+          "upn": "nbrooks@MngEnvMCAP648165.onmicrosoft.com"
         },
         {
-          "displayName": "Lt. Marcus Grant",
-          "mailNickname": "mgrant",
-          "department": "Cybersecurity",
-          "jobTitle": "ISSO (Info Systems Security Officer)",
-          "usageLocation": "US"
+          "upn": "dokafor@MngEnvMCAP648165.onmicrosoft.com"
         },
         {
-          "displayName": "Catherine Wells",
-          "mailNickname": "cwells",
-          "department": "Legal",
-          "jobTitle": "General Counsel",
-          "usageLocation": "US"
+          "upn": "sreeves@MngEnvMCAP648165.onmicrosoft.com"
         },
         {
-          "displayName": "Derek Huang",
-          "mailNickname": "dhuang",
-          "department": "Administration",
-          "jobTitle": "Agency Administrator",
-          "usageLocation": "US"
+          "upn": "jblake@MngEnvMCAP648165.onmicrosoft.com"
         }
       ],
       "groups": [
         {
           "displayName": "PVGov-Operations",
           "members": [
-            "dmercer",
-            "bcalloway",
-            "mgrant"
+            "rtorres",
+            "mchen",
+            "dokafor"
           ]
         },
         {
           "displayName": "PVGov-Oversight",
           "members": [
-            "cwells",
-            "psharma"
+            "sreeves",
+            "nbrooks"
           ]
         },
         {
           "displayName": "PVGov-Leadership",
           "members": [
-            "dmercer",
-            "dhuang"
+            "rtorres",
+            "jblake"
           ]
         }
-      ]
+      ],
+      "mode": "existing"
     },
     "dlp": {
       "enabled": true,
@@ -224,8 +201,8 @@
           "name": "Classified-Document-Leak-Investigation",
           "description": "Investigation into unauthorized disclosure of CUI and export-controlled technical data",
           "custodians": [
-            "bcalloway@MngEnvMCAP648165.onmicrosoft.com",
-            "mgrant@MngEnvMCAP648165.onmicrosoft.com"
+            "mchen@MngEnvMCAP648165.onmicrosoft.com",
+            "dokafor@MngEnvMCAP648165.onmicrosoft.com"
           ],
           "holdQuery": "CUI OR classified OR \"export controlled\" OR ITAR",
           "searchQuery": "\"unauthorized disclosure\" OR leak OR \"spillage\" OR \"data exfiltration\""
@@ -257,26 +234,26 @@
       "enabled": true,
       "emails": [
         {
-          "from": "bcalloway",
-          "to": "dmercer",
+          "from": "mchen",
+          "to": "rtorres",
           "subject": "Intelligence Assessment - Operation Sentinel",
           "body": "Col. Mercer, the intelligence assessment for Operation Sentinel is complete. Key subjects include foreign nationals with passport numbers 512847963 and 648201573. This document contains CUI markings and references classified source material. The assessment identifies three persons of interest with ties to the target network. Please review in the SCIF and confirm receipt."
         },
         {
-          "from": "psharma",
-          "to": "cwells",
+          "from": "nbrooks",
+          "to": "sreeves",
           "subject": "Defense Contractor Vetting",
           "body": "Catherine, I'm processing the security clearance paperwork for Meridian Defense Systems. The primary contact's SSN is 478-62-1935 and ITIN is 912-78-4521. Their facility clearance is pending adjudication. We need to verify their CAGE code and confirm DFARS 252.204-7012 compliance before awarding the subcontract. Can legal review the DD Form 254 by end of week?"
         },
         {
-          "from": "mgrant",
-          "to": "dhuang",
+          "from": "dokafor",
+          "to": "jblake",
           "subject": "Cybersecurity Incident - Unauthorized CUI Access",
           "body": "Derek, we detected a spillage incident at 0347 hours. An uncleared contractor accessed a SharePoint library containing CUI//SP-EXPT documents from an unapproved endpoint. This violates NIST 800-171 controls AC-2 and AC-3. I've isolated the account and initiated forensic imaging. We have 72 hours to report to the agency CISO per our incident response plan. Recommend convening the IRT at 0900 tomorrow."
         },
         {
-          "from": "dmercer",
-          "to": "bcalloway",
+          "from": "rtorres",
+          "to": "mchen",
           "subject": "ITAR Technical Data Transfer Review",
           "body": "Brian, the State Department license application for the technical data transfer to our allied partner is under review. The package includes export-controlled specifications for the sensor array subsystem. The foreign government end-user has submitted their required certifications but we need to verify the end-use statement aligns with our DSP-5 application. Do not transmit any ITAR-controlled data until we receive the signed license from DDTC."
         }

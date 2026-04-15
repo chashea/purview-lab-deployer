@@ -8,66 +8,47 @@
       "enabled": true,
       "users": [
         {
-          "displayName": "Alex Harper",
-          "mailNickname": "aharper",
-          "department": "Marketing",
-          "jobTitle": "Marketing Manager",
-          "usageLocation": "US"
+          "upn": "rtorres@MngEnvMCAP648165.onmicrosoft.com"
         },
         {
-          "displayName": "Victor Cho",
-          "mailNickname": "vcho",
-          "department": "Finance",
-          "jobTitle": "Finance Controller",
-          "usageLocation": "US"
+          "upn": "mchen@MngEnvMCAP648165.onmicrosoft.com"
         },
         {
-          "displayName": "Leah Ramirez",
-          "mailNickname": "lramirez",
-          "department": "Legal",
-          "jobTitle": "Privacy Counsel",
-          "usageLocation": "US"
+          "upn": "nbrooks@MngEnvMCAP648165.onmicrosoft.com"
         },
         {
-          "displayName": "Ethan Tran",
-          "mailNickname": "etran",
-          "department": "IT",
-          "jobTitle": "Security Architect",
-          "usageLocation": "US"
+          "upn": "dokafor@MngEnvMCAP648165.onmicrosoft.com"
         },
         {
-          "displayName": "Priya Desai",
-          "mailNickname": "pdesai",
-          "department": "Compliance",
-          "jobTitle": "Compliance Lead",
-          "usageLocation": "US"
+          "upn": "sreeves@MngEnvMCAP648165.onmicrosoft.com"
         }
       ],
       "groups": [
         {
           "displayName": "PVShadowAI-AI-Governance",
           "members": [
-            "lramirez",
-            "etran",
-            "pdesai"
+            "nbrooks",
+            "dokafor",
+            "sreeves"
           ]
         },
         {
           "displayName": "PVShadowAI-Privileged-Data-Owners",
           "members": [
-            "vcho",
-            "pdesai"
+            "mchen",
+            "sreeves"
           ]
         },
         {
           "displayName": "PVShadowAI-Business-Users",
           "members": [
-            "aharper",
-            "vcho",
-            "etran"
+            "rtorres",
+            "mchen",
+            "dokafor"
           ]
         }
-      ]
+      ],
+      "mode": "existing"
     },
     "dlp": {
       "enabled": true,
@@ -646,9 +627,9 @@
           "name": "Shadow-AI-Incident-Review",
           "description": "Investigation into potential sensitive data exposure through unapproved AI tool usage.",
           "custodians": [
-            "etran",
-            "lramirez",
-            "pdesai"
+            "dokafor",
+            "nbrooks",
+            "sreeves"
           ],
           "holdQuery": "\"AI\" OR \"copilot\" OR \"chatbot\" OR \"prompt\"",
           "searchQuery": "\"public AI\" OR \"external AI\" OR \"paste\" OR \"upload\"",
@@ -676,8 +657,8 @@
           "name": "AI-Data-Exfiltration-Investigation",
           "description": "Investigation into confirmed data exfiltration via AI tools including prompt history and file upload evidence.",
           "custodians": [
-            "aharper",
-            "vcho"
+            "rtorres",
+            "mchen"
           ],
           "holdQuery": "\"upload\" OR \"paste\" OR \"AI\" OR \"chatgpt\" OR \"copilot\"",
           "searchQuery": "\"SSN\" OR \"credit card\" OR \"bank account\" OR \"confidential\" OR \"api key\"",
@@ -705,8 +686,8 @@
           "name": "Prompt-Injection-Investigation",
           "description": "Investigation into prompt injection or jailbreak attempts targeting enterprise AI services.",
           "custodians": [
-            "etran",
-            "pdesai"
+            "dokafor",
+            "sreeves"
           ],
           "holdQuery": "\"jailbreak\" OR \"ignore instructions\" OR \"bypass\" OR \"prompt injection\"",
           "searchQuery": "\"ignore previous\" OR \"act as\" OR \"pretend\" OR \"override\" OR \"system prompt\"",
@@ -907,62 +888,62 @@
       "enabled": true,
       "emails": [
         {
-          "from": "aharper",
-          "to": "vcho",
+          "from": "rtorres",
+          "to": "mchen",
           "subject": "Quick way to summarize campaign data",
           "body": "Hey Victor, I found this public AI tool that can analyze spreadsheets instantly. I just paste the data into the prompt window and it generates a full summary. Way faster than doing it manually. Want me to show you?"
         },
         {
-          "from": "vcho",
-          "to": "aharper",
+          "from": "mchen",
+          "to": "rtorres",
           "subject": "RE: Quick way to summarize campaign data",
           "body": "That sounds useful but be careful — I heard the security team is cracking down on external AI tools. I tried to upload a forecast to one of those chatbot sites last week and the browser blocked it. Maybe stick to Copilot for now?"
         },
         {
-          "from": "aharper",
-          "to": "vcho",
+          "from": "rtorres",
+          "to": "mchen",
           "subject": "RE: RE: Quick way to summarize campaign data",
           "body": "Good call. I already used the external AI service to paste the customer data export though — it generated a great segmentation analysis. Hopefully that is fine since it was just names and IDs, nothing too sensitive."
         },
         {
-          "from": "etran",
-          "to": "pdesai",
+          "from": "dokafor",
+          "to": "sreeves",
           "subject": "DLP alert - potential data exposure via external AI",
           "body": "Priya, we got a DLP alert this morning. Looks like someone in Marketing tried to paste sensitive customer data into a public AI chatbot. The content included PII fields — customer names and ID numbers. I have placed a hold on the mailbox. Can you review and advise on next steps?"
         },
         {
-          "from": "pdesai",
-          "to": "lramirez",
+          "from": "sreeves",
+          "to": "nbrooks",
           "subject": "FW: DLP alert - potential data exposure via external AI",
           "body": "Leah, forwarding this from Ethan on the security team. We have a potential incident involving an employee using an external AI tool to upload customer data. The eDiscovery case is already set up. Could you confirm whether this triggers our breach notification obligations?"
         },
         {
-          "from": "lramirez",
-          "to": "pdesai",
+          "from": "nbrooks",
+          "to": "sreeves",
           "subject": "RE: DLP alert - potential data exposure via external AI",
           "body": "Thanks Priya. Based on what Ethan described, if customer PII was pasted into a public AI service, we may need to assess whether the AI provider retained the data. Let us pull the full communication thread from the eDiscovery search results before making a determination. I will also check whether the prompt history was captured in our audit logs."
         },
         {
-          "from": "aharper",
-          "to": "etran",
+          "from": "rtorres",
+          "to": "dokafor",
           "subject": "RE: DLP alert - requesting override",
           "body": "Ethan, I got blocked from using the external AI tool for the campaign analysis. I understand the policy but I need to finish this by end of week. The data only had customer names and segment IDs, no SSNs or financials. Can you grant me an exception or suggest an approved alternative? I tried Copilot but it would not summarize the spreadsheet the same way."
         },
         {
-          "from": "etran",
-          "to": "pdesai",
+          "from": "dokafor",
+          "to": "sreeves",
           "subject": "Escalation - repeated shadow AI usage in Marketing",
           "body": "Priya, escalating this to you and IT leadership. This is the third DLP match from the Marketing department in two weeks involving external AI tools. The user has now requested a policy override. I recommend we schedule a mandatory AI governance training for the Marketing team and review whether Copilot access needs to be expanded to cover their use case. Attaching the DLP incident timeline and audit log extracts."
         },
         {
-          "from": "pdesai",
-          "to": "lramirez",
+          "from": "sreeves",
+          "to": "nbrooks",
           "subject": "Incident timeline - Shadow AI data exposure (Case AI-2025-0147)",
           "body": "Leah, here is the consolidated incident timeline for our records:\n\n1. Mar 10 - User pasted customer data export into external AI chatbot\n2. Mar 10 - DLP policy triggered, endpoint block applied, incident report generated\n3. Mar 11 - eDiscovery hold placed on user mailbox, audit logs pulled\n4. Mar 12 - Communication thread recovered via compliance search\n5. Mar 14 - User requested policy override, denied by Security\n6. Mar 17 - Mandatory AI governance training scheduled for Marketing\n\nPlease confirm whether breach notification is required based on the data types involved (names, customer IDs, segment data). No SSNs or credit cards were confirmed in the exposed content."
         },
         {
-          "from": "lramirez",
-          "to": "aharper",
+          "from": "nbrooks",
+          "to": "rtorres",
           "subject": "Approved AI tools and data handling guidelines",
           "body": "Alex, following the recent incident I wanted to share the approved AI tools list and data handling guidelines for your reference.\n\nApproved tools:\n- Microsoft Copilot (integrated with our M365 tenant, data stays within org boundary)\n- Azure OpenAI Service (enterprise deployment, no data retention by provider)\n\nProhibited tools:\n- ChatGPT, Claude, Gemini, Perplexity, and other public AI services\n- Any tool not on the approved list above\n\nBefore using any AI tool with organizational data, check the sensitivity label on the document. Content labeled Confidential or higher must only be used with approved enterprise AI tools. If you have questions, reach out to the AI Governance team."
         }
@@ -970,31 +951,31 @@
       "documents": [
         {
           "fileName": "Q4-Financial-Forecast.docx",
-          "owner": "vcho",
+          "owner": "mchen",
           "label": "PVShadowAI-Confidential",
           "content": "Q4 Financial Forecast - CONFIDENTIAL\n\nProjected Revenue: $14.2M\nCustomer ID: CUST-482917\nPayroll routing: 021000021\nAccount: 0012345678\n\nDo not share externally or with AI tools."
         },
         {
           "fileName": "Customer-Data-Export.docx",
-          "owner": "aharper",
+          "owner": "rtorres",
           "label": "PVShadowAI-Highly-Confidential-AI-Regulated-Data",
           "content": "Customer Data Export - HIGHLY CONFIDENTIAL\n\nCustomer: Jane Smith\nSSN: 287-44-9921\nCredit Card: 4532-1111-2222-3333\nCustomer ID: CUST-193847\nAPI Key: sk-proj-abc123def456ghi789jkl"
         },
         {
           "fileName": "Engineering-Specs.docx",
-          "owner": "etran",
+          "owner": "dokafor",
           "label": "PVShadowAI-Confidential",
           "content": "Internal Engineering Specifications\n\nProject: PRJ-NOVA2025\nAPI Endpoint Key: api_live_xK9mN2pQ4rS6tU8v\nArchitecture notes for internal review only.\nDo not paste into external AI services."
         },
         {
           "fileName": "HR-Compensation-Analysis.docx",
-          "owner": "vcho",
+          "owner": "mchen",
           "label": "PVShadowAI-Highly-Confidential-AI-Blocked-from-External-Tools",
           "content": "HR Compensation Analysis - HIGHLY CONFIDENTIAL\n\nEmployee: Sarah Johnson\nSSN: 441-28-7736\nBase Salary: $142,000\nStock Grant: 2,500 RSUs (vest Q2 2026)\nBonus Target: 18%\n\nEmployee: Michael Chen\nSSN: 553-91-2248\nBase Salary: $168,000\nStock Grant: 3,200 RSUs (vest Q3 2026)\nBonus Target: 22%\n\nThis document contains compensation data subject to HR confidentiality requirements. Do not share with AI tools."
         },
         {
           "fileName": "AI-Usage-Policy-Draft.docx",
-          "owner": "pdesai",
+          "owner": "sreeves",
           "label": "PVShadowAI-Confidential",
           "content": "DRAFT - Organizational AI Usage Policy v2.1\n\nSection 1: Approved AI Tools\n- Microsoft Copilot (M365 integrated)\n- Azure OpenAI Service (enterprise deployment)\n\nSection 2: Prohibited Activities\n- Pasting organizational data into public AI services\n- Using AI tools to process data labeled Highly Confidential\n- Sharing AI-generated summaries of regulated data externally\n\nSection 3: Incident Response\n- DLP alerts trigger automatic insider risk scoring\n- Repeated violations escalate to mandatory training and access review\n- Data exposure incidents follow the standard breach notification process\n\nDRAFT - For internal review by AI Governance team only."
         }

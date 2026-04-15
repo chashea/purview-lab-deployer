@@ -8,42 +8,31 @@
       "enabled": true,
       "users": [
         {
-          "displayName": "Megan Torres",
-          "mailNickname": "mtorres",
-          "department": "Finance",
-          "jobTitle": "Financial Analyst",
-          "usageLocation": "US"
+          "upn": "rtorres@MngEnvMCAP648165.onmicrosoft.com"
         },
         {
-          "displayName": "Jordan Kim",
-          "mailNickname": "jkim",
-          "department": "Marketing",
-          "jobTitle": "Brand Strategist",
-          "usageLocation": "US"
+          "upn": "mchen@MngEnvMCAP648165.onmicrosoft.com"
         },
         {
-          "displayName": "Nadia Shah",
-          "mailNickname": "nshah",
-          "department": "Compliance",
-          "jobTitle": "Data Security Admin",
-          "usageLocation": "US"
+          "upn": "nbrooks@MngEnvMCAP648165.onmicrosoft.com"
         }
       ],
       "groups": [
         {
           "displayName": "PVCopilotDLP-Copilot-Users",
           "members": [
-            "mtorres",
-            "jkim"
+            "rtorres",
+            "mchen"
           ]
         },
         {
           "displayName": "PVCopilotDLP-Compliance-Admins",
           "members": [
-            "nshah"
+            "nbrooks"
           ]
         }
-      ]
+      ],
+      "mode": "existing"
     },
     "sensitivityLabels": {
       "enabled": true,
@@ -278,7 +267,7 @@
           "name": "Copilot-DLP-Incident-Review",
           "description": "Investigation case for Copilot DLP policy violations involving sensitive prompts or labeled content access attempts.",
           "custodians": [
-            "nshah"
+            "nbrooks"
           ],
           "holdQuery": "\"copilot\" OR \"DLP\" OR \"blocked\" OR \"policy violation\"",
           "searchQuery": "\"sensitive data\" OR \"SSN\" OR \"credit card\" OR \"highly confidential\""
@@ -312,26 +301,26 @@
       "enabled": true,
       "emails": [
         {
-          "from": "mtorres",
-          "to": "jkim",
+          "from": "rtorres",
+          "to": "mchen",
           "subject": "Q4 Revenue Projections — Internal Only",
           "body": "Hey Jordan, here are the Q4 numbers. Customer account 4532-8721-0034-6619 has outstanding receivables. The projected revenue is $2.4M but that depends on closing the Contoso deal. Please keep this confidential."
         },
         {
-          "from": "jkim",
-          "to": "mtorres",
+          "from": "mchen",
+          "to": "rtorres",
           "subject": "RE: Q4 Revenue Projections — Internal Only",
           "body": "Thanks Megan. I tried asking Copilot to summarize the financial report on SharePoint but it said it couldn't access the file due to a sensitivity policy. Is that expected? The file had a red 'Highly Confidential' label on it."
         },
         {
-          "from": "mtorres",
-          "to": "nshah",
+          "from": "rtorres",
+          "to": "nbrooks",
           "subject": "Copilot blocked my analysis request",
           "body": "Hi Nadia, I was using Copilot to help with expense analysis and included some employee SSNs (like 078-05-1120 and 219-09-9999) in my prompt for context. Copilot refused to process the request and showed a policy message. Is this the new DLP policy? Just want to understand what I can and can't do."
         },
         {
-          "from": "nshah",
-          "to": "mtorres",
+          "from": "nbrooks",
+          "to": "rtorres",
           "subject": "RE: Copilot blocked my analysis request",
           "body": "Hi Megan, yes — that is working as designed. Our DLP policy for Copilot detects sensitive info types like SSNs in prompts and blocks the response. You can still use Copilot for analysis, just don't include the actual SSN values in your prompt. Reference account IDs instead. I can see the audit trail for the block in the compliance portal."
         }

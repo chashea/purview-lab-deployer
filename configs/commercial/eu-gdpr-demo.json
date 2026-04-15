@@ -8,71 +8,48 @@
       "enabled": true,
       "users": [
         {
-          "displayName": "Katarina Lindström",
-          "mailNickname": "klindstrom",
-          "department": "Legal",
-          "jobTitle": "Data Protection Officer",
-          "usageLocation": "US"
+          "upn": "rtorres@MngEnvMCAP648165.onmicrosoft.com"
         },
         {
-          "displayName": "Pierre Dubois",
-          "mailNickname": "pdubois",
-          "department": "Engineering",
-          "jobTitle": "Software Engineering Lead",
-          "usageLocation": "US"
+          "upn": "mchen@MngEnvMCAP648165.onmicrosoft.com"
         },
         {
-          "displayName": "Sofia Marchetti",
-          "mailNickname": "smarchetti",
-          "department": "Marketing",
-          "jobTitle": "Marketing Director",
-          "usageLocation": "US"
+          "upn": "nbrooks@MngEnvMCAP648165.onmicrosoft.com"
         },
         {
-          "displayName": "Hans Becker",
-          "mailNickname": "hbecker",
-          "department": "HR",
-          "jobTitle": "HR Manager",
-          "usageLocation": "US"
+          "upn": "dokafor@MngEnvMCAP648165.onmicrosoft.com"
         },
         {
-          "displayName": "Ana Rodrigues",
-          "mailNickname": "arodrigues",
-          "department": "Customer Support",
-          "jobTitle": "Customer Success Manager",
-          "usageLocation": "US"
+          "upn": "sreeves@MngEnvMCAP648165.onmicrosoft.com"
         },
         {
-          "displayName": "Thomas Eriksen",
-          "mailNickname": "teriksen",
-          "department": "Executive",
-          "jobTitle": "Chief Privacy Officer",
-          "usageLocation": "US"
+          "upn": "jblake@MngEnvMCAP648165.onmicrosoft.com"
         }
       ],
       "groups": [
         {
           "displayName": "PVEU-Engineering",
           "members": [
-            "pdubois",
-            "smarchetti"
+            "mchen",
+            "nbrooks"
           ]
         },
         {
           "displayName": "PVEU-Privacy-Team",
           "members": [
-            "klindstrom",
-            "teriksen"
+            "rtorres",
+            "jblake"
           ]
         },
         {
           "displayName": "PVEU-People-Ops",
           "members": [
-            "hbecker",
-            "arodrigues"
+            "dokafor",
+            "sreeves"
           ]
         }
-      ]
+      ],
+      "mode": "existing"
     },
     "dlp": {
       "enabled": true,
@@ -223,8 +200,8 @@
           "name": "DSAR-Cross-Border-Transfer",
           "description": "Data subject access request involving cross-border transfer of EU personal data to third-party processor",
           "custodians": [
-            "klindstrom@MngEnvMCAP648165.onmicrosoft.com",
-            "arodrigues@MngEnvMCAP648165.onmicrosoft.com"
+            "rtorres@MngEnvMCAP648165.onmicrosoft.com",
+            "sreeves@MngEnvMCAP648165.onmicrosoft.com"
           ],
           "holdQuery": "\"personal data\" OR \"data subject\" OR GDPR",
           "searchQuery": "\"data transfer\" OR \"third party\" OR \"processor agreement\""
@@ -256,26 +233,26 @@
       "enabled": true,
       "emails": [
         {
-          "from": "smarchetti",
-          "to": "pdubois",
+          "from": "nbrooks",
+          "to": "mchen",
           "subject": "Customer Analytics Dataset",
           "body": "Pierre, I need to share the Q1 customer analytics dataset with our US marketing partner. The file includes EU passport numbers (e.g., FR7839201) for identity verification alongside marketing segmentation data. This qualifies as a cross-border transfer under GDPR — can you confirm our technical safeguards are in place before I initiate the transfer?"
         },
         {
-          "from": "hbecker",
-          "to": "klindstrom",
+          "from": "dokafor",
+          "to": "rtorres",
           "subject": "Employee Onboarding Records",
           "body": "Katarina, attached are the onboarding documents for our new Berlin office hires. Records include EU national identification numbers (DE-1234567890) and tax identification numbers (DE 123456789) along with employment contract details. Please confirm these are filed in the GDPR-compliant HR system with appropriate access controls."
         },
         {
-          "from": "arodrigues",
-          "to": "teriksen",
+          "from": "sreeves",
+          "to": "jblake",
           "subject": "DSAR Request - Customer Maria Silva",
           "body": "Thomas, we received a data subject access request from customer Maria Silva under Art. 15 right of access. She is requesting all personal data we hold, including transaction history and support tickets. Her account contains PII including national ID and payment details. We have 30 days to respond — I've started compiling the data export. Can you review before we send?"
         },
         {
-          "from": "klindstrom",
-          "to": "smarchetti",
+          "from": "rtorres",
+          "to": "nbrooks",
           "subject": "DPO Finding - Unlawful Data Processing",
           "body": "Sofia, during my quarterly review I identified a gap in our Art. 6 lawful basis for processing marketing consent data. The current opt-in flow does not meet GDPR granularity requirements — bundled consent is not freely given. We need to remediate before our next supervisory authority audit. If we cannot demonstrate lawful basis, we may need to notify the DPA. Please pause the current campaign and schedule a meeting with legal this week."
         }

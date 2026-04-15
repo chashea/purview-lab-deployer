@@ -7,21 +7,14 @@
       "enabled": true,
       "users": [
         {
-          "displayName": "Sarah Mitchell",
-          "mailNickname": "pvlab.sarah",
-          "department": "Finance",
-          "jobTitle": "Financial Analyst",
-          "usageLocation": "US"
+          "upn": "rtorres@MngEnvMCAP648165.onmicrosoft.com"
         },
         {
-          "displayName": "David Park",
-          "mailNickname": "pvlab.david",
-          "department": "HR",
-          "jobTitle": "HR Specialist",
-          "usageLocation": "US"
+          "upn": "mchen@MngEnvMCAP648165.onmicrosoft.com"
         }
       ],
-      "groups": []
+      "groups": [],
+      "mode": "existing"
     },
     "dlp": {
       "enabled": true,
@@ -95,14 +88,14 @@
       "enabled": true,
       "emails": [
         {
-          "from": "pvlab.sarah",
-          "to": "pvlab.david",
+          "from": "rtorres",
+          "to": "mchen",
           "subject": "Q4 Financial Report - Contains PII",
           "body": "Hi David,\n\nPlease review the attached report. Employee SSN for reference: 123-45-6789.\n\nRegards,\nSarah"
         },
         {
-          "from": "pvlab.david",
-          "to": "pvlab.sarah",
+          "from": "mchen",
+          "to": "rtorres",
           "subject": "Benefits Enrollment Update",
           "body": "Sarah,\n\nHere are the payment details:\nCredit Card: 4111-1111-1111-1111\nBank Account: 123456789012\n\nThanks,\nDavid"
         }

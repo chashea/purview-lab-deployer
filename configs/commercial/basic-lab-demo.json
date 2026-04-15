@@ -8,60 +8,28 @@
       "enabled": true,
       "users": [
         {
-          "displayName": "Rachel Torres",
-          "mailNickname": "rtorres",
-          "department": "HR",
-          "jobTitle": "HR Manager",
-          "usageLocation": "US"
+          "upn": "rtorres@MngEnvMCAP648165.onmicrosoft.com"
         },
         {
-          "displayName": "Marcus Chen",
-          "mailNickname": "mchen",
-          "department": "Finance",
-          "jobTitle": "Financial Analyst",
-          "usageLocation": "US"
+          "upn": "mchen@MngEnvMCAP648165.onmicrosoft.com"
         },
         {
-          "displayName": "Natalie Brooks",
-          "mailNickname": "nbrooks",
-          "department": "Legal",
-          "jobTitle": "Legal Counsel",
-          "usageLocation": "US"
+          "upn": "nbrooks@MngEnvMCAP648165.onmicrosoft.com"
         },
         {
-          "displayName": "David Okafor",
-          "mailNickname": "dokafor",
-          "department": "IT",
-          "jobTitle": "IT Security Engineer",
-          "usageLocation": "US"
+          "upn": "dokafor@MngEnvMCAP648165.onmicrosoft.com"
         },
         {
-          "displayName": "Samantha Reeves",
-          "mailNickname": "sreeves",
-          "department": "Sales",
-          "jobTitle": "Sales Director",
-          "usageLocation": "US"
+          "upn": "sreeves@MngEnvMCAP648165.onmicrosoft.com"
         },
         {
-          "displayName": "Jonathan Blake",
-          "mailNickname": "jblake",
-          "department": "Executive",
-          "jobTitle": "Chief Financial Officer",
-          "usageLocation": "US"
+          "upn": "jblake@MngEnvMCAP648165.onmicrosoft.com"
         },
         {
-          "displayName": "Maya Sullivan",
-          "mailNickname": "msullivan",
-          "department": "Medical",
-          "jobTitle": "Occupational Health Specialist",
-          "usageLocation": "US"
+          "upn": "msullivan@MngEnvMCAP648165.onmicrosoft.com"
         },
         {
-          "displayName": "Priya Nair",
-          "mailNickname": "pnair",
-          "department": "HR",
-          "jobTitle": "Senior HR Business Partner",
-          "usageLocation": "US"
+          "upn": "pnair@MngEnvMCAP648165.onmicrosoft.com"
         }
       ],
       "groups": [
@@ -87,7 +55,8 @@
             "pnair"
           ]
         }
-      ]
+      ],
+      "mode": "existing"
     },
     "dlp": {
       "enabled": true,
