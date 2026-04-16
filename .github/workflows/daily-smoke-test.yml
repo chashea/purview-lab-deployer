@@ -44,18 +44,15 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           allow-no-subscriptions: true
 
-      - name: Connect to Microsoft Graph
-        shell: pwsh
-        run: |
-          $token = az account get-access-token --resource https://graph.microsoft.com --query accessToken -o tsv
-          Connect-MgGraph -AccessToken (ConvertTo-SecureString $token -AsPlainText -Force) -NoWelcome
-          $ctx = Get-MgContext
-          Write-Host "Graph connected: TenantId=$($ctx.TenantId)"
-
       - name: Run DLP smoke test
         shell: pwsh
         run: |
           $profile = '${{ github.event.inputs.profile || 'basic-lab' }}'
+
+          # Get Graph token from az CLI and connect
+          $token = az account get-access-token --resource https://graph.microsoft.com --query accessToken -o tsv
+          Connect-MgGraph -AccessToken (ConvertTo-SecureString $token -AsPlainText -Force) -NoWelcome
+          Write-Host "Graph connected: TenantId=$((Get-MgContext).TenantId)"
 
           foreach ($mod in Get-ChildItem modules/*.psm1) {
               Import-Module $mod.FullName -Force
