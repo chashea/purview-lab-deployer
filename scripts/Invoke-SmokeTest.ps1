@@ -2,17 +2,21 @@
 
 <#
 .SYNOPSIS
-    Sends smoke-test emails to trigger Exchange-scoped DLP policies and optionally
-    validates that DLP rule matches appear in the Unified Audit Log.
+    Sends emails and uploads files containing sensitive data to trigger DLP policies
+    across Exchange, SharePoint, and OneDrive, then optionally validates audit matches.
 
 .DESCRIPTION
-    Reads the lab config, identifies Exchange-scoped DLP policies, and sends emails
-    containing sensitive data patterns (SSN, credit card, bank account, medical terms)
-    that match each policy's SIT conditions. Each email is tagged with a unique run ID
-    so results can be correlated later.
+    Reads the lab config, identifies DLP policies scoped to Exchange/SharePoint/OneDrive,
+    and generates test activity containing sensitive data patterns (SSN, credit card,
+    bank account, medical terms) that match each policy's SIT conditions.
+
+    For Exchange: sends emails between licensed users.
+    For SharePoint/OneDrive: uploads text files with sensitive content to each user's OneDrive.
+
+    Each test item is tagged with a unique run ID for audit log correlation.
 
     Modes:
-      - Default: send emails and print expected outcomes
+      - Default: send emails + upload files, print expected outcomes
       - -ValidateOnly -Since <datetime>: skip sending, query audit log for matches
       - -WaitMinutes <N>: send, then poll for audit matches
 
@@ -46,6 +50,9 @@
 
 .EXAMPLE
     ./scripts/Invoke-SmokeTest.ps1 -LabProfile basic-lab -ValidateOnly -Since "2026-04-15T15:00:00"
+
+.EXAMPLE
+    ./scripts/Invoke-SmokeTest.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -Cloud commercial
 #>
 
 [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Send')]
@@ -106,7 +113,7 @@ $domain = $Config.domain
 $runId = "SMOKE-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
 
 Write-Host "`n========================================" -ForegroundColor Yellow
-Write-Host " Purview DLP Smoke Test" -ForegroundColor Yellow
+Write-Host " Purview DLP Smoke Test (Exchange + SharePoint + OneDrive)" -ForegroundColor Yellow
 Write-Host " Profile: $($Config.labName)" -ForegroundColor Yellow
 Write-Host " Prefix: $prefix | Domain: $domain" -ForegroundColor Yellow
 Write-Host " Run ID: $runId" -ForegroundColor Yellow
@@ -138,11 +145,15 @@ $sitPayloads = @{
     )
 }
 
-# --- Non-Exchange locations to skip ---
-$nonExchangeLocations = @('Devices', 'Browser', 'Network', 'EnterpriseAI', 'M365Copilot')
+# --- Locations that cannot be tested via email or file upload ---
+$nonTestableLocations = @('Devices', 'Browser', 'Network', 'EnterpriseAI', 'M365Copilot', 'CopilotExperiences')
+
+# --- Testable locations ---
+$exchangeLocations = @('Exchange')
+$fileLocations = @('SharePoint', 'OneDrive', 'OneDriveForBusiness')
 
 # --- Build test cases from config ---
-function Get-ExchangeDlpTestCases {
+function Get-DlpTestCases {
     [CmdletBinding()]
     [OutputType([System.Collections.Generic.List[hashtable]])]
     param(
@@ -174,18 +185,22 @@ function Get-ExchangeDlpTestCases {
     foreach ($policy in $dlpWorkload.policies) {
         $policyName = "$prefix-$($policy.name)"
 
-        # Check locations — skip policies that only target non-Exchange locations
+        # Check locations — skip policies that only target non-testable locations
         $locations = @($policy.locations)
         if ($locations.Count -gt 0) {
-            $hasExchangeLocation = $false
+            $hasTestableLocation = $false
             foreach ($loc in $locations) {
-                if ($loc -notin $nonExchangeLocations) { $hasExchangeLocation = $true }
+                if ($loc -notin $nonTestableLocations) { $hasTestableLocation = $true }
             }
-            if (-not $hasExchangeLocation) {
-                Write-Host "  Skipping non-Exchange policy: $policyName ($($locations -join ', '))" -ForegroundColor DarkGray
+            if (-not $hasTestableLocation) {
+                Write-Host "  Skipping non-testable policy: $policyName ($($locations -join ', '))" -ForegroundColor DarkGray
                 continue
             }
         }
+
+        # Determine transport: email, file, or both
+        $hasExchange = ($locations.Count -eq 0) -or ($locations | Where-Object { $_ -in $exchangeLocations })
+        $hasFile = ($locations.Count -eq 0) -or ($locations | Where-Object { $_ -in $fileLocations })
 
         foreach ($rule in $policy.rules) {
             $ruleName = "$prefix-$($rule.name)"
@@ -210,15 +225,33 @@ function Get-ExchangeDlpTestCases {
 
                 $subject = "[$RunId] $ruleName"
 
-                $testCases.Add(@{
-                    Policy  = $policyName
-                    Rule    = $ruleName
-                    SIT     = $sit
-                    From    = $from
-                    To      = $to
-                    Subject = $subject
-                    Body    = "$payload`n`n---`nSmoke test: $RunId | Rule: $ruleName | SIT: $sit"
-                })
+                # Email test case
+                if ($hasExchange) {
+                    $testCases.Add(@{
+                        Policy    = $policyName
+                        Rule      = $ruleName
+                        SIT       = $sit
+                        Transport = 'Email'
+                        From      = $from
+                        To        = $to
+                        Subject   = $subject
+                        Body      = "$payload`n`n---`nSmoke test: $RunId | Rule: $ruleName | SIT: $sit"
+                    })
+                }
+
+                # File upload test case (OneDrive/SharePoint)
+                if ($hasFile) {
+                    $safeRuleName = ($ruleName -replace '[^a-zA-Z0-9-]', '_')
+                    $testCases.Add(@{
+                        Policy    = $policyName
+                        Rule      = $ruleName
+                        SIT       = $sit
+                        Transport = 'OneDrive'
+                        Owner     = $from
+                        FileName  = "$RunId-$safeRuleName.txt"
+                        Content   = "CONFIDENTIAL — FOR INTERNAL USE ONLY`n`n$payload`n`n---`nSmoke test: $RunId | Rule: $ruleName | SIT: $sit"
+                    })
+                }
             }
         }
     }
@@ -290,6 +323,53 @@ function Send-SmokeTestEmails {
     }
 
     return @{ Sent = $sent; Failed = $failed }
+}
+
+# --- Upload files to OneDrive via Graph ---
+function Send-SmokeTestFiles {
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory)]
+        [array]$TestCases
+    )
+
+    $context = Get-MgContext
+    if (-not $context -or [string]::IsNullOrWhiteSpace($context.Account)) {
+        throw 'Microsoft Graph context is not available.'
+    }
+
+    $uploaded = 0
+    $failed = 0
+
+    foreach ($tc in $TestCases) {
+        if ($PSCmdlet.ShouldProcess("$($tc.Owner) OneDrive: $($tc.FileName)", 'Upload file')) {
+            try {
+                $contentBytes = [System.Text.Encoding]::UTF8.GetBytes($tc.Content)
+                $stream = [System.IO.MemoryStream]::new($contentBytes)
+
+                $folderPath = 'DLP-Smoke-Tests'
+                $uploadUri = "https://graph.microsoft.com/v1.0/users/$($tc.Owner)/drive/root:/$folderPath/$($tc.FileName):/content"
+
+                Invoke-MgGraphRequest -Method PUT -Uri $uploadUri `
+                    -Body $stream -ContentType 'text/plain' -ErrorAction Stop | Out-Null
+
+                Write-Host "  Uploaded: $($tc.Owner)/DLP-Smoke-Tests/$($tc.FileName)" -ForegroundColor Green
+                Write-Host "           Rule: $($tc.Rule) | SIT: $($tc.SIT)" -ForegroundColor DarkGray
+                $uploaded++
+            }
+            catch {
+                Write-Host "  FAIL upload: $($tc.FileName) to $($tc.Owner) — $_" -ForegroundColor Red
+                $failed++
+            }
+            finally {
+                if ($stream) { $stream.Dispose() }
+            }
+
+            Start-Sleep -Milliseconds 500
+        }
+    }
+
+    return @{ Uploaded = $uploaded; Failed = $failed }
 }
 
 # --- Query audit log for DLP matches ---
@@ -372,28 +452,36 @@ if (-not $SkipAuth) {
     }
     else {
         Write-Host "--- Connecting to cloud services ---" -ForegroundColor Cyan
-        Connect-MgGraph -TenantId $tenantId -Scopes 'Mail.Send', 'User.Read.All' -NoWelcome -ErrorAction Stop
+        Connect-MgGraph -TenantId $tenantId -Scopes 'Mail.Send', 'User.Read.All', 'Files.ReadWrite.All', 'Sites.ReadWrite.All' -NoWelcome -ErrorAction Stop
         Write-Host "  Graph connected.`n" -ForegroundColor Green
     }
 }
 
 # Build test cases from config
 Write-Host "--- Building test cases from config ---" -ForegroundColor Cyan
-$testCases = Get-ExchangeDlpTestCases -Config $Config -RunId $runId
+$testCases = Get-DlpTestCases -Config $Config -RunId $runId
 
 if ($testCases.Count -eq 0) {
-    Write-Host "`nNo Exchange-scoped DLP test cases found in config." -ForegroundColor DarkYellow
+    Write-Host "`nNo testable DLP test cases found in config." -ForegroundColor DarkYellow
     exit 0
 }
 
+$emailCases = @($testCases | Where-Object { $_.Transport -eq 'Email' })
+$fileCases = @($testCases | Where-Object { $_.Transport -eq 'OneDrive' })
 $policyCount = @($testCases | ForEach-Object { $_.Policy } | Sort-Object -Unique).Count
-Write-Host "`n  $($testCases.Count) test emails targeting $policyCount policies`n"
+Write-Host "`n  $($testCases.Count) test cases ($($emailCases.Count) emails + $($fileCases.Count) file uploads) targeting $policyCount policies`n"
 
 # Show test matrix
 Write-Host "--- Test Matrix ---" -ForegroundColor Cyan
 foreach ($tc in $testCases) {
-    Write-Host "  $($tc.Rule)" -ForegroundColor White
-    Write-Host "    SIT: $($tc.SIT) | $($tc.From) → $($tc.To)" -ForegroundColor DarkGray
+    $icon = if ($tc.Transport -eq 'Email') { 'Mail' } else { 'File' }
+    Write-Host "  [$icon] $($tc.Rule)" -ForegroundColor White
+    if ($tc.Transport -eq 'Email') {
+        Write-Host "    SIT: $($tc.SIT) | $($tc.From) → $($tc.To)" -ForegroundColor DarkGray
+    }
+    else {
+        Write-Host "    SIT: $($tc.SIT) | $($tc.Owner) OneDrive → $($tc.FileName)" -ForegroundColor DarkGray
+    }
 }
 
 # Validate-only mode
@@ -408,22 +496,36 @@ if ($ValidateOnly) {
     exit 0
 }
 
-# Send
-Write-Host "`n--- Sending smoke test emails ---" -ForegroundColor Cyan
+# Send emails + upload files
+Write-Host "`n--- Sending smoke test data ---" -ForegroundColor Cyan
 $sendTime = Get-Date
-$sendResult = Send-SmokeTestEmails -TestCases $testCases
+$emailResult = @{ Sent = 0; Failed = 0 }
+$fileResult = @{ Uploaded = 0; Failed = 0 }
+
+if ($emailCases.Count -gt 0) {
+    Write-Host "`n  Emails ($($emailCases.Count)):" -ForegroundColor White
+    $emailResult = Send-SmokeTestEmails -TestCases $emailCases
+}
+
+if ($fileCases.Count -gt 0) {
+    Write-Host "`n  OneDrive uploads ($($fileCases.Count)):" -ForegroundColor White
+    $fileResult = Send-SmokeTestFiles -TestCases $fileCases
+}
 
 Write-Host "`n--- Send Summary ---" -ForegroundColor Cyan
-Write-Host "  Sent: $($sendResult.Sent) | Failed: $($sendResult.Failed)"
+Write-Host "  Emails sent: $($emailResult.Sent) | Failed: $($emailResult.Failed)"
+Write-Host "  Files uploaded: $($fileResult.Uploaded) | Failed: $($fileResult.Failed)"
 Write-Host "  Run ID: $runId"
 Write-Host "  Sent at: $($sendTime.ToString('yyyy-MM-dd HH:mm:ss'))"
 
 # Expected outcomes
 Write-Host "`n--- Expected DLP Alerts ---" -ForegroundColor Cyan
 Write-Host "  Alerts appear in Purview within 15-60 minutes:" -ForegroundColor DarkGray
-Write-Host "  https://purview.microsoft.com/datalossprevention/alerts`n" -ForegroundColor DarkGray
+Write-Host "  https://purview.microsoft.com/datalossprevention/alerts" -ForegroundColor DarkGray
+Write-Host "  Activity Explorer: https://purview.microsoft.com/datalossprevention/activityexplorer`n" -ForegroundColor DarkGray
 foreach ($tc in $testCases) {
-    Write-Host "  $($tc.Policy)" -ForegroundColor White
+    $icon = if ($tc.Transport -eq 'Email') { 'Mail' } else { 'File' }
+    Write-Host "  [$icon] $($tc.Policy)" -ForegroundColor White
     Write-Host "    Rule: $($tc.Rule) | SIT: $($tc.SIT)" -ForegroundColor DarkGray
 }
 
