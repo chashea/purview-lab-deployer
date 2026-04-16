@@ -268,7 +268,7 @@ function Send-SmokeTestEmails {
     )
 
     $context = Get-MgContext
-    if (-not $context -or [string]::IsNullOrWhiteSpace($context.Account)) {
+    if (-not $context -or (-not $context.Account -and -not $context.AppName -and -not $context.ClientId)) {
         throw 'Microsoft Graph context is not available.'
     }
 
@@ -334,7 +334,7 @@ function Send-SmokeTestFiles {
     )
 
     $context = Get-MgContext
-    if (-not $context -or [string]::IsNullOrWhiteSpace($context.Account)) {
+    if (-not $context -or (-not $context.Account -and -not $context.AppName -and -not $context.ClientId)) {
         throw 'Microsoft Graph context is not available.'
     }
 
