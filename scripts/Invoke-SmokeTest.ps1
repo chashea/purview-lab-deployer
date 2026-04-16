@@ -53,6 +53,9 @@
 
 .EXAMPLE
     ./scripts/Invoke-SmokeTest.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -Cloud commercial
+
+.EXAMPLE
+    ./scripts/Invoke-SmokeTest.ps1 -LabProfile basic-lab -BurstActivity -Cloud commercial
 #>
 
 [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Send')]
@@ -75,6 +78,9 @@ param(
 
     [Parameter(ParameterSetName = 'Send')]
     [int]$WaitMinutes = 0,
+
+    [Parameter(ParameterSetName = 'Send')]
+    [switch]$BurstActivity,
 
     [Parameter()]
     [switch]$SkipAuth
@@ -372,6 +378,155 @@ function Send-SmokeTestFiles {
     return @{ Uploaded = $uploaded; Failed = $failed }
 }
 
+# --- Burst activity for Insider Risk signals ---
+function Send-BurstActivity {
+    [CmdletBinding(SupportsShouldProcess)]
+    param(
+        [Parameter(Mandatory)]
+        [string[]]$Users,
+
+        [Parameter(Mandatory)]
+        [string]$RunId
+    )
+
+    Write-Host "`n--- Insider Risk Burst Activity ---" -ForegroundColor Cyan
+    Write-Host "  Generating high-volume activity to trigger IRM signals...`n"
+
+    $emailsSent = 0
+    $filesUploaded = 0
+    $sharesCreated = 0
+
+    # Burst 1: Rapid email sends (10 emails from one user — data exfiltration pattern)
+    $sourceUser = $Users[0]
+    Write-Host "  [Burst] Rapid emails from $sourceUser (10 messages)..." -ForegroundColor White
+
+    $subjects = @(
+        "FW: Quarterly Revenue Forecast - CONFIDENTIAL"
+        "FW: Board Presentation Draft - Internal Only"
+        "FW: Customer List Export - Q4 2026"
+        "FW: Compensation Data - HR Review"
+        "FW: Strategic Plan 2027 - Executive Summary"
+        "FW: Merger Analysis - Strictly Confidential"
+        "FW: IP Portfolio Assessment - Legal Review"
+        "FW: Employee Performance Rankings - HR"
+        "FW: Vendor Contract Terms - Procurement"
+        "FW: Financial Audit Findings - Draft"
+    )
+
+    for ($i = 0; $i -lt $subjects.Count; $i++) {
+        $to = $Users[($i + 1) % $Users.Count]
+        if ($PSCmdlet.ShouldProcess("$sourceUser -> ${to}: $($subjects[$i])", 'Send burst email')) {
+            try {
+                $body = @{
+                    message = @{
+                        subject      = "[$RunId] $($subjects[$i])"
+                        body         = @{
+                            contentType = 'Text'
+                            content     = "Forwarding for your review. SSN reference: 078-05-1120. Card on file: 4111-1111-1111-1111.`n`nSmoke test burst: $RunId"
+                        }
+                        toRecipients = @(@{ emailAddress = @{ address = $to } })
+                    }
+                    saveToSentItems = $true
+                }
+
+                try {
+                    Invoke-MgGraphRequest -Method POST -Uri "https://graph.microsoft.com/v1.0/users/$sourceUser/sendMail" -Body $body -ErrorAction Stop
+                }
+                catch {
+                    Invoke-MgGraphRequest -Method POST -Uri 'https://graph.microsoft.com/v1.0/me/sendMail' -Body $body -ErrorAction Stop
+                }
+                $emailsSent++
+            }
+            catch {
+                Write-Host "    FAIL: $($subjects[$i]) — $_" -ForegroundColor Red
+            }
+            Start-Sleep -Milliseconds 300
+        }
+    }
+    Write-Host "    $emailsSent emails sent" -ForegroundColor Green
+
+    # Burst 2: Mass file uploads (15 files from one user — staging pattern)
+    $uploadUser = if ($Users.Count -gt 1) { $Users[1] } else { $Users[0] }
+    Write-Host "`n  [Burst] Mass file uploads to $uploadUser OneDrive (15 files)..." -ForegroundColor White
+
+    $fileNames = @(
+        "customer-database-export.csv"
+        "employee-salary-data-2026.xlsx"
+        "board-meeting-minutes-confidential.docx"
+        "merger-target-financials.pdf"
+        "intellectual-property-inventory.xlsx"
+        "vendor-pricing-agreements.docx"
+        "executive-compensation-review.xlsx"
+        "client-contact-list-full.csv"
+        "strategic-roadmap-2027.pptx"
+        "audit-findings-draft.docx"
+        "hr-investigation-notes.docx"
+        "patent-portfolio-analysis.pdf"
+        "revenue-forecast-model.xlsx"
+        "confidential-legal-memo.docx"
+        "departing-employee-handover.docx"
+    )
+
+    foreach ($fileName in $fileNames) {
+        if ($PSCmdlet.ShouldProcess("$uploadUser OneDrive: $fileName", 'Upload burst file')) {
+            try {
+                $content = "CONFIDENTIAL - INTERNAL USE ONLY`n`nThis document contains sensitive business data.`nSSN: 219-09-9999`nAccount: routing 021000021 account 123456789012`n`nSmoke test burst: $RunId`nFile: $fileName"
+                $contentBytes = [System.Text.Encoding]::UTF8.GetBytes($content)
+                $stream = [System.IO.MemoryStream]::new($contentBytes)
+
+                $uploadUri = "https://graph.microsoft.com/v1.0/users/$uploadUser/drive/root:/DLP-Smoke-Tests/burst-$RunId/$fileName`:/content"
+                Invoke-MgGraphRequest -Method PUT -Uri $uploadUri -Body $stream -ContentType 'text/plain' -ErrorAction Stop | Out-Null
+                $filesUploaded++
+            }
+            catch {
+                Write-Host "    FAIL upload: $fileName — $_" -ForegroundColor Red
+            }
+            finally {
+                if ($stream) { $stream.Dispose() }
+            }
+            Start-Sleep -Milliseconds 200
+        }
+    }
+    Write-Host "    $filesUploaded files uploaded" -ForegroundColor Green
+
+    # Burst 3: Create sharing links (external sharing pattern)
+    Write-Host "`n  [Burst] Creating sharing links on uploaded files..." -ForegroundColor White
+
+    try {
+        $driveItems = Invoke-MgGraphRequest -Method GET `
+            -Uri "https://graph.microsoft.com/v1.0/users/$uploadUser/drive/root:/DLP-Smoke-Tests/burst-$RunId`:/children" `
+            -ErrorAction Stop
+
+        $itemsToShare = @($driveItems.value | Select-Object -First 5)
+        foreach ($item in $itemsToShare) {
+            if ($PSCmdlet.ShouldProcess("$($item.name)", 'Create sharing link')) {
+                try {
+                    $shareBody = @{
+                        type  = "view"
+                        scope = "organization"
+                    }
+                    Invoke-MgGraphRequest -Method POST `
+                        -Uri "https://graph.microsoft.com/v1.0/users/$uploadUser/drive/items/$($item.id)/createLink" `
+                        -Body $shareBody -ErrorAction Stop | Out-Null
+                    $sharesCreated++
+                }
+                catch {
+                    Write-Host "    FAIL share: $($item.name) — $_" -ForegroundColor Red
+                }
+            }
+        }
+        Write-Host "    $sharesCreated sharing links created" -ForegroundColor Green
+    }
+    catch {
+        Write-Host "    Could not list files for sharing: $_" -ForegroundColor DarkYellow
+    }
+
+    Write-Host "`n  [Burst Summary] Emails: $emailsSent | Files: $filesUploaded | Shares: $sharesCreated" -ForegroundColor Cyan
+    Write-Host "  IRM signals should appear within 24-48 hours." -ForegroundColor DarkGray
+
+    return @{ Emails = $emailsSent; Files = $filesUploaded; Shares = $sharesCreated }
+}
+
 # --- Query audit log for DLP matches ---
 function Test-DlpAuditMatches {
     [CmdletBinding()]
@@ -518,6 +673,14 @@ Write-Host "  Files uploaded: $($fileResult.Uploaded) | Failed: $($fileResult.Fa
 Write-Host "  Run ID: $runId"
 Write-Host "  Sent at: $($sendTime.ToString('yyyy-MM-dd HH:mm:ss'))"
 
+# Burst activity for Insider Risk
+if ($BurstActivity) {
+    $users = @($Config.workloads.testUsers.users | ForEach-Object {
+        if ($_.upn) { $_.upn } elseif ($_.mailNickname) { "$($_.mailNickname)@$($Config.domain)" }
+    })
+    $burstResult = Send-BurstActivity -Users $users -RunId $runId
+}
+
 # Expected outcomes
 Write-Host "`n--- Expected DLP Alerts ---" -ForegroundColor Cyan
 Write-Host "  Alerts appear in Purview within 15-60 minutes:" -ForegroundColor DarkGray
@@ -527,6 +690,13 @@ foreach ($tc in $testCases) {
     $icon = if ($tc.Transport -eq 'Email') { 'Mail' } else { 'File' }
     Write-Host "  [$icon] $($tc.Policy)" -ForegroundColor White
     Write-Host "    Rule: $($tc.Rule) | SIT: $($tc.SIT)" -ForegroundColor DarkGray
+}
+
+if ($BurstActivity) {
+    Write-Host "`n--- Expected Insider Risk Signals ---" -ForegroundColor Cyan
+    Write-Host "  IRM alerts: https://purview.microsoft.com/insiderriskmanagement/alerts" -ForegroundColor DarkGray
+    Write-Host "  Signals take 24-48 hours to process into risk scores." -ForegroundColor DarkGray
+    Write-Host "  Activity generated: $($burstResult.Emails) rapid emails, $($burstResult.Files) file uploads, $($burstResult.Shares) sharing links`n" -ForegroundColor DarkGray
 }
 
 # Optional wait + validate
