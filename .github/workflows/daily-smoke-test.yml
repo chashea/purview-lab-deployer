@@ -1,0 +1,96 @@
+name: Daily DLP Smoke Test
+
+on:
+  schedule:
+    - cron: '0 14 * * 1-5'  # 2 PM UTC (10 AM ET) weekdays
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'Lab profile to test'
+        required: true
+        default: 'basic-lab'
+        type: choice
+        options:
+          - basic-lab
+          - copilot-protection
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    environment: commercial
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PowerShell modules
+        shell: pwsh
+        run: |
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module -Name ExchangeOnlineManagement -Force -Scope CurrentUser
+          Install-Module -Name Microsoft.Graph.Authentication -Force -Scope CurrentUser
+          Install-Module -Name Microsoft.Graph.Users -Force -Scope CurrentUser
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+
+      - name: Connect to Microsoft Graph
+        shell: pwsh
+        run: |
+          $token = az account get-access-token --resource https://graph.microsoft.com --query accessToken -o tsv
+          Connect-MgGraph -AccessToken (ConvertTo-SecureString $token -AsPlainText -Force) -NoWelcome
+          $ctx = Get-MgContext
+          Write-Host "Graph connected: TenantId=$($ctx.TenantId)"
+
+      - name: Connect to Security & Compliance
+        shell: pwsh
+        run: |
+          $cert = $null  # OIDC token flow
+          Connect-IPPSSession -AppId $env:AZURE_CLIENT_ID -Organization ${{ secrets.AZURE_DOMAIN }} -ShowBanner:$false -ErrorAction Stop
+          Write-Host "IPPS connected"
+
+      - name: Run DLP smoke test
+        shell: pwsh
+        run: |
+          $profile = '${{ github.event.inputs.profile || 'basic-lab' }}'
+
+          # Import modules
+          foreach ($mod in Get-ChildItem modules/*.psm1) {
+              Import-Module $mod.FullName -Force
+          }
+
+          $Config = Import-LabConfig -ConfigPath "configs/commercial/$((Get-ProfileConfigMapping)[$profile])"
+          $prefix = $Config.prefix
+          $domain = $Config.domain
+          $runId = "SMOKE-CI-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+
+          Write-Host "Profile: $profile | Prefix: $prefix | Run ID: $runId"
+
+          # Get users
+          $users = @($Config.workloads.testUsers.users | ForEach-Object {
+              if ($_.upn) { $_.upn } elseif ($_.mailNickname) { "$($_.mailNickname)@$domain" }
+          })
+
+          Write-Host "Users: $($users -join ', ')"
+
+          # Run the smoke test with SkipAuth (already connected above)
+          ./scripts/Invoke-SmokeTest.ps1 -LabProfile $profile -Cloud commercial -SkipAuth
+
+      - name: Upload run summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-test-${{ github.run_id }}
+          path: logs/
+          retention-days: 30
