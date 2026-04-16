@@ -348,20 +348,35 @@ function Send-SmokeTestFiles {
     $failed = 0
 
     foreach ($tc in $TestCases) {
-        if ($PSCmdlet.ShouldProcess("$($tc.Owner) OneDrive: $($tc.FileName)", 'Upload file')) {
+        if ($PSCmdlet.ShouldProcess("OneDrive: $($tc.FileName)", 'Upload file')) {
             try {
                 $contentBytes = [System.Text.Encoding]::UTF8.GetBytes($tc.Content)
                 $stream = [System.IO.MemoryStream]::new($contentBytes)
 
                 $folderPath = 'DLP-Smoke-Tests'
-                $uploadUri = "https://graph.microsoft.com/v1.0/users/$($tc.Owner)/drive/root:/$folderPath/$($tc.FileName):/content"
 
-                Invoke-MgGraphRequest -Method PUT -Uri $uploadUri `
-                    -Body $stream -ContentType 'text/plain' -ErrorAction Stop | Out-Null
+                # Try user's OneDrive first, fall back to /me/drive for delegated auth
+                $uploadSuccess = $false
+                try {
+                    $uploadUri = "https://graph.microsoft.com/v1.0/users/$($tc.Owner)/drive/root:/$folderPath/$($tc.FileName):/content"
+                    Invoke-MgGraphRequest -Method PUT -Uri $uploadUri `
+                        -Body $stream -ContentType 'text/plain' -ErrorAction Stop | Out-Null
+                    $uploadSuccess = $true
+                    Write-Host "  Uploaded: $($tc.Owner)/DLP-Smoke-Tests/$($tc.FileName)" -ForegroundColor Green
+                }
+                catch {
+                    $stream.Position = 0
+                    $uploadUri = "https://graph.microsoft.com/v1.0/me/drive/root:/$folderPath/$($tc.FileName):/content"
+                    Invoke-MgGraphRequest -Method PUT -Uri $uploadUri `
+                        -Body $stream -ContentType 'text/plain' -ErrorAction Stop | Out-Null
+                    $uploadSuccess = $true
+                    Write-Host "  Uploaded: me/DLP-Smoke-Tests/$($tc.FileName)" -ForegroundColor Green
+                }
 
-                Write-Host "  Uploaded: $($tc.Owner)/DLP-Smoke-Tests/$($tc.FileName)" -ForegroundColor Green
-                Write-Host "           Rule: $($tc.Rule) | SIT: $($tc.SIT)" -ForegroundColor DarkGray
-                $uploaded++
+                if ($uploadSuccess) {
+                    Write-Host "           Rule: $($tc.Rule) | SIT: $($tc.SIT)" -ForegroundColor DarkGray
+                    $uploaded++
+                }
             }
             catch {
                 Write-Host "  FAIL upload: $($tc.FileName) to $($tc.Owner) — $_" -ForegroundColor Red
@@ -468,14 +483,22 @@ function Send-BurstActivity {
     )
 
     foreach ($fileName in $fileNames) {
-        if ($PSCmdlet.ShouldProcess("$uploadUser OneDrive: $fileName", 'Upload burst file')) {
+        if ($PSCmdlet.ShouldProcess("OneDrive: $fileName", 'Upload burst file')) {
             try {
                 $content = "CONFIDENTIAL - INTERNAL USE ONLY`n`nThis document contains sensitive business data.`nSSN: 219-09-9999`nAccount: routing 021000021 account 123456789012`n`nSmoke test burst: $RunId`nFile: $fileName"
                 $contentBytes = [System.Text.Encoding]::UTF8.GetBytes($content)
                 $stream = [System.IO.MemoryStream]::new($contentBytes)
 
-                $uploadUri = "https://graph.microsoft.com/v1.0/users/$uploadUser/drive/root:/DLP-Smoke-Tests/burst-$RunId/$fileName`:/content"
-                Invoke-MgGraphRequest -Method PUT -Uri $uploadUri -Body $stream -ContentType 'text/plain' -ErrorAction Stop | Out-Null
+                $burstFolder = "DLP-Smoke-Tests/burst-$RunId"
+                try {
+                    $uploadUri = "https://graph.microsoft.com/v1.0/users/$uploadUser/drive/root:/$burstFolder/$fileName`:/content"
+                    Invoke-MgGraphRequest -Method PUT -Uri $uploadUri -Body $stream -ContentType 'text/plain' -ErrorAction Stop | Out-Null
+                }
+                catch {
+                    $stream.Position = 0
+                    $uploadUri = "https://graph.microsoft.com/v1.0/me/drive/root:/$burstFolder/$fileName`:/content"
+                    Invoke-MgGraphRequest -Method PUT -Uri $uploadUri -Body $stream -ContentType 'text/plain' -ErrorAction Stop | Out-Null
+                }
                 $filesUploaded++
             }
             catch {
@@ -489,15 +512,23 @@ function Send-BurstActivity {
     }
     Write-Host "    $filesUploaded files uploaded" -ForegroundColor Green
 
-    # Burst 3: Create sharing links (external sharing pattern)
+    # Burst 3: Create sharing links
     Write-Host "`n  [Burst] Creating sharing links on uploaded files..." -ForegroundColor White
 
+    $burstFolderPath = "DLP-Smoke-Tests/burst-$RunId"
     try {
-        $driveItems = Invoke-MgGraphRequest -Method GET `
-            -Uri "https://graph.microsoft.com/v1.0/users/$uploadUser/drive/root:/DLP-Smoke-Tests/burst-$RunId`:/children" `
-            -ErrorAction Stop
+        $listUri = $null
+        try {
+            $listUri = "https://graph.microsoft.com/v1.0/users/$uploadUser/drive/root:/$burstFolderPath`:/children"
+            $driveItems = Invoke-MgGraphRequest -Method GET -Uri $listUri -ErrorAction Stop
+        }
+        catch {
+            $listUri = "https://graph.microsoft.com/v1.0/me/drive/root:/$burstFolderPath`:/children"
+            $driveItems = Invoke-MgGraphRequest -Method GET -Uri $listUri -ErrorAction Stop
+        }
 
         $itemsToShare = @($driveItems.value | Select-Object -First 5)
+        $driveBase = if ($listUri -like "*/me/*") { "https://graph.microsoft.com/v1.0/me/drive" } else { "https://graph.microsoft.com/v1.0/users/$uploadUser/drive" }
         foreach ($item in $itemsToShare) {
             if ($PSCmdlet.ShouldProcess("$($item.name)", 'Create sharing link')) {
                 try {
@@ -506,7 +537,7 @@ function Send-BurstActivity {
                         scope = "organization"
                     }
                     Invoke-MgGraphRequest -Method POST `
-                        -Uri "https://graph.microsoft.com/v1.0/users/$uploadUser/drive/items/$($item.id)/createLink" `
+                        -Uri "$driveBase/items/$($item.id)/createLink" `
                         -Body $shareBody -ErrorAction Stop | Out-Null
                     $sharesCreated++
                 }
