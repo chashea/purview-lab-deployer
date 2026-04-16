@@ -123,6 +123,7 @@ The daily workflow uses OIDC federated credentials. To set up:
 
 ## Additional docs
 
+- **[Quick Start Guide](QUICKSTART.md)** — get running in your tenant in 30 minutes
 - [Commercial config guide](configs/commercial/README.md)
 - [GCC config guide](configs/gcc/README.md)
 - [Profiles overview](profiles/README.md)
