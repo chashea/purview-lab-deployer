@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+﻿#Requires -Version 7.0
 
 <#
 .SYNOPSIS
@@ -45,7 +45,7 @@ function Request-LabProfile {
     $profiles = @(
         @{ Number = 1; Name = 'basic-lab'; Description = 'Basic demo lab' }
         @{ Number = 2; Name = 'shadow-ai'; Description = 'Shadow AI demo' }
-        @{ Number = 3; Name = 'copilot-dlp'; Description = 'Copilot DLP guardrails demo' }
+        @{ Number = 3; Name = 'copilot-protection'; Aliases = @('copilot-dlp'); Description = 'Copilot DLP guardrails demo' }
     )
 
     $profileNumbers = ($profiles | ForEach-Object { $_.Number }) -join '/'
@@ -63,7 +63,14 @@ function Request-LabProfile {
             $selectedLabProfile = 'basic-lab'
         }
         else {
-            $match = $profiles | Where-Object { $_.Number -eq [int]$profileInput -or $_.Name -eq $profileInput.Trim() }
+            $trimmedProfileInput = $profileInput.Trim()
+            $parsedNumber = 0
+            $hasNumericInput = [int]::TryParse($trimmedProfileInput, [ref]$parsedNumber)
+            $match = $profiles | Where-Object {
+                ($hasNumericInput -and $_.Number -eq $parsedNumber) -or
+                $_.Name -eq $trimmedProfileInput -or
+                (@($_.Aliases) -contains $trimmedProfileInput)
+            }
             if ($match) {
                 $selectedLabProfile = $match.Name
             }

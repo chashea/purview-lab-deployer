@@ -1,6 +1,6 @@
 {
   "profileType": "scenario-overlay",
-  "name": "copilot-dlp",
+  "name": "copilot-protection",
   "baseCloud": "gcc",
   "notes": [
     "Scenario profile for Copilot DLP Guardrails demo in GCC.",

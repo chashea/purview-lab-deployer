@@ -252,13 +252,13 @@
           "from": "mtorres",
           "to": "nshah",
           "subject": "Copilot blocked my analysis request",
-          "body": "Hi Nadia, I was using Copilot to help with expense analysis and included some employee SSNs (like 078-05-1120 and 219-09-9999) in my prompt for context. Copilot refused to process the request and showed a policy message. Is this the new DLP policy? Just want to understand what I can and can't do."
+          "body": "Hi Nadia, I asked Copilot to summarize the Employee-Benefits-Summary file in SharePoint and it refused because of a sensitivity policy. The file is labeled Highly Confidential. Is this expected behavior under the new Copilot DLP policy?"
         },
         {
           "from": "nshah",
           "to": "mtorres",
           "subject": "RE: Copilot blocked my analysis request",
-          "body": "Hi Megan, yes — that is working as designed. Our DLP policy for Copilot detects sensitive info types like SSNs in prompts and blocks the response. You can still use Copilot for analysis, just don't include the actual SSN values in your prompt. Reference account IDs instead. I can see the audit trail for the block in the compliance portal."
+          "body": "Hi Megan, yes — that is working as designed. In GCC, our Copilot DLP policy blocks Copilot from processing files with protected sensitivity labels like Highly Confidential. You can still use Copilot with allowed content, but labeled restricted files are intentionally blocked. I can see the audit trail for the block in the compliance portal."
         }
       ],
       "documents": [

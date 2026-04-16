@@ -54,6 +54,7 @@
 - Condition: Content contains sensitive info types
 - 3 rules: SSN, Credit Card, PHI
 - Action: Block Copilot response
+- Scope note: typed prompt text is evaluated; uploaded file contents in prompts are not DLP-scanned
 
 **Live demo:**
 
@@ -108,6 +109,8 @@
 - Inline DLP prevents Copilot from using sensitive data for external web search queries
 - Even if Copilot could answer the question, Purview decides it shouldn't
 - The prompt itself would carry sensitive data outside the compliance boundary
+- Web search availability is governed by Cloud Policy (**Allow web search in Copilot**)
+- Generated web queries can be audited and investigated alongside prompts/responses
 
 **If preview-enabled:** Demonstrate with a live prompt
 **If not:** Walk through the policy configuration in the portal
@@ -173,7 +176,10 @@
 > "That's exactly why we use label-specific rules. 'Confidential > General' allows Copilot access. 'Highly Confidential > Restricted' blocks it. The label is the control surface."
 
 **Q: "How long until DLP policies take effect on Copilot?"**
-> "Typically 15–60 minutes after policy creation or change. For demo purposes, deploy ahead of time and verify with the runbook before going live."
+> "Plan for up to 4 hours after policy creation or change for full Copilot/Copilot Chat propagation. For demos, deploy ahead of time and verify with the runbook."
+
+**Q: "Are uploaded files in prompts scanned by Copilot DLP prompt controls?"**
+> "Not for prompt SIT scanning. Prompt controls evaluate text typed directly in the prompt. Uploaded file contents aren't scanned by that control, so we rely on label-based controls and existing access protections for file content."
 
 **Q: "What licenses do we need?"**
 > "Microsoft 365 E5 or E5 Compliance for Purview DLP. Copilot for Microsoft 365 for the Copilot license. Both are required."

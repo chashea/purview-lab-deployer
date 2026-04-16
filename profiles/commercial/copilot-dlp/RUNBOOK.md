@@ -4,11 +4,29 @@ Complete these steps after running `Deploy-Lab.ps1` to prepare the full demo exp
 
 ---
 
+## Pre-Flight Checks (Commercial)
+
+Before presenting, verify:
+
+1. `CopilotLocation` (or equivalent) is available to DLP policy cmdlets:
+   ```powershell
+   (Get-Command New-DlpCompliancePolicy).Parameters.Keys | Where-Object { $_ -like '*Copilot*' }
+   ```
+2. Sensitivity labels are published to demo users:
+   ```powershell
+   Get-Label | Where-Object { $_.DisplayName -like 'PVCopilotDLP*' }
+   ```
+3. If you plan to run the web-search segment, confirm your intended web-search state in Cloud Policy (**Allow web search in Copilot**) before the demo.
+
+> DLP policy changes can take up to 4 hours to fully appear in Copilot and Copilot Chat experiences.
+
+---
+
 ## Phase 0 — Baseline Demo (Manual, 5 min)
 
 The baseline creates the before/after contrast. Show Copilot working without guardrails **before** DLP policies take effect.
 
-> DLP policies deploy in simulation mode and may take 15–60 minutes to propagate. Use this window for the baseline demo.
+> DLP policies deploy in simulation mode and can take up to 4 hours to fully propagate. Use this window for the baseline demo and set expectations with the audience.
 
 ### Steps
 
@@ -35,6 +53,8 @@ After policy propagation, verify the "Copilot Prompt SIT Block" policy is active
 4. Copilot should display a policy-driven block message
 5. Repeat with a credit card number: `"What charges were made on card 4532-8721-0034-6619?"`
 6. Repeat with medical terms: `"Summarize the treatment plan for diabetes mellitus"`
+
+> Prompt SIT blocking evaluates text typed directly in prompts. Uploaded file contents in prompts are not DLP-scanned.
 
 ### Expected Behavior
 
@@ -87,6 +107,8 @@ The auto-label policy catches SSN content automatically. For the demo, also manu
 
 This capability prevents Copilot from using sensitive data for external web search queries. It is currently in **Private Preview**.
 
+> Web search behavior is controlled by tenant policy. Confirm your **Allow web search in Copilot** setting before the demo flow.
+
 ### If Preview-Enrolled
 
 1. Navigate to **Microsoft Purview > DLP > Policies**
@@ -105,7 +127,8 @@ Walk through the policy logic on screen (portal UI) and explain:
 
 ### References
 
-- [Purview DLP for Copilot web search](https://learn.microsoft.com/purview/dlp-microsoft-copilot#web-search)
+- [Learn about using Microsoft Purview DLP to protect interactions with Microsoft 365 Copilot and Copilot Chat](https://learn.microsoft.com/purview/dlp-microsoft365-copilot-location-learn-about)
+- [Data, privacy, and security for web search in Microsoft 365 Copilot and Copilot Chat](https://learn.microsoft.com/microsoft-365/copilot/manage-public-web-access#web-search)
 
 ---
 
@@ -138,7 +161,7 @@ Walk through the policy logic on screen (portal UI) and explain:
 
 ## Pre-Demo Checklist
 
-- [ ] DLP policies propagated (15–60 min after deploy)
+- [ ] DLP policies propagated (allow up to 4 hours after deploy)
 - [ ] Sensitivity labels published to demo users
 - [ ] Copilot licenses assigned to test users (mtorres, jkim)
 - [ ] Test documents uploaded to SharePoint
@@ -156,6 +179,6 @@ DLP policies deploy in simulation mode by default. To enable enforcement for liv
 1. Navigate to **Microsoft Purview > DLP > Policies**
 2. Select each `PVCopilotDLP-*` policy
 3. Change status from **Test it out** to **Turn it on**
-4. Allow 15–30 minutes for propagation
+4. Allow up to 4 hours for full propagation
 
 Or redeploy without simulation mode by setting `"simulationMode": false` in the config.

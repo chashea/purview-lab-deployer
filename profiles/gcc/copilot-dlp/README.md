@@ -14,7 +14,7 @@
 
 ## Scenario Overview
 
-This lab demonstrates how Microsoft Purview DLP enforces data boundaries for Microsoft 365 Copilot prompts, files, and AI-driven actions in a GCC environment. Customers see what actually happens when those guardrails trigger — and the audit evidence that proves it.
+This lab demonstrates how Microsoft Purview DLP enforces data boundaries for Microsoft 365 Copilot and Copilot Chat prompts, files, and AI-driven actions in a GCC environment. Customers see what actually happens when those guardrails trigger — and the audit evidence that proves it.
 
 | Component | Count | Details |
 |---|---|---|
@@ -33,25 +33,29 @@ This lab demonstrates how Microsoft Purview DLP enforces data boundaries for Mic
 
 - **Microsoft 365 G5** (or G5 Compliance add-on)
 - **Microsoft 365 Copilot** licenses assigned to demo users (GCC availability required)
-- Purview DLP permissions (Compliance Administrator or Data Security AI Admin)
+- One of these roles: Entra AI Admin, Purview Data Security AI Admin, or Purview Compliance Administrator
 - Sensitivity labels published to demo users
 - Validate `CopilotLocation` parameter availability: run `Get-Command New-DlpCompliancePolicy` and check for `CopilotLocation` in parameters
+- For web-search scenarios, explicitly configure **Allow web search in Copilot** (GCC default is off)
+- Plan for policy propagation delay: updates can take up to 4 hours to fully reflect in Copilot experiences
 
 ## Quick Start
 
 ```powershell
 # Deploy
-./Deploy-Lab.ps1 -Cloud gcc -LabProfile copilot-dlp -TenantId <tenant-guid>
+./Deploy-Lab.ps1 -Cloud gcc -LabProfile copilot-protection -TenantId <tenant-guid>
 
 # Deploy without test users (use existing tenant accounts)
-./Deploy-Lab.ps1 -Cloud gcc -LabProfile copilot-dlp -TenantId <tenant-guid> -SkipTestUsers
+./Deploy-Lab.ps1 -Cloud gcc -LabProfile copilot-protection -TenantId <tenant-guid> -SkipTestUsers
 
 # Dry run
-./Deploy-Lab.ps1 -Cloud gcc -LabProfile copilot-dlp -WhatIf
+./Deploy-Lab.ps1 -Cloud gcc -LabProfile copilot-protection -WhatIf
 
 # Teardown
-./Remove-Lab.ps1 -Cloud gcc -LabProfile copilot-dlp -Confirm:$false -TenantId <tenant-guid>
+./Remove-Lab.ps1 -Cloud gcc -LabProfile copilot-protection -Confirm:$false -TenantId <tenant-guid>
 ```
+
+Legacy alias: `copilot-dlp` remains supported for backward compatibility.
 
 ## Pre-Deploy Validation (GCC)
 
@@ -83,11 +87,16 @@ If `CopilotLocation` is not available, the deployer will skip the Copilot locati
 
 - **GCC supports label-based Copilot DLP only.** SIT-based conditions (sensitive info types in prompts) are not supported for Copilot DLP rules in GCC. This lab deploys a single policy with two label-based rules.
 - DLP policies deploy in **simulation mode** (TestWithNotifications) by default. Switch to enforce for live demos.
+- Prompt SIT controls evaluate typed prompt text only. Uploaded file contents in prompts are not DLP-scanned.
+- DLP updates can take up to 4 hours to fully appear in Copilot and Copilot Chat.
 - Phase 2 (web search prevention) requires **Private Preview** enrollment — may not be available in GCC.
+- GCC web search defaults to disabled unless enabled with Cloud Policy (**Allow web search in Copilot**).
 - **GCC rollout lag:** If Copilot DLP features are not yet available in your GCC tenant, the deployer degrades gracefully. Use the RUNBOOK to identify which features require manual portal configuration.
 
 ## References
 
-- [Learn about using Microsoft Purview DLP to protect interactions with Copilot](https://learn.microsoft.com/purview/dlp-microsoft-copilot)
-- [Use Microsoft Purview to manage data security for M365 Copilot](https://learn.microsoft.com/purview/ai-microsoft-purview)
+- [Learn about using Microsoft Purview DLP to protect interactions with Microsoft 365 Copilot and Copilot Chat](https://learn.microsoft.com/purview/dlp-microsoft365-copilot-location-learn-about)
+- [Use Microsoft Purview to manage data security and compliance for Microsoft 365 Copilot and Copilot Chat](https://learn.microsoft.com/purview/ai-m365-copilot)
+- [Data, privacy, and security for web search in Microsoft 365 Copilot and Copilot Chat](https://learn.microsoft.com/microsoft-365/copilot/manage-public-web-access#web-search)
+- [Considerations to manage Microsoft 365 Copilot and Channel Agent in Teams for security and compliance](https://learn.microsoft.com/purview/ai-m365-copilot-considerations)
 - [Microsoft 365 feature availability in GCC](https://learn.microsoft.com/office365/servicedescriptions/office-365-platform-service-description/office-365-us-government/gcc)

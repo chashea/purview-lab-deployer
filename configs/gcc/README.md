@@ -25,7 +25,7 @@ This folder contains Microsoft Purview lab configs for GCC tenants.
 - Guide: `../../profiles/gcc/copilot-dlp/README.md`
 
 ```powershell
-./Deploy-Lab.ps1 -Cloud gcc -LabProfile copilot-dlp -TenantId <tenant-guid>
+./Deploy-Lab.ps1 -Cloud gcc -LabProfile copilot-protection -TenantId <tenant-guid>
 ```
 
 ## Other configs

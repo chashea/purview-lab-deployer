@@ -44,7 +44,7 @@ root/
 │   │   ├── capabilities.json             # Commercial workload capabilities
 │   │   ├── basic-lab/                    # Basic lab scenario profile + guide
 │   │   ├── shadow-ai/                    # Shadow AI scenario profile + guide
-│   │   └── copilot-dlp/                  # Copilot DLP profile + runbook + demo
+│   │   └── copilot-dlp/                  # Copilot protection profile + runbook + demo
 │   ├── gcc/
 │   │   ├── capabilities.json             # GCC workload capabilities
 │   │   └── shadow-ai/                    # Shadow AI scenario profile + guide
@@ -95,10 +95,10 @@ root/
 
 - **Basic lab** (baseline): `configs/<cloud>/basic-lab-demo.json` — core compliance workloads, prefix `PVLab`
 - **Shadow AI** (separate): `configs/commercial/shadow-ai-demo.json` — AI-focused DLP/labels/retention/eDiscovery/IRM, prefix `PVShadowAI`
-- **Copilot DLP** (M365 Copilot guardrails): `configs/<cloud>/copilot-dlp-demo.json` — Copilot-specific DLP rules, labeled content protection, prompt blocking, prefix `PVLab`. Has a manual demo runbook at `profiles/commercial/copilot-dlp/RUNBOOK.md`.
+- **Copilot protection** (M365 Copilot guardrails): `configs/<cloud>/copilot-dlp-demo.json` — Copilot-specific DLP rules, labeled content protection, prompt blocking, prefix `PVLab`. Use with `-LabProfile copilot-protection`. Has a manual demo runbook at `profiles/commercial/copilot-dlp/RUNBOOK.md`.
 - **Scenario configs**: `dlp-only.json`, `education-demo.json`, `eu-gdpr-demo.json`, etc.
 
-Shadow AI is intentionally separated from baseline basic-lab. Different prefix, different config, independent deploy/remove lifecycle. Copilot DLP shares the `PVLab` prefix with basic-lab.
+Shadow AI is intentionally separated from baseline basic-lab. Different prefix, different config, independent deploy/remove lifecycle. Copilot protection shares the `PVLab` prefix with basic-lab.
 
 ## Key conventions
 

@@ -29,13 +29,17 @@ Get-Label | Where-Object { $_.DisplayName -like 'PVCopilotDLP*' }
 | CopilotInteraction audit | Results or "no results" (not an error) | Copilot audit may not be enabled — Phase 3 audit demos will be limited |
 | Published labels | PVCopilotDLP labels listed | Labels need time to publish — wait 15–30 minutes after deploy |
 
+For the web-search demo segment, also verify Cloud Policy state:
+
+- **Allow web search in Copilot** is configured as intended for your demo (GCC defaults to off unless enabled).
+
 ---
 
 ## Phase 0 — Baseline Demo (Manual, 5 min)
 
 The baseline creates the before/after contrast. Show Copilot working without guardrails **before** DLP policies take effect.
 
-> DLP policies deploy in simulation mode and may take 15–60 minutes to propagate. Use this window for the baseline demo.
+> DLP policies deploy in simulation mode and can take up to 4 hours to fully propagate. Use this window for the baseline demo and set expectations with the audience.
 
 ### Steps
 
@@ -85,6 +89,8 @@ If Copilot location was not available for DLP policies, label-based blocking thr
 
 > **GCC Status:** This feature is in Private Preview for commercial tenants. GCC availability is TBD. If not available, walk through the policy logic and explain the control.
 
+> Prompt SIT blocking evaluates typed prompt text only. Uploaded file contents in prompts are not DLP-scanned.
+
 ### If Available
 
 1. Navigate to **Microsoft Purview > DLP > Policies**
@@ -126,14 +132,14 @@ Copilot audit events (`CopilotInteraction`) may not yet be available in GCC. If 
 
 ### Key Message
 
-> "Every time Copilot is constrained by DLP, there's a full audit trail. This works the same in GCC as commercial — defensible AI governance for government workloads."
+> "Every time Copilot is constrained by DLP, there's a full audit trail. In GCC, this provides defensible AI governance with the controls currently available in your tenant."
 
 ---
 
 ## Pre-Demo Checklist (GCC)
 
 - [ ] Pre-flight validation passed (CopilotLocation, audit events, labels)
-- [ ] DLP policies propagated (15–60 min after deploy)
+- [ ] DLP policies propagated (allow up to 4 hours after deploy)
 - [ ] Sensitivity labels published to demo users
 - [ ] Copilot licenses assigned to test users (mtorres, jkim) — GCC Copilot availability confirmed
 - [ ] Test documents uploaded to SharePoint
@@ -151,6 +157,6 @@ DLP policies deploy in simulation mode by default. To enable enforcement for liv
 1. Navigate to **Microsoft Purview > DLP > Policies**
 2. Select each `PVCopilotDLP-*` policy
 3. Change status from **Test it out** to **Turn it on**
-4. Allow 15–30 minutes for propagation
+4. Allow up to 4 hours for full propagation
 
 Or redeploy without simulation mode by setting `"simulationMode": false` in the config.

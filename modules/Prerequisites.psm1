@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+﻿#Requires -Version 7.0
 
 <#
 .SYNOPSIS
@@ -412,9 +412,10 @@ function Get-ProfileConfigMapping {
     param()
 
     return @{
-        'basic-lab'   = 'basic-lab-demo.json'
-        'shadow-ai'   = 'shadow-ai-demo.json'
-        'copilot-dlp' = 'copilot-dlp-demo.json'
+        'basic-lab'           = 'basic-lab-demo.json'
+        'shadow-ai'           = 'shadow-ai-demo.json'
+        'copilot-protection' = 'copilot-dlp-demo.json'
+        'copilot-dlp'         = 'copilot-dlp-demo.json'
     }
 }
 

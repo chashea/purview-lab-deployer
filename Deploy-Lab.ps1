@@ -14,7 +14,8 @@
 
 .PARAMETER LabProfile
     Deployment profile name. Resolves to a config file under configs/<cloud>/.
-    Available profiles: basic-lab, shadow-ai.
+    Available profiles: basic-lab, shadow-ai, copilot-protection.
+    Backward-compatible alias: copilot-dlp.
 
 .PARAMETER SkipAuth
     Skip connecting to Exchange Online and Microsoft Graph (for testing).
@@ -47,7 +48,7 @@ param(
     [string]$ConfigPath,
 
     [Parameter()]
-    [ValidateSet('basic-lab', 'shadow-ai', 'copilot-dlp')]
+    [ValidateSet('basic-lab', 'shadow-ai', 'copilot-protection', 'copilot-dlp')]
     [string]$LabProfile,
 
     [Parameter()]

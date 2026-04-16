@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Automated Microsoft Purview demo lab deployment via PowerShell 7+.
 Config-driven, modular by workload, deploy + teardown symmetry.
-Three deployment profiles: basic-lab, shadow-ai, copilot-dlp — each with commercial and GCC variants.
+Three deployment profiles: basic-lab, shadow-ai, copilot-protection (alias: copilot-dlp) — each with commercial and GCC variants.
 
 ## Stack
 

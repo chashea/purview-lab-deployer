@@ -13,7 +13,7 @@
     {
       "step": 1,
       "title": "Guardrail #1 — Block sensitive prompts",
-      "talkTrack": "Now we activate DLP for Copilot. When a user types a prompt containing a Social Security Number, credit card, or medical information, Copilot blocks the response with a clear policy message. The user knows exactly why — no black box.",
+      "talkTrack": "Now we activate DLP for Copilot. When a user types a prompt containing a Social Security Number, credit card, or medical information, Copilot blocks the response with a clear policy message. The user knows exactly why — no black box. This control evaluates typed prompt text; uploaded files are governed by label-based controls.",
       "showInPortal": [
         "DLP policy: Copilot Prompt SIT Block",
         "Copilot prompt with SSN → blocked response",
@@ -42,7 +42,7 @@
     {
       "step": 3,
       "title": "Guardrail #3 — Stop Copilot web search with sensitive data",
-      "talkTrack": "Even if Copilot could answer the question by searching the web, Purview decides it shouldn't — because the prompt contains sensitive data that would leave the compliance boundary. This is currently in Private Preview.",
+      "talkTrack": "Even if Copilot could answer the question by searching the web, Purview decides it shouldn't — because the prompt contains sensitive data that would leave the compliance boundary. This is currently in Private Preview and depends on tenant web-search policy configuration.",
       "showInPortal": [
         "DLP policy creation walkthrough (web search location)",
         "Expected behavior explanation"

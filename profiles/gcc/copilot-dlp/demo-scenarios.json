@@ -1,7 +1,7 @@
 {
   "demoName": "Copilot DLP Guardrails (GCC)",
   "version": "1.0",
-  "cloudNotes": "GCC deployment. SIT-based Copilot DLP policies are not supported in GCC — only label-based content blocking is available. Copilot DLP features may have delayed rollout compared to commercial. Validate CopilotLocation parameter availability and Copilot audit events before demo.",
+  "cloudNotes": "GCC deployment. SIT-based Copilot DLP policies are not supported in GCC — only label-based content blocking is available. Copilot DLP features may have delayed rollout compared to commercial. Validate CopilotLocation parameter availability and Copilot audit events before demo. Web search is off by default in GCC unless enabled with policy.",
   "presentationFlow": [
     {
       "step": 0,
@@ -29,8 +29,9 @@
     {
       "step": 2,
       "title": "Guardrail #2 — Stop Copilot web search with sensitive data",
-      "talkTrack": "Even if Copilot could answer the question by searching the web, Purview decides it shouldn't — because the prompt contains sensitive data that would leave the compliance boundary. This is currently in Private Preview.",
+      "talkTrack": "Even if Copilot could answer the question by searching the web, Purview decides it shouldn't — because the prompt contains sensitive data that would leave the compliance boundary. This is currently in Private Preview. In GCC, web search must be policy-enabled before this scenario can be demonstrated.",
       "showInPortal": [
+        "Cloud Policy: Allow web search in Copilot (enabled for demo users)",
         "DLP policy creation walkthrough (web search location)",
         "Expected behavior explanation"
       ],
@@ -42,7 +43,7 @@
     {
       "step": 3,
       "title": "Evidence & investigations",
-      "talkTrack": "Every Copilot DLP event creates a full audit trail. Security teams can see which file was excluded, which policy was responsible, and who triggered it. This is defensible AI governance — same in GCC as commercial.",
+      "talkTrack": "Every Copilot DLP event creates a full audit trail. Security teams can see which file was excluded, which policy was responsible, and who triggered it. This is defensible AI governance in GCC, with feature availability depending on tenant rollout.",
       "showInPortal": [
         "Audit log search: CopilotInteraction events",
         "Audit log search: DlpRuleMatch events",

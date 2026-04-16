@@ -40,7 +40,7 @@ Status values: `available`, `limited` (warns), `delayed` (warns), `unavailable` 
 |---------|-----------|-----|--------|--------|
 | basic-lab | Yes | Yes | PVLab | basic-lab-demo.json |
 | shadow-ai | Yes | Yes | PVShadowAI | shadow-ai-demo.json |
-| copilot-dlp | Yes | Yes | PVCopilotDLP | copilot-dlp-demo.json |
+| copilot-protection | Yes | Yes | PVCopilotDLP | copilot-dlp-demo.json |
 | foundry | Yes | No | PVFoundry | foundry-demo.json |
 
 ## README conventions
@@ -48,7 +48,7 @@ Status values: `available`, `limited` (warns), `delayed` (warns), `unavailable` 
 Profile READMEs follow a consistent structure. Reference `profiles/commercial/basic-lab/README.md` as the baseline template:
 
 1. **Title** — `# <Profile Name> — <Cloud> Deployment Guide`
-2. **Tagline** — One-line value proposition (optional, used in copilot-dlp and foundry)
+2. **Tagline** — One-line value proposition (optional, used in copilot-protection and foundry)
 3. **Scenario Overview** — Table summarizing component counts
 4. **Prerequisites** — Licenses, roles, modules required
 5. **Quick Start** — Deploy, dry-run, and teardown commands

@@ -44,7 +44,7 @@ You are a lab operations specialist for the purview-lab-deployer project. You ru
 |-------|--------|--------|-------|
 | Basic lab | `configs/<cloud>/basic-lab-demo.json` | `PVLab` | Core compliance workloads |
 | Shadow AI | `configs/commercial/shadow-ai-demo.json` | `PVShadowAI` | AI-focused, commercial only, independent lifecycle |
-| Copilot DLP | `configs/<cloud>/copilot-dlp-demo.json` | `PVLab` | M365 Copilot guardrails, has manual runbook |
+| Copilot protection | `configs/<cloud>/copilot-dlp-demo.json` | `PVLab` | M365 Copilot guardrails, use `-LabProfile copilot-protection`, has manual runbook |
 
 Shadow AI and basic lab are separate tracks — different prefix, different config, fully independent.
 

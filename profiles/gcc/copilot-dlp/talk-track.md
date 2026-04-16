@@ -42,7 +42,7 @@ This positions the demo as forward-looking without losing credibility.
 > - Stop Copilot from using sensitive data for web search
 > - See the full audit trail when Copilot is constrained
 >
-> All of this runs the same in GCC as commercial. Same policies, same enforcement model, same audit trail. The only difference is the licensing — G5 instead of E5.
+> The core governance model is the same in GCC, but there are feature differences to call out clearly: GCC currently supports label-based Copilot DLP, while SIT-based Copilot prompt blocking remains commercial-only.
 >
 > **Note:** In GCC, Copilot DLP supports label-based content blocking. SIT-based prompt blocking (detecting PII/PHI/PCI in prompts) is not available for Copilot in GCC — that capability is commercial-only today."
 
@@ -101,6 +101,7 @@ This positions the demo as forward-looking without losing credibility.
 - Inline DLP prevents Copilot from using sensitive data for external web search queries
 - Even if Copilot could answer the question, Purview decides it shouldn't
 - The prompt itself would carry sensitive data outside the compliance boundary
+- In GCC, web search is off by default unless enabled via Cloud Policy (**Allow web search in Copilot**)
 
 > "Even if Copilot could answer the question, Purview decides it shouldn't. The sensitive data stays inside the boundary. This is the same model whether you're commercial or GCC."
 
@@ -138,14 +139,14 @@ This positions the demo as forward-looking without losing credibility.
 >
 > In GCC, label-based content blocking is the primary Copilot DLP control. SIT-based prompt blocking is available in commercial — when it comes to GCC, the same policy model will apply.
 >
-> This runs identically in GCC. Same policies, same enforcement, same audit trail. G5 licensing, GCC compliance boundary. Your agency's data stays inside the guardrails."
+> This runs with GCC-appropriate guardrails today: label-based DLP enforcement, sensitivity labels, and audit evidence. As GCC feature rollout expands, the same control model extends without redesign. G5 licensing, GCC compliance boundary, defensible governance."
 
 ---
 
 ## Anticipated Questions
 
 **Q: "Is this the same in GCC as commercial?"**
-> "The label-based DLP enforcement, sensitivity labels, and audit infrastructure are the same. The key difference in GCC is that SIT-based Copilot DLP policies (blocking prompts containing SSN, credit card, PHI) are not available — only label-based content blocking works for Copilot in GCC. Licensing is G5 vs E5, and feature rollout timing may lag by weeks to months."
+> "The label-based DLP enforcement, sensitivity labels, and audit infrastructure are the same. The key differences in GCC are: SIT-based Copilot prompt DLP isn't available today, web search is off by default unless policy-enabled, and feature rollout can lag commercial."
 
 **Q: "Does this work with GCC High or DoD?"**
 > "This demo targets GCC (not GCC High or DoD). GCC High and DoD have different endpoint configurations and more restrictive feature availability. Contact your Microsoft account team for GCC High/DoD guidance."
@@ -155,6 +156,9 @@ This positions the demo as forward-looking without losing credibility.
 
 **Q: "Does this actually block Copilot, or just log it?"**
 > "Both. The DLP action is 'block' — Copilot cannot return a response. And every block generates an audit record. In simulation mode, it logs without blocking, which is useful for policy tuning."
+
+**Q: "Are uploaded files in prompts scanned by Copilot DLP prompt controls?"**
+> "Prompt SIT scanning evaluates text typed directly in prompts. Uploaded file contents aren't scanned by that control. In GCC, our lab relies on label-based protections and access controls for file content boundaries."
 
 **Q: "What if Copilot features aren't available in our GCC tenant yet?"**
 > "The deployer degrades gracefully — it creates the policies without the Copilot location and logs a warning. When the feature rolls out to your tenant, you add the location and enforcement begins immediately. No policy rewrite needed."
