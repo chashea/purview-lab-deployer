@@ -34,7 +34,6 @@ jobs:
         shell: pwsh
         run: |
           Set-PSRepository PSGallery -InstallationPolicy Trusted
-          Install-Module -Name ExchangeOnlineManagement -Force -Scope CurrentUser
           Install-Module -Name Microsoft.Graph.Authentication -Force -Scope CurrentUser
           Install-Module -Name Microsoft.Graph.Users -Force -Scope CurrentUser
 
@@ -53,38 +52,15 @@ jobs:
           $ctx = Get-MgContext
           Write-Host "Graph connected: TenantId=$($ctx.TenantId)"
 
-      - name: Connect to Security & Compliance
-        shell: pwsh
-        run: |
-          $cert = $null  # OIDC token flow
-          Connect-IPPSSession -AppId $env:AZURE_CLIENT_ID -Organization ${{ secrets.AZURE_DOMAIN }} -ShowBanner:$false -ErrorAction Stop
-          Write-Host "IPPS connected"
-
       - name: Run DLP smoke test
         shell: pwsh
         run: |
           $profile = '${{ github.event.inputs.profile || 'basic-lab' }}'
 
-          # Import modules
           foreach ($mod in Get-ChildItem modules/*.psm1) {
               Import-Module $mod.FullName -Force
           }
 
-          $Config = Import-LabConfig -ConfigPath "configs/commercial/$((Get-ProfileConfigMapping)[$profile])"
-          $prefix = $Config.prefix
-          $domain = $Config.domain
-          $runId = "SMOKE-CI-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
-
-          Write-Host "Profile: $profile | Prefix: $prefix | Run ID: $runId"
-
-          # Get users
-          $users = @($Config.workloads.testUsers.users | ForEach-Object {
-              if ($_.upn) { $_.upn } elseif ($_.mailNickname) { "$($_.mailNickname)@$domain" }
-          })
-
-          Write-Host "Users: $($users -join ', ')"
-
-          # Run the smoke test with SkipAuth (already connected above)
           ./scripts/Invoke-SmokeTest.ps1 -LabProfile $profile -Cloud commercial -SkipAuth
 
       - name: Upload run summary
