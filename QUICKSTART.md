@@ -100,33 +100,36 @@ This creates:
 
 ## Step 4 — Run smoke tests
 
-### DLP alerts + incidents (email + OneDrive)
+### Option A: Standalone mode (no config file needed)
 
 ```powershell
-# Send test emails and upload files with fake sensitive data
+./scripts/Invoke-SmokeTest.ps1 `
+    -TenantId "YOUR-TENANT-ID" `
+    -Domain "YOUR-TENANT.onmicrosoft.com" `
+    -Users "user1@YOUR-TENANT.onmicrosoft.com","user2@YOUR-TENANT.onmicrosoft.com"
+```
+
+### Option B: Config mode (uses your lab config)
+
+```powershell
 ./scripts/Invoke-SmokeTest.ps1 -ConfigPath configs/commercial/my-lab.json -Cloud commercial
 ```
 
-This sends 8 emails and uploads 8 files containing SSN, credit card, bank account, and medical data to trigger every deployed DLP rule.
+### DLP + Insider Risk burst activity
 
-**Results appear in:**
-- [DLP Alerts](https://purview.microsoft.com/datalossprevention/alerts) — within 15-60 minutes
-- [Activity Explorer](https://purview.microsoft.com/datalossprevention/activityexplorer) — within minutes
-
-### DLP + Insider Risk signals
+Add `-BurstActivity` to either mode for high-volume IRM signals:
 
 ```powershell
-# Add burst activity for Insider Risk Management signals
-./scripts/Invoke-SmokeTest.ps1 -ConfigPath configs/commercial/my-lab.json -Cloud commercial -BurstActivity
+# Standalone with burst
+./scripts/Invoke-SmokeTest.ps1 `
+    -TenantId "YOUR-TENANT-ID" `
+    -Domain "YOUR-TENANT.onmicrosoft.com" `
+    -Users "user1@YOUR-TENANT.onmicrosoft.com","user2@YOUR-TENANT.onmicrosoft.com" `
+    -BurstActivity
+
+# Config with burst
+./scripts/Invoke-SmokeTest.ps1 -ConfigPath configs/commercial/my-lab.json -BurstActivity
 ```
-
-This adds:
-- 10 rapid emails from one user (data exfiltration pattern)
-- 15 file uploads to OneDrive (staging pattern)
-- 5 sharing links (data sharing pattern)
-
-**IRM results appear in:**
-- [Insider Risk Alerts](https://purview.microsoft.com/insiderriskmanagement/alerts) — within 24-48 hours
 
 ### Copilot DLP testing
 

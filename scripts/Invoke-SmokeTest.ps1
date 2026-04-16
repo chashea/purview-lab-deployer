@@ -6,25 +6,34 @@
     across Exchange, SharePoint, and OneDrive, then optionally validates audit matches.
 
 .DESCRIPTION
-    Reads the lab config, identifies DLP policies scoped to Exchange/SharePoint/OneDrive,
-    and generates test activity containing sensitive data patterns (SSN, credit card,
-    bank account, medical terms) that match each policy's SIT conditions.
+    Two modes of operation:
+
+    Config mode: reads a lab config JSON to identify DLP policies and generate targeted
+    test cases for each rule's SIT conditions.
+
+    Standalone mode: uses -TenantId, -Domain, and -Users parameters directly — no config
+    file or deployer modules needed. Generates test cases for all common SITs (SSN,
+    credit card, bank account, medical terms).
 
     For Exchange: sends emails between licensed users.
-    For SharePoint/OneDrive: uploads text files with sensitive content to each user's OneDrive.
+    For SharePoint/OneDrive: uploads text files with sensitive content to OneDrive.
 
     Each test item is tagged with a unique run ID for audit log correlation.
 
-    Modes:
-      - Default: send emails + upload files, print expected outcomes
-      - -ValidateOnly -Since <datetime>: skip sending, query audit log for matches
-      - -WaitMinutes <N>: send, then poll for audit matches
+.PARAMETER TenantId
+    (Standalone mode) Entra ID tenant ID. Used for Graph authentication.
+
+.PARAMETER Domain
+    (Standalone mode) Tenant domain (e.g., contoso.onmicrosoft.com).
+
+.PARAMETER Users
+    (Standalone mode) Array of licensed user UPNs. Minimum 2 required.
 
 .PARAMETER ConfigPath
-    Path to the lab configuration JSON file.
+    (Config mode) Path to the lab configuration JSON file.
 
 .PARAMETER LabProfile
-    Lab profile shorthand (basic-lab, shadow-ai, copilot-protection).
+    (Config mode) Lab profile shorthand (basic-lab, shadow-ai, copilot-protection).
 
 .PARAMETER Cloud
     Cloud environment (commercial or gcc). Default: commercial.
@@ -39,20 +48,30 @@
 .PARAMETER WaitMinutes
     After sending, poll the audit log for this many minutes (default: 0 = no wait).
 
+.PARAMETER BurstActivity
+    Generate high-volume activity (rapid emails, mass file uploads, sharing links)
+    to trigger Insider Risk Management signals.
+
 .PARAMETER SkipAuth
-    Skip cloud authentication (for dry-run testing).
+    Skip cloud authentication (for dry-run testing or pre-connected sessions).
 
 .PARAMETER WhatIf
     Show what would be sent without actually sending.
 
 .EXAMPLE
+    # Standalone mode — no config file needed
+    ./scripts/Invoke-SmokeTest.ps1 -TenantId "00000000-..." -Domain "contoso.onmicrosoft.com" -Users "alice@contoso.onmicrosoft.com","bob@contoso.onmicrosoft.com"
+
+.EXAMPLE
+    # Standalone with burst activity for Insider Risk
+    ./scripts/Invoke-SmokeTest.ps1 -TenantId "00000000-..." -Domain "contoso.onmicrosoft.com" -Users "alice@contoso.onmicrosoft.com","bob@contoso.onmicrosoft.com" -BurstActivity
+
+.EXAMPLE
+    # Config mode — uses lab deployer config
     ./scripts/Invoke-SmokeTest.ps1 -LabProfile basic-lab -Cloud commercial
 
 .EXAMPLE
     ./scripts/Invoke-SmokeTest.ps1 -LabProfile basic-lab -ValidateOnly -Since "2026-04-15T15:00:00"
-
-.EXAMPLE
-    ./scripts/Invoke-SmokeTest.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -Cloud commercial
 
 .EXAMPLE
     ./scripts/Invoke-SmokeTest.ps1 -LabProfile basic-lab -BurstActivity -Cloud commercial
@@ -60,6 +79,15 @@
 
 [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Send')]
 param(
+    [Parameter()]
+    [string]$TenantId,
+
+    [Parameter()]
+    [string]$Domain,
+
+    [Parameter()]
+    [string[]]$Users,
+
     [Parameter()]
     [string]$ConfigPath,
 
@@ -87,42 +115,78 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$repoRoot = Split-Path $PSScriptRoot
 
-# Import modules
-Import-Module (Join-Path $repoRoot 'modules' 'Prerequisites.psm1') -Force
-foreach ($mod in (Get-ChildItem -Path (Join-Path $repoRoot 'modules') -Filter '*.psm1')) {
-    Import-Module $mod.FullName -Force
+# --- Determine mode: standalone vs config ---
+$standaloneMode = (-not [string]::IsNullOrWhiteSpace($TenantId)) -or
+                  (-not [string]::IsNullOrWhiteSpace($Domain)) -or
+                  ($null -ne $Users -and $Users.Count -gt 0)
+
+$configMode = (-not [string]::IsNullOrWhiteSpace($ConfigPath)) -or
+              (-not [string]::IsNullOrWhiteSpace($LabProfile))
+
+if ($standaloneMode -and $configMode) {
+    throw 'Use either standalone params (-TenantId/-Domain/-Users) or config params (-ConfigPath/-LabProfile), not both.'
 }
 
-# --- Resolve config ---
-if (-not [string]::IsNullOrWhiteSpace($LabProfile) -and -not [string]::IsNullOrWhiteSpace($ConfigPath)) {
-    throw 'Specify either -LabProfile or -ConfigPath, not both.'
-}
+if ($standaloneMode) {
+    # Validate standalone params
+    if ([string]::IsNullOrWhiteSpace($TenantId)) { $TenantId = Read-Host 'Enter your Entra ID tenant ID (GUID)' }
+    if ([string]::IsNullOrWhiteSpace($Domain)) { $Domain = Read-Host 'Enter your tenant domain (e.g., contoso.onmicrosoft.com)' }
+    if (-not $Users -or $Users.Count -lt 2) {
+        $userInput = Read-Host 'Enter at least 2 licensed user UPNs (comma-separated)'
+        $Users = $userInput -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' }
+    }
+    if ($Users.Count -lt 2) { throw 'At least 2 licensed users with mailboxes are required.' }
 
-if (-not [string]::IsNullOrWhiteSpace($LabProfile)) {
-    $profileConfigMap = Get-ProfileConfigMapping
-    $configFileName = $profileConfigMap[$LabProfile]
-    if (-not $configFileName) { throw "Unknown profile: $LabProfile" }
-    $ConfigPath = Join-Path $repoRoot "configs/$Cloud/$configFileName"
+    $prefix = 'SmokeTest'
+    $domain = $Domain
+    $labName = "Standalone Smoke Test ($Domain)"
 }
+else {
+    # Config mode — import deployer modules
+    $repoRoot = Split-Path $PSScriptRoot
+    $modulesPath = Join-Path $repoRoot 'modules'
 
-if ([string]::IsNullOrWhiteSpace($ConfigPath)) {
-    throw 'Either -LabProfile or -ConfigPath is required.'
+    if (Test-Path (Join-Path $modulesPath 'Prerequisites.psm1')) {
+        Import-Module (Join-Path $modulesPath 'Prerequisites.psm1') -Force
+        foreach ($mod in (Get-ChildItem -Path $modulesPath -Filter '*.psm1')) {
+            Import-Module $mod.FullName -Force
+        }
+    }
+    else {
+        throw "Deployer modules not found at '$modulesPath'. Use standalone mode (-TenantId/-Domain/-Users) or run from the repo root."
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($LabProfile) -and -not [string]::IsNullOrWhiteSpace($ConfigPath)) {
+        throw 'Specify either -LabProfile or -ConfigPath, not both.'
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($LabProfile)) {
+        $profileConfigMap = Get-ProfileConfigMapping
+        $configFileName = $profileConfigMap[$LabProfile]
+        if (-not $configFileName) { throw "Unknown profile: $LabProfile" }
+        $ConfigPath = Join-Path $repoRoot "configs/$Cloud/$configFileName"
+    }
+
+    if ([string]::IsNullOrWhiteSpace($ConfigPath)) {
+        throw 'Either -LabProfile, -ConfigPath, or standalone params (-TenantId/-Domain/-Users) required.'
+    }
+
+    $Config = Import-LabConfig -ConfigPath $ConfigPath
+    $prefix = $Config.prefix
+    $domain = $Config.domain
+    $labName = $Config.labName
 }
-
-$Config = Import-LabConfig -ConfigPath $ConfigPath
-$prefix = $Config.prefix
-$domain = $Config.domain
 
 # --- Run ID ---
 $runId = "SMOKE-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
 
 Write-Host "`n========================================" -ForegroundColor Yellow
 Write-Host " Purview DLP Smoke Test (Exchange + SharePoint + OneDrive)" -ForegroundColor Yellow
-Write-Host " Profile: $($Config.labName)" -ForegroundColor Yellow
+Write-Host " Profile: $labName" -ForegroundColor Yellow
 Write-Host " Prefix: $prefix | Domain: $domain" -ForegroundColor Yellow
 Write-Host " Run ID: $runId" -ForegroundColor Yellow
+if ($standaloneMode) { Write-Host " Mode: Standalone" -ForegroundColor Yellow }
 Write-Host "========================================`n" -ForegroundColor Yellow
 
 # --- SIT payload generators ---
@@ -626,9 +690,11 @@ function Test-DlpAuditMatches {
 
 # Auth
 if (-not $SkipAuth) {
-    $tenantId = switch ($Cloud) {
-        'commercial' { 'f1b92d41-6d54-4102-9dd9-4208451314df' }
-        'gcc' { '119e9fe0-c9d3-4a9d-be8b-c82d03fd0cd4' }
+    $authTenantId = if ($standaloneMode) { $TenantId } else {
+        switch ($Cloud) {
+            'commercial' { 'f1b92d41-6d54-4102-9dd9-4208451314df' }
+            'gcc' { '119e9fe0-c9d3-4a9d-be8b-c82d03fd0cd4' }
+        }
     }
 
     if ($ValidateOnly) {
@@ -638,17 +704,65 @@ if (-not $SkipAuth) {
     }
     else {
         Write-Host "--- Connecting to cloud services ---" -ForegroundColor Cyan
-        Connect-MgGraph -TenantId $tenantId -Scopes 'Mail.Send', 'User.Read.All', 'Files.ReadWrite.All', 'Sites.ReadWrite.All' -NoWelcome -ErrorAction Stop
+        Connect-MgGraph -TenantId $authTenantId -Scopes 'Mail.Send', 'User.Read.All', 'Files.ReadWrite.All', 'Sites.ReadWrite.All' -NoWelcome -ErrorAction Stop
         Write-Host "  Graph connected.`n" -ForegroundColor Green
     }
 }
 
-# Build test cases from config
-Write-Host "--- Building test cases from config ---" -ForegroundColor Cyan
-$testCases = Get-DlpTestCases -Config $Config -RunId $runId
+# Build test cases
+Write-Host "--- Building test cases ---" -ForegroundColor Cyan
+
+if ($standaloneMode) {
+    # Standalone: generate test cases for all SIT types
+    $testCases = [System.Collections.Generic.List[hashtable]]::new()
+    $sitNames = @(
+        'U.S. Social Security Number (SSN)'
+        'Credit Card Number'
+        'U.S. Bank Account Number'
+        'All Medical Terms And Conditions'
+    )
+    $userIdx = 0
+    foreach ($sitName in $sitNames) {
+        $payloads = $sitPayloads[$sitName]
+        if (-not $payloads) { continue }
+        $payload = $payloads[(Get-Random -Minimum 0 -Maximum $payloads.Count)]
+        $from = $Users[$userIdx % $Users.Count]
+        $to = $Users[($userIdx + 1) % $Users.Count]
+        $userIdx++
+
+        $safeSit = ($sitName -replace '[^a-zA-Z0-9-]', '_')
+
+        # Email test case
+        $testCases.Add(@{
+            Policy    = 'DLP'
+            Rule      = "$prefix-$sitName"
+            SIT       = $sitName
+            Transport = 'Email'
+            From      = $from
+            To        = $to
+            Subject   = "[$runId] DLP Test - $sitName"
+            Body      = "$payload`n`n---`nSmoke test: $runId | SIT: $sitName"
+        })
+
+        # File upload test case
+        $testCases.Add(@{
+            Policy    = 'DLP'
+            Rule      = "$prefix-$sitName"
+            SIT       = $sitName
+            Transport = 'OneDrive'
+            Owner     = $from
+            FileName  = "$runId-$safeSit.txt"
+            Content   = "CONFIDENTIAL`n`n$payload`n`n---`nSmoke test: $runId | SIT: $sitName"
+        })
+    }
+}
+else {
+    # Config mode: derive test cases from deployed DLP policies
+    $testCases = Get-DlpTestCases -Config $Config -RunId $runId
+}
 
 if ($testCases.Count -eq 0) {
-    Write-Host "`nNo testable DLP test cases found in config." -ForegroundColor DarkYellow
+    Write-Host "`nNo testable DLP test cases found." -ForegroundColor DarkYellow
     exit 0
 }
 
@@ -706,10 +820,15 @@ Write-Host "  Sent at: $($sendTime.ToString('yyyy-MM-dd HH:mm:ss'))"
 
 # Burst activity for Insider Risk
 if ($BurstActivity) {
-    $users = @($Config.workloads.testUsers.users | ForEach-Object {
-        if ($_.upn) { $_.upn } elseif ($_.mailNickname) { "$($_.mailNickname)@$($Config.domain)" }
-    })
-    $burstResult = Send-BurstActivity -Users $users -RunId $runId
+    $burstUsers = if ($standaloneMode) {
+        $Users
+    }
+    else {
+        @($Config.workloads.testUsers.users | ForEach-Object {
+            if ($_.upn) { $_.upn } elseif ($_.mailNickname) { "$($_.mailNickname)@$($Config.domain)" }
+        })
+    }
+    $burstResult = Send-BurstActivity -Users $burstUsers -RunId $runId
 }
 
 # Expected outcomes
