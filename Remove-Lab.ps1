@@ -49,7 +49,7 @@ param(
     [string]$ConfigPath,
 
     [Parameter()]
-    [ValidateSet('basic-lab', 'shadow-ai', 'copilot-protection', 'copilot-dlp')]
+    [ValidateSet('basic-lab', 'shadow-ai', 'copilot-protection', 'copilot-dlp', 'purview-sentinel')]
     [string]$LabProfile,
 
     [Parameter()]
@@ -64,7 +64,10 @@ param(
 
     [Parameter()]
     [ValidateSet('commercial', 'gcc')]
-    [string]$Cloud = $env:PURVIEW_CLOUD
+    [string]$Cloud = $env:PURVIEW_CLOUD,
+
+    [Parameter()]
+    [switch]$ForceDeleteResourceGroup
 )
 
 $ErrorActionPreference = 'Stop'
@@ -170,15 +173,22 @@ try {
 
     # Remove workloads in reverse dependency order
 
+    # TestData — skip (sent emails cannot be recalled)
+    Write-LabStep -StepName 'TestData' -Description 'Test data removal'
+    Write-LabLog -Message 'TestData: skipped. Sent emails and uploaded files cannot be recalled.' -Level Warning
+
+    # Sentinel integration — removed BEFORE AuditConfig (reverse of deploy order)
+    if ($Config.workloads.PSObject.Properties['sentinelIntegration'] -and $Config.workloads.sentinelIntegration.enabled) {
+        Write-LabStep -StepName 'SentinelIntegration' -Description 'Removing Sentinel workspace + Purview connectors'
+        Remove-SentinelIntegration -Config $Config -Manifest (Get-WorkloadManifest -WorkloadName 'sentinelIntegration') -ForceDeleteResourceGroup:$ForceDeleteResourceGroup -WhatIf:$WhatIfPreference
+        Write-LabLog -Message 'Sentinel integration removal complete.' -Level Success
+    }
+
     # AuditConfig — non-destructive removal
     if ($Config.workloads.PSObject.Properties['auditConfig'] -and $Config.workloads.auditConfig.enabled) {
         Write-LabStep -StepName 'AuditConfig' -Description 'Audit configuration removal'
         Remove-AuditConfig -Config $Config -Manifest (Get-WorkloadManifest -WorkloadName 'auditConfig') -WhatIf:$WhatIfPreference
     }
-
-    # TestData — skip (sent emails cannot be recalled)
-    Write-LabStep -StepName 'TestData' -Description 'Test data removal'
-    Write-LabLog -Message 'TestData: skipped. Sent emails and uploaded files cannot be recalled.' -Level Warning
 
     # 1. Insider Risk
     if ($Config.workloads.insiderRisk.enabled) {

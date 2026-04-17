@@ -45,6 +45,10 @@
     "conditionalAccess": {
       "status": "available",
       "note": "Conditional Access policy automation via Graph API available in GCC."
+    },
+    "sentinelIntegration": {
+      "status": "unavailable",
+      "note": "Microsoft Sentinel in GCC requires Azure US Government endpoints and separate connector registrations; this lab targets commercial only."
     }
   }
 }

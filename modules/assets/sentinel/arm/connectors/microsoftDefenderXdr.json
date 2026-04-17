@@ -1,0 +1,10 @@
+{
+  "kind": "MicrosoftThreatProtection",
+  "properties": {
+    "tenantId": "{{tenantId}}",
+    "dataTypes": {
+      "incidents": { "state": "Enabled" },
+      "alerts": { "state": "Enabled" }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "kind": "Scheduled",
+  "properties": {
+    "displayName": "{{displayName}}",
+    "description": "Correlates DLP alerts with a subsequent burst of file downloads by the same user within 1 hour (potential exfiltration pattern). Requires Defender XDR CloudAppEvents.",
+    "severity": "{{severity}}",
+    "enabled": true,
+    "query": "let dlp = union isfuzzy=true SecurityAlert\n| where TimeGenerated > ago(1h)\n| extend ProductName = tostring(column_ifexists('ProductName', ''))\n| extend Entities = tostring(column_ifexists('Entities', ''))\n| extend AlertName = tostring(column_ifexists('AlertName', ''))\n| where ProductName has 'Microsoft Data Loss Prevention' or ProductName has 'Microsoft 365 DLP'\n| extend user = tostring(parse_json(Entities)[0].Name)\n| project dlpTime=TimeGenerated, user, AlertName;\nlet downloads = union isfuzzy=true CloudAppEvents\n| where TimeGenerated > ago(1h)\n| extend ActionType = tostring(column_ifexists('ActionType', ''))\n| extend AccountUpn = tostring(column_ifexists('AccountUpn', ''))\n| extend AccountDisplayName = tostring(column_ifexists('AccountDisplayName', ''))\n| where ActionType in ('FileDownloaded','FileSyncDownloadedFull')\n| summarize downloadCount=count(), firstDownload=min(TimeGenerated) by AccountDisplayName, AccountUpn;\ndlp\n| join kind=inner downloads on $left.user == $right.AccountUpn\n| where downloadCount >= 20\n| where firstDownload between (dlpTime .. dlpTime + 1h)\n| project dlpTime, user, AlertName, downloadCount, firstDownload",
+    "queryFrequency": "PT1H",
+    "queryPeriod": "PT1H",
+    "triggerOperator": "GreaterThan",
+    "triggerThreshold": 0,
+    "suppressionDuration": "PT1H",
+    "suppressionEnabled": false,
+    "tactics": ["Exfiltration"],
+    "eventGroupingSettings": { "aggregationKind": "SingleAlert" }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "kind": "MicrosoftPurviewInformationProtection",
+  "properties": {
+    "tenantId": "{{tenantId}}",
+    "dataTypes": {
+      "logs": { "state": "Enabled" }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "kind": "Scheduled",
+  "properties": {
+    "displayName": "{{displayName}}",
+    "description": "Detects when a user reclassifies a document with a lower sensitivity label (potential label downgrade / exfiltration prep). Requires the Office 365 connector for OfficeActivity.",
+    "severity": "{{severity}}",
+    "enabled": true,
+    "query": "union isfuzzy=true OfficeActivity\n| where TimeGenerated > ago(1h)\n| extend Operation = tostring(column_ifexists('Operation', ''))\n| extend SensitivityLabelEventData = tostring(column_ifexists('SensitivityLabelEventData', ''))\n| where Operation in ('SensitivityLabelApplied','SensitivityLabelChanged','SensitivityLabelRemoved')\n| where isnotempty(SensitivityLabelEventData)\n| extend evt = parse_json(SensitivityLabelEventData)\n| extend OldLabelId = tostring(evt.OldSensitivityLabelId), NewLabelId = tostring(evt.SensitivityLabelId)\n| where Operation == 'SensitivityLabelRemoved' or (isnotempty(OldLabelId) and OldLabelId != NewLabelId)\n| extend UserId = tostring(column_ifexists('UserId', ''))\n| extend OfficeObjectId = tostring(column_ifexists('OfficeObjectId', ''))\n| extend ClientIP = tostring(column_ifexists('ClientIP', ''))\n| project TimeGenerated, UserId, Operation, OfficeObjectId, OldLabelId, NewLabelId, ClientIP",
+    "queryFrequency": "PT1H",
+    "queryPeriod": "PT1H",
+    "triggerOperator": "GreaterThan",
+    "triggerThreshold": 0,
+    "suppressionDuration": "PT1H",
+    "suppressionEnabled": false,
+    "tactics": ["DefenseEvasion"],
+    "eventGroupingSettings": { "aggregationKind": "SingleAlert" }
+  }
+}

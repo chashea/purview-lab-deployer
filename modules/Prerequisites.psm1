@@ -416,7 +416,77 @@ function Get-ProfileConfigMapping {
         'shadow-ai'           = 'shadow-ai-demo.json'
         'copilot-protection' = 'copilot-dlp-demo.json'
         'copilot-dlp'         = 'copilot-dlp-demo.json'
+        'purview-sentinel'    = 'purview-sentinel-demo.json'
     }
+}
+
+function Test-LabAzPrerequisites {
+    <#
+    .SYNOPSIS
+        Validates Azure CLI and subscription prerequisites for the Sentinel workload.
+        Only called when sentinelIntegration is enabled AND auth is live.
+    #>
+    [CmdletBinding()]
+    [OutputType([bool])]
+    param(
+        [Parameter(Mandatory)]
+        [PSCustomObject]$Config
+    )
+
+    $allPassed = $true
+
+    $azCmd = Get-Command -Name az -ErrorAction SilentlyContinue
+    if (-not $azCmd) {
+        Write-Warning "Azure CLI ('az') is required for sentinelIntegration but was not found on PATH."
+        return $false
+    }
+
+    try {
+        $versionJson = & az version --output json 2>$null | ConvertFrom-Json
+        $azVer = [version]([string]$versionJson.'azure-cli')
+        if ($azVer -lt [version]'2.50.0') {
+            Write-Warning "Azure CLI version $azVer is older than the minimum 2.50.0 required for sentinelIntegration."
+            $allPassed = $false
+        }
+    }
+    catch {
+        Write-Warning "Could not determine Azure CLI version: $($_.Exception.Message)"
+        $allPassed = $false
+    }
+
+    try {
+        $account = & az account show --only-show-errors 2>$null | ConvertFrom-Json
+        if (-not $account -or -not $account.id) {
+            Write-Warning "'az account show' returned no active account. Run 'az login' first."
+            return $false
+        }
+
+        $configSub = [string]$Config.workloads.sentinelIntegration.subscriptionId
+        if (-not [string]::IsNullOrWhiteSpace($configSub) -and [string]$account.id -ne $configSub) {
+            Write-Warning "Active az subscription is '$($account.id)' but config expects '$configSub'. Run: az account set --subscription $configSub"
+            $allPassed = $false
+        }
+    }
+    catch {
+        Write-Warning "Azure CLI authentication check failed: $($_.Exception.Message)"
+        $allPassed = $false
+    }
+
+    foreach ($ns in @('Microsoft.OperationalInsights', 'Microsoft.SecurityInsights')) {
+        try {
+            $prov = & az provider show --namespace $ns --only-show-errors 2>$null | ConvertFrom-Json
+            if (-not $prov -or [string]$prov.registrationState -ne 'Registered') {
+                Write-Warning "Azure resource provider '$ns' is not Registered. Run: az provider register --namespace $ns"
+                $allPassed = $false
+            }
+        }
+        catch {
+            Write-Warning "Could not query resource provider '$ns': $($_.Exception.Message)"
+            $allPassed = $false
+        }
+    }
+
+    return $allPassed
 }
 
 function Get-LabStringArray {
@@ -644,6 +714,7 @@ Export-ModuleMember -Function @(
     'Export-LabManifest'
     'Import-LabManifest'
     'Get-ProfileConfigMapping'
+    'Test-LabAzPrerequisites'
     'Get-LabStringArray'
     'Get-LabSupportedParameterName'
     'Get-LabObjectProperty'

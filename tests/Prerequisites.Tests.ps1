@@ -10,15 +10,16 @@ Describe 'Get-ProfileConfigMapping' {
     It 'Returns a hashtable with all profile names and aliases' {
         $map = Get-ProfileConfigMapping
         $map | Should -BeOfType [hashtable]
-        $map.Keys.Count | Should -Be 4
+        $map.Keys.Count | Should -Be 5
     }
 
-    It 'Contains basic-lab, shadow-ai, copilot-protection, copilot-dlp alias' {
+    It 'Contains basic-lab, shadow-ai, copilot-protection, copilot-dlp alias, purview-sentinel' {
         $map = Get-ProfileConfigMapping
         $map['basic-lab'] | Should -Be 'basic-lab-demo.json'
         $map['shadow-ai'] | Should -Be 'shadow-ai-demo.json'
         $map['copilot-protection'] | Should -Be 'copilot-dlp-demo.json'
         $map['copilot-dlp'] | Should -Be 'copilot-dlp-demo.json'
+        $map['purview-sentinel'] | Should -Be 'purview-sentinel-demo.json'
     }
 }
 

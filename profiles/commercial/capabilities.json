@@ -45,6 +45,10 @@
     "conditionalAccess": {
       "status": "available",
       "note": "Conditional Access policy automation via Graph API supported."
+    },
+    "sentinelIntegration": {
+      "status": "available",
+      "note": "Microsoft Sentinel workspace + Purview data connector lab (ARM-based, requires an Azure subscription in the same tenant)."
     }
   }
 }

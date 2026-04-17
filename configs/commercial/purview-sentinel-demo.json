@@ -1,0 +1,119 @@
+{
+  "$schema": "./_schema.json",
+  "labName": "Purview → Sentinel Integration Lab",
+  "prefix": "PVSentinel",
+  "domain": "MngEnvMCAP648165.onmicrosoft.com",
+  "cloud": "commercial",
+  "workloads": {
+    "testUsers": {
+      "enabled": true,
+      "mode": "existing",
+      "users": [
+        { "upn": "rtorres@MngEnvMCAP648165.onmicrosoft.com" },
+        { "upn": "mchen@MngEnvMCAP648165.onmicrosoft.com" },
+        { "upn": "jblake@MngEnvMCAP648165.onmicrosoft.com" }
+      ],
+      "groups": []
+    },
+    "sensitivityLabels": {
+      "enabled": true,
+      "labels": [
+        {
+          "name": "Confidential",
+          "displayName": "Confidential",
+          "tooltip": "Sensitive business data",
+          "priority": 1
+        }
+      ]
+    },
+    "dlp": {
+      "enabled": true,
+      "policies": [
+        {
+          "name": "Sentinel-DLP-Demo",
+          "mode": "Enable",
+          "locations": ["Exchange", "SharePoint", "OneDrive"],
+          "rules": [
+            {
+              "name": "SSN-HighSeverity",
+              "contentContainsSensitiveInformation": [
+                { "name": "U.S. Social Security Number (SSN)", "minCount": 1 }
+              ],
+              "enforcement": "Audit",
+              "severity": "High"
+            }
+          ]
+        }
+      ]
+    },
+    "retention": { "enabled": false },
+    "eDiscovery": { "enabled": false },
+    "communicationCompliance": { "enabled": false },
+    "insiderRisk": {
+      "enabled": true,
+      "policies": [
+        {
+          "name": "Sentinel-IRM-Demo",
+          "template": "Data leaks"
+        }
+      ]
+    },
+    "conditionalAccess": { "enabled": false },
+    "auditConfig": {
+      "enabled": true,
+      "searches": [
+        {
+          "name": "DLPRuleMatches",
+          "operations": ["DLPRuleMatch", "DLPRuleUndo"]
+        }
+      ]
+    },
+    "sentinelIntegration": {
+      "enabled": true,
+      "subscriptionId": "9d02bc65-7c0d-4c6a-b824-da0000cb7c7d",
+      "resourceGroup": {
+        "name": "PVSentinel-rg",
+        "location": "eastus"
+      },
+      "workspace": {
+        "name": "PVSentinel-ws",
+        "retentionDays": 30,
+        "sku": "PerGB2018"
+      },
+      "connectors": {
+        "microsoftDefenderXdr": {
+          "enabled": true,
+          "dataTypes": ["Alerts", "CloudAppEvents"]
+        },
+        "insiderRiskManagement": {
+          "enabled": true
+        },
+        "office365": {
+          "enabled": true,
+          "dataTypes": ["SharePoint", "Exchange", "Teams"]
+        }
+      },
+      "analyticsRules": [
+        { "name": "HighSevDLP",        "template": "dlp-high-severity",          "severity": "High" },
+        { "name": "IRMHighSev",        "template": "insider-risk-high-severity", "severity": "High" },
+        { "name": "LabelDowngrade",    "template": "sensitivity-label-downgrade","severity": "Medium" },
+        { "name": "MassDownloadAfterDLP", "template": "mass-download-after-dlp", "severity": "High" }
+      ],
+      "workbook": {
+        "enabled": true,
+        "name": "Purview Signals"
+      }
+    },
+    "testData": {
+      "enabled": true,
+      "emails": [
+        {
+          "from": "rtorres",
+          "to": "jblake",
+          "subject": "Quarterly report (test SSN)",
+          "body": "Sharing SSN 123-45-6789 for review. (Lab-generated test email to trigger DLP → Sentinel signal.)"
+        }
+      ]
+    }
+  }
+}

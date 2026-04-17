@@ -59,7 +59,4 @@ else {
 
 Write-Host "Starting deploy with cloud='$cloud' profile='$selectedLabProfile'..."
 
-# Test users are auto-created by default
-$deployParams['TestUsersMode'] = 'create'
-
 & $deployScriptPath @deployParams

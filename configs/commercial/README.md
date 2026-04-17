@@ -2,29 +2,28 @@
 
 This folder contains Microsoft Purview lab configs for commercial tenants.
 
-## Primary config
+## Primary configs
 
-- Baseline lab deployment: `basic-lab-demo.json`
+Each profile has a single canonical config:
+
+- `basic-lab-demo.json` — baseline lab (DLP, labels, retention, eDiscovery, insider risk)
+- `shadow-ai-demo.json` — shadow AI detection and governance
+- `copilot-dlp-demo.json` — Copilot DLP guardrails
 
 ```powershell
 ./Deploy-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -TenantId <tenant-guid> -Cloud commercial
 ```
 
-## Existing-user configs
+## Using your own test users
 
-Use these configs when test users are already licensed in the tenant. Skips user creation, references existing UPNs, and enables test data delivery.
-
-- `basic-lab-existing-demo.json` — Full basic-lab workloads with existing licensed users
-- `shadow-ai-existing-demo.json` — Full shadow-ai workloads remapped to existing licensed users
-- `existing-users-demo.json` — Minimal config (DLP + labels + eDiscovery + test data)
+Each config ships with a set of pre-licensed demo users baked in. To run the same profile against a different set of existing tenant users, pass `-TestUsers`:
 
 ```powershell
-# Deploy basic-lab with existing users
-./Deploy-Lab.ps1 -LabProfile basic-lab-existing -Cloud commercial
-
-# Deploy shadow-ai with existing users
-./Deploy-Lab.ps1 -LabProfile shadow-ai-existing -Cloud commercial
+./Deploy-Lab.ps1 -LabProfile basic-lab -Cloud commercial -TestUsers alice@contoso.com,bob@contoso.com
+./Deploy-Lab.ps1 -LabProfile shadow-ai -Cloud commercial -TestUsers alice@contoso.com,bob@contoso.com
 ```
+
+When `-TestUsers` is supplied, the config's `testUsers.users` list is replaced with the provided UPNs, groups are cleared, and the mode is forced to `existing` (no user creation). When omitted, the users already listed in the config are used as-is.
 
 ## Other configs
 
@@ -34,7 +33,6 @@ Use these configs when test users are already licensed in the tenant. Skips user
 - `education-demo.json`
 - `dlp-only.json`
 - `ediscovery-retention.json`
-- `shadow-ai-demo.json` (commercial-only Shadow AI track)
 
 ## Shadow AI (separate deployment)
 

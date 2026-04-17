@@ -1,0 +1,18 @@
+{
+  "kind": "Scheduled",
+  "properties": {
+    "displayName": "{{displayName}}",
+    "description": "High-severity DLP alerts from Microsoft Purview surfaced via Defender XDR.",
+    "severity": "{{severity}}",
+    "enabled": true,
+    "query": "union isfuzzy=true SecurityAlert\n| where TimeGenerated > ago(1h)\n| where ProductName has 'Microsoft Data Loss Prevention' or ProductName has 'Microsoft 365 DLP'\n| where AlertSeverity in ('High','Medium')\n| project TimeGenerated, AlertName, AlertSeverity, CompromisedEntity, Description, Entities",
+    "queryFrequency": "PT1H",
+    "queryPeriod": "PT1H",
+    "triggerOperator": "GreaterThan",
+    "triggerThreshold": 0,
+    "suppressionDuration": "PT1H",
+    "suppressionEnabled": false,
+    "tactics": ["Exfiltration"],
+    "eventGroupingSettings": { "aggregationKind": "SingleAlert" }
+  }
+}

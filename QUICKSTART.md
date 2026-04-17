@@ -187,5 +187,6 @@ All resources are prefixed with `PVLab-` for reliable cleanup.
 | **basic-lab** | `-LabProfile basic-lab` | Core compliance (DLP, labels, retention, eDiscovery, insider risk) |
 | **shadow-ai** | `-LabProfile shadow-ai` | AI-focused (endpoint/browser/network DLP, AI labels, CA policies) |
 | **copilot-protection** | `-LabProfile copilot-protection` | Copilot guardrails (prompt blocking, labeled content protection) |
+| **purview-sentinel** | `-LabProfile purview-sentinel` | Sentinel workspace + Defender XDR / IRM / Office 365 connectors + Purview-focused analytics rules and workbook (requires an Azure subscription and `az login`; fill in `subscriptionId` in the demo config first) |
 
 Each profile uses its own config under `configs/commercial/`. Copy and customize for your tenant.

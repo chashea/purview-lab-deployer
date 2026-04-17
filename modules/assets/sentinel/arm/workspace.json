@@ -1,0 +1,16 @@
+{
+  "location": "{{location}}",
+  "properties": {
+    "sku": {
+      "name": "{{sku}}"
+    },
+    "retentionInDays": "{{retentionDays}}",
+    "features": {
+      "enableLogAccessUsingOnlyResourcePermissions": true
+    }
+  },
+  "tags": {
+    "createdBy": "purview-lab-deployer",
+    "labPrefix": "{{labPrefix}}"
+  }
+}

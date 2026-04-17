@@ -28,14 +28,24 @@
     Cloud profile to use (`commercial` or `gcc`). If omitted, uses config value.
 
 .PARAMETER SkipTestUsers
-    Skip test user creation entirely. Useful when deploying policies against
-    existing tenant users without provisioning new accounts.
+    Skip the test users workload entirely. Useful when deploying policies against
+    existing tenant users without touching the user/group workload.
+
+.PARAMETER TestUsers
+    Override the test users defined in the config with your own list of existing
+    tenant UPNs. When supplied, the config's testUsers.users array is replaced
+    with these UPNs and the mode is forced to 'existing'. Groups defined in the
+    config are cleared (they reference the config's user aliases which won't map).
+    When omitted, the users already listed in the config are used as-is.
 
 .EXAMPLE
     ./Deploy-Lab.ps1 -Cloud commercial -LabProfile basic-lab
 
 .EXAMPLE
     ./Deploy-Lab.ps1 -Cloud commercial -LabProfile shadow-ai
+
+.EXAMPLE
+    ./Deploy-Lab.ps1 -Cloud commercial -LabProfile basic-lab -TestUsers alice@contoso.com,bob@contoso.com
 
 .EXAMPLE
     ./Deploy-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -WhatIf
@@ -48,7 +58,7 @@ param(
     [string]$ConfigPath,
 
     [Parameter()]
-    [ValidateSet('basic-lab', 'shadow-ai', 'copilot-protection', 'copilot-dlp')]
+    [ValidateSet('basic-lab', 'shadow-ai', 'copilot-protection', 'copilot-dlp', 'purview-sentinel')]
     [string]$LabProfile,
 
     [Parameter()]
@@ -62,8 +72,7 @@ param(
     [string]$Cloud = $env:PURVIEW_CLOUD,
 
     [Parameter()]
-    [ValidateSet('create', 'existing')]
-    [string]$TestUsersMode,
+    [string[]]$TestUsers,
 
     [Parameter()]
     [switch]$SkipTestUsers
@@ -123,14 +132,31 @@ try {
         Write-LabLog -Message 'Test user creation skipped (-SkipTestUsers).' -Level Info
     }
 
-    # Apply TestUsersMode override — defaults to 'create' (auto-create test users)
-    $effectiveMode = if (-not [string]::IsNullOrWhiteSpace($TestUsersMode)) { $TestUsersMode } else { 'create' }
-    if ($Config.workloads.testUsers) {
-        if ($Config.workloads.testUsers.PSObject.Properties['mode']) {
-            $Config.workloads.testUsers.mode = $effectiveMode
+    # Apply TestUsers override — replace config's user list with caller-supplied UPNs
+    if ($TestUsers -and $TestUsers.Count -gt 0 -and $Config.workloads.testUsers) {
+        $upnObjects = @($TestUsers | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | ForEach-Object {
+            [PSCustomObject]@{ upn = $_.Trim() }
+        })
+
+        if ($Config.workloads.testUsers.PSObject.Properties['users']) {
+            $Config.workloads.testUsers.users = $upnObjects
         } else {
-            $Config.workloads.testUsers | Add-Member -NotePropertyName 'mode' -NotePropertyValue $effectiveMode
+            $Config.workloads.testUsers | Add-Member -NotePropertyName 'users' -NotePropertyValue $upnObjects
         }
+
+        # Caller-supplied UPNs can't map to the config's group member aliases, so drop groups
+        if ($Config.workloads.testUsers.PSObject.Properties['groups']) {
+            $Config.workloads.testUsers.groups = @()
+        }
+
+        # Force existing mode — arbitrary UPNs can't be auto-created
+        if ($Config.workloads.testUsers.PSObject.Properties['mode']) {
+            $Config.workloads.testUsers.mode = 'existing'
+        } else {
+            $Config.workloads.testUsers | Add-Member -NotePropertyName 'mode' -NotePropertyValue 'existing'
+        }
+
+        Write-LabLog -Message "TestUsers overridden by caller: $($upnObjects.Count) UPN(s). Groups cleared; mode forced to 'existing'." -Level Info
     }
 
     Write-LabLog -Message "Lab: $($Config.labName) | Prefix: $($Config.prefix) | Domain: $($Config.domain) | Cloud: $resolvedCloud" -Level Info
@@ -401,17 +427,32 @@ try {
         }
     }
 
-    if ($Config.workloads.testData.enabled) {
-        Invoke-Workload -Name 'testData' -Step 'TestData' -Description 'Sending test data (emails, files)' -Action {
-            Send-TestData -Config $Config -WhatIf:$WhatIfPreference
-        }
-    } else { Write-LabLog -Message 'testData workload is disabled, skipping.' -Level Info }
-
     if ($Config.workloads.PSObject.Properties['auditConfig'] -and $Config.workloads.auditConfig.enabled) {
         Invoke-Workload -Name 'auditConfig' -Step 'AuditConfig' -Description 'Configuring audit logging for AI activities' -Action {
             Deploy-AuditConfig -Config $Config -WhatIf:$WhatIfPreference
         }
     }
+
+    if ($Config.workloads.PSObject.Properties['sentinelIntegration'] -and $Config.workloads.sentinelIntegration.enabled) {
+        if (-not $SkipAuth) {
+            Write-LabStep -StepName 'SentinelPrereqs' -Description 'Validating Azure CLI prerequisites for Sentinel'
+            if (-not (Test-LabAzPrerequisites -Config $Config)) {
+                throw 'Azure prerequisites for sentinelIntegration are not satisfied. See warnings above. (Run az login, az account set, or az provider register as needed.)'
+            }
+        }
+        else {
+            Write-LabLog -Message 'Skipping Azure prerequisite checks for sentinelIntegration (-SkipAuth).' -Level Warning
+        }
+        Invoke-Workload -Name 'sentinelIntegration' -Step 'SentinelIntegration' -Description 'Provisioning Sentinel workspace + Purview data connectors' -Action {
+            Deploy-SentinelIntegration -Config $Config -WhatIf:$WhatIfPreference
+        }
+    }
+
+    if ($Config.workloads.testData.enabled) {
+        Invoke-Workload -Name 'testData' -Step 'TestData' -Description 'Sending test data (emails, files)' -Action {
+            Send-TestData -Config $Config -WhatIf:$WhatIfPreference
+        }
+    } else { Write-LabLog -Message 'testData workload is disabled, skipping.' -Level Info }
 
     # Export manifest (skip in WhatIf)
     $manifestPath = $null

@@ -1,0 +1,11 @@
+{
+  "kind": "Office365",
+  "properties": {
+    "tenantId": "{{tenantId}}",
+    "dataTypes": {
+      "exchange": { "state": "{{exchangeState}}" },
+      "sharePoint": { "state": "{{sharePointState}}" },
+      "teams": { "state": "{{teamsState}}" }
+    }
+  }
+}

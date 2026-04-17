@@ -621,6 +621,149 @@
             }
           }
         },
+        "sentinelIntegration": {
+          "type": "object",
+          "description": "Microsoft Sentinel workspace + Purview data connector lab. Provisions an Azure Log Analytics workspace, onboards Sentinel, wires data connectors that surface Purview signals (DLP, Insider Risk), and deploys analytics rules and a workbook.",
+          "required": [
+            "subscriptionId",
+            "resourceGroup",
+            "workspace"
+          ],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "subscriptionId": {
+              "type": "string",
+              "description": "Azure subscription ID (GUID) that hosts the Sentinel workspace."
+            },
+            "resourceGroup": {
+              "type": "object",
+              "required": [
+                "name",
+                "location"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "location": {
+                  "type": "string",
+                  "description": "Azure region (e.g., eastus)."
+                }
+              }
+            },
+            "workspace": {
+              "type": "object",
+              "required": [
+                "name"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "retentionDays": {
+                  "type": "integer",
+                  "minimum": 30,
+                  "maximum": 730,
+                  "default": 30
+                },
+                "sku": {
+                  "type": "string",
+                  "default": "PerGB2018",
+                  "enum": [
+                    "PerGB2018",
+                    "CapacityReservation",
+                    "Free",
+                    "Standard",
+                    "Premium"
+                  ]
+                }
+              }
+            },
+            "connectors": {
+              "type": "object",
+              "properties": {
+                "microsoftDefenderXdr": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": { "type": "boolean" },
+                    "dataTypes": {
+                      "type": "array",
+                      "items": { "type": "string" },
+                      "description": "Defender XDR data streams. Typical: Alerts, CloudAppEvents."
+                    }
+                  }
+                },
+                "insiderRiskManagement": {
+                  "type": "object",
+                  "description": "Purview Insider Risk Management SIEM export connector. Tenant-side SIEM export must be enabled in the Purview portal; not ARM-configurable.",
+                  "properties": {
+                    "enabled": { "type": "boolean" }
+                  }
+                },
+                "office365": {
+                  "type": "object",
+                  "properties": {
+                    "enabled": { "type": "boolean" },
+                    "dataTypes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": [
+                          "SharePoint",
+                          "Exchange",
+                          "Teams"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "analyticsRules": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "template"
+                ],
+                "properties": {
+                  "name": { "type": "string" },
+                  "template": {
+                    "type": "string",
+                    "description": "Rule template identifier. Must match an asset in modules/assets/sentinel/arm/rules/."
+                  },
+                  "severity": {
+                    "type": "string",
+                    "enum": [
+                      "Informational",
+                      "Low",
+                      "Medium",
+                      "High"
+                    ],
+                    "default": "Medium"
+                  },
+                  "enabled": {
+                    "type": "boolean",
+                    "default": true
+                  }
+                }
+              }
+            },
+            "workbook": {
+              "type": "object",
+              "properties": {
+                "enabled": { "type": "boolean" },
+                "name": {
+                  "type": "string",
+                  "description": "Workbook display name. Template loaded from modules/assets/sentinel/arm/workbooks/purview.json."
+                }
+              }
+            }
+          }
+        },
         "testData": {
           "type": "object",
           "properties": {

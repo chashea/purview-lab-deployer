@@ -72,7 +72,6 @@ Use existing configs as templates for different complexity levels:
 - **Full-featured**: `configs/commercial/basic-lab-demo.json`
 - **Minimal/focused**: `configs/commercial/dlp-only.json`
 - **Shadow AI track**: `configs/commercial/shadow-ai-demo.json` (uses prefix `PVShadowAI`)
-- **Existing users**: `configs/commercial/existing-users-demo.json` (testUsers.mode = "existing")
 
 ## Smoke test
 
