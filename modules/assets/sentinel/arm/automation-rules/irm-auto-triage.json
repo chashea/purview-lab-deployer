@@ -1,0 +1,44 @@
+{
+  "properties": {
+    "displayName": "{{displayName}}",
+    "order": 1,
+    "triggeringLogic": {
+      "isEnabled": true,
+      "triggersOn": "Incidents",
+      "triggersWhen": "Created",
+      "conditions": [
+        {
+          "conditionType": "Property",
+          "conditionProperties": {
+            "propertyName": "IncidentRelatedAnalyticRuleIds",
+            "operator": "Contains",
+            "propertyValues": ["{{ruleResourceId}}"]
+          }
+        }
+      ]
+    },
+    "actions": [
+      {
+        "order": 1,
+        "actionType": "RunPlaybook",
+        "actionConfiguration": {
+          "logicAppResourceId": "{{playbookResourceId}}",
+          "tenantId": "{{tenantId}}"
+        }
+      },
+      {
+        "order": 2,
+        "actionType": "ModifyProperties",
+        "actionConfiguration": {
+          "severity": "High",
+          "tagsToAdd": {
+            "tags": [
+              { "label": "purview-lab" },
+              { "label": "irm-high-severity" }
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

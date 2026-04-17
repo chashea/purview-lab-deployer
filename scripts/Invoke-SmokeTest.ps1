@@ -6,14 +6,22 @@
     across Exchange, SharePoint, and OneDrive, then optionally validates audit matches.
 
 .DESCRIPTION
-    Two modes of operation:
+    Three modes of operation:
+
+    Auto-discover mode (default): run with no args. Connects to Microsoft Graph
+    using the signed-in user (or current az login), discovers the tenant ID,
+    primary .onmicrosoft.com domain, and two licensed mailbox-enabled users
+    automatically. Works against ANY Purview tenant — no config file, no lab
+    profile, no hardcoded tenant required. Ideal for teammates cloning the repo
+    and running against their own tenant.
 
     Config mode: reads a lab config JSON to identify DLP policies and generate targeted
-    test cases for each rule's SIT conditions.
+    test cases for each rule's SIT conditions. Useful when validating a specific
+    deployed lab profile.
 
-    Standalone mode: uses -TenantId, -Domain, and -Users parameters directly — no config
-    file or deployer modules needed. Generates test cases for all common SITs (SSN,
-    credit card, bank account, medical terms).
+    Standalone mode: uses -TenantId, -Domain, and -Users parameters directly.
+    Generates test cases for all common SITs (SSN, credit card, bank account,
+    medical terms).
 
     For Exchange: sends emails between licensed users.
     For SharePoint/OneDrive: uploads text files with sensitive content to OneDrive.
@@ -59,7 +67,15 @@
     Show what would be sent without actually sending.
 
 .EXAMPLE
-    # Standalone mode — no config file needed
+    # Auto-discover mode — zero arguments. Works in ANY Purview tenant.
+    ./scripts/Invoke-SmokeTest.ps1
+
+.EXAMPLE
+    # Auto-discover + Insider Risk burst activity
+    ./scripts/Invoke-SmokeTest.ps1 -BurstActivity
+
+.EXAMPLE
+    # Standalone mode — explicit tenant/domain/users (skips discovery)
     ./scripts/Invoke-SmokeTest.ps1 -TenantId "00000000-..." -Domain "contoso.onmicrosoft.com" -Users "alice@contoso.onmicrosoft.com","bob@contoso.onmicrosoft.com"
 
 .EXAMPLE
@@ -119,10 +135,14 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-# --- Determine mode: standalone vs config ---
-$standaloneMode = (-not [string]::IsNullOrWhiteSpace($TenantId)) -or
-                  (-not [string]::IsNullOrWhiteSpace($Domain)) -or
-                  ($null -ne $Users -and $Users.Count -gt 0)
+# --- Determine mode: auto-discover (default), standalone, or config ---
+$standaloneMode = (-not [string]::IsNullOrWhiteSpace($TenantId)) -and
+                  (-not [string]::IsNullOrWhiteSpace($Domain)) -and
+                  ($null -ne $Users -and $Users.Count -ge 2)
+
+$partialStandalone = ((-not [string]::IsNullOrWhiteSpace($TenantId)) -or
+                     (-not [string]::IsNullOrWhiteSpace($Domain)) -or
+                     ($null -ne $Users -and $Users.Count -gt 0)) -and -not $standaloneMode
 
 $configMode = (-not [string]::IsNullOrWhiteSpace($ConfigPath)) -or
               (-not [string]::IsNullOrWhiteSpace($LabProfile))
@@ -131,19 +151,81 @@ if ($standaloneMode -and $configMode) {
     throw 'Use either standalone params (-TenantId/-Domain/-Users) or config params (-ConfigPath/-LabProfile), not both.'
 }
 
-if ($standaloneMode) {
-    # Validate standalone params
-    if ([string]::IsNullOrWhiteSpace($TenantId)) { $TenantId = Read-Host 'Enter your Entra ID tenant ID (GUID)' }
-    if ([string]::IsNullOrWhiteSpace($Domain)) { $Domain = Read-Host 'Enter your tenant domain (e.g., contoso.onmicrosoft.com)' }
-    if (-not $Users -or $Users.Count -lt 2) {
-        $userInput = Read-Host 'Enter at least 2 licensed user UPNs (comma-separated)'
-        $Users = $userInput -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' }
-    }
-    if ($Users.Count -lt 2) { throw 'At least 2 licensed users with mailboxes are required.' }
+$autoDiscoverMode = -not $standaloneMode -and -not $configMode
 
+if ($partialStandalone -and -not $configMode) {
+    Write-Host "  Partial standalone params supplied; missing values will be auto-discovered from Graph." -ForegroundColor DarkYellow
+    $autoDiscoverMode = $true
+}
+
+# --- Auto-discover helpers ---
+function Get-DiscoveredTenantContext {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param()
+
+    $context = Get-MgContext
+    if (-not $context) { throw 'Microsoft Graph is not connected. Call Connect-MgGraph first.' }
+
+    $discoveredTenantId = $context.TenantId
+
+    $org = Invoke-MgGraphRequest -Method GET -Uri 'https://graph.microsoft.com/v1.0/organization' -ErrorAction Stop
+    $orgData = @($org.value)[0]
+    if (-not $orgData) { throw 'Unable to read tenant organization from Graph.' }
+
+    $domains = @($orgData.verifiedDomains)
+    $defaultDomain = ($domains | Where-Object { $_.isDefault -eq $true } | Select-Object -First 1).name
+    $onMsDomain = ($domains | Where-Object { $_.name -like '*.onmicrosoft.com' } | Select-Object -First 1).name
+    $discoveredDomain = if ($onMsDomain) { $onMsDomain } elseif ($defaultDomain) { $defaultDomain } else { $domains[0].name }
+
+    return @{
+        TenantId   = $discoveredTenantId
+        Domain     = $discoveredDomain
+        OrgDisplay = $orgData.displayName
+    }
+}
+
+function Get-DiscoveredLicensedUsers {
+    [CmdletBinding()]
+    [OutputType([string[]])]
+    param(
+        [int]$MinCount = 2,
+        [int]$MaxCount = 3
+    )
+
+    # Pull enabled users that have at least one license assigned and a mailbox-capable UPN.
+    # Deterministic sort (by UPN) so repeated runs hit the same users.
+    $uri = "https://graph.microsoft.com/v1.0/users?`$select=userPrincipalName,accountEnabled,assignedLicenses,mail,userType&`$top=200"
+    $resp = Invoke-MgGraphRequest -Method GET -Uri $uri -ErrorAction Stop
+    $allUsers = @($resp.value)
+
+    $candidates = $allUsers |
+        Where-Object {
+            $_.accountEnabled -eq $true -and
+            $_.userType -ne 'Guest' -and
+            $null -ne $_.assignedLicenses -and
+            @($_.assignedLicenses).Count -gt 0 -and
+            -not [string]::IsNullOrWhiteSpace($_.mail) -and
+            $_.userPrincipalName -notlike '*#EXT#*'
+        } |
+        Sort-Object userPrincipalName |
+        Select-Object -First $MaxCount
+
+    if (@($candidates).Count -lt $MinCount) {
+        throw "Auto-discovery found only $((@($candidates)).Count) licensed mailbox user(s); need at least $MinCount. Use -Users to specify explicitly."
+    }
+
+    return [string[]]@($candidates | ForEach-Object { $_.userPrincipalName })
+}
+
+if ($standaloneMode) {
     $prefix = 'SmokeTest'
     $domain = $Domain
     $labName = "Standalone Smoke Test ($Domain)"
+}
+elseif ($autoDiscoverMode) {
+    $prefix = 'SmokeTest'
+    # TenantId/Domain/Users populated after Graph connection below.
 }
 else {
     # Config mode — import deployer modules
@@ -184,13 +266,21 @@ else {
 # --- Run ID ---
 $runId = "SMOKE-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
 
-Write-Host "`n========================================" -ForegroundColor Yellow
-Write-Host " Purview DLP Smoke Test (Exchange + SharePoint + OneDrive)" -ForegroundColor Yellow
-Write-Host " Profile: $labName" -ForegroundColor Yellow
-Write-Host " Prefix: $prefix | Domain: $domain" -ForegroundColor Yellow
-Write-Host " Run ID: $runId" -ForegroundColor Yellow
-if ($standaloneMode) { Write-Host " Mode: Standalone" -ForegroundColor Yellow }
-Write-Host "========================================`n" -ForegroundColor Yellow
+if (-not $autoDiscoverMode) {
+    Write-Host "`n========================================" -ForegroundColor Yellow
+    Write-Host " Purview DLP Smoke Test (Exchange + SharePoint + OneDrive)" -ForegroundColor Yellow
+    Write-Host " Profile: $labName" -ForegroundColor Yellow
+    Write-Host " Prefix: $prefix | Domain: $domain" -ForegroundColor Yellow
+    Write-Host " Run ID: $runId" -ForegroundColor Yellow
+    if ($standaloneMode) { Write-Host " Mode: Standalone" -ForegroundColor Yellow }
+    Write-Host "========================================`n" -ForegroundColor Yellow
+}
+else {
+    Write-Host "`n========================================" -ForegroundColor Yellow
+    Write-Host " Purview DLP Smoke Test (Auto-Discover Mode)" -ForegroundColor Yellow
+    Write-Host " Run ID: $runId" -ForegroundColor Yellow
+    Write-Host "========================================`n" -ForegroundColor Yellow
+}
 
 # --- SIT payload generators ---
 # Each returns realistic email body snippets with enough surrounding context
@@ -693,7 +783,14 @@ function Test-DlpAuditMatches {
 
 # Auth
 if (-not $SkipAuth) {
-    $authTenantId = if ($standaloneMode) { $TenantId } else {
+    $authTenantId = if ($standaloneMode) {
+        $TenantId
+    }
+    elseif ($autoDiscoverMode) {
+        # No tenant hint — Connect-MgGraph will use the interactive/device/CLI session
+        $null
+    }
+    else {
         switch ($Cloud) {
             'commercial' { 'f1b92d41-6d54-4102-9dd9-4208451314df' }
             'gcc' { '119e9fe0-c9d3-4a9d-be8b-c82d03fd0cd4' }
@@ -707,7 +804,7 @@ if (-not $SkipAuth) {
     }
     else {
         Write-Host "--- Connecting to cloud services ---" -ForegroundColor Cyan
-        $graphScopes = @('Mail.Send', 'User.Read.All', 'Files.ReadWrite.All', 'Sites.ReadWrite.All')
+        $graphScopes = @('Mail.Send', 'User.Read.All', 'Files.ReadWrite.All', 'Sites.ReadWrite.All', 'Organization.Read.All')
 
         # Prefer an existing az CLI session (works for OIDC in CI and `az login` locally).
         # Fall back to interactive Connect-MgGraph when az is unavailable.
@@ -725,18 +822,49 @@ if (-not $SkipAuth) {
             $secureToken = ConvertTo-SecureString $azToken -AsPlainText -Force
             Connect-MgGraph -AccessToken $secureToken -NoWelcome -ErrorAction Stop
         }
-        else {
+        elseif ($authTenantId) {
             Connect-MgGraph -TenantId $authTenantId -Scopes $graphScopes -NoWelcome -ErrorAction Stop
+        }
+        else {
+            Connect-MgGraph -Scopes $graphScopes -NoWelcome -ErrorAction Stop
         }
         Write-Host "  Graph connected.`n" -ForegroundColor Green
     }
 }
 
+# Auto-discover tenant/domain/users after Graph is connected
+if ($autoDiscoverMode) {
+    Write-Host "--- Auto-discovering tenant context ---" -ForegroundColor Cyan
+
+    $discovered = Get-DiscoveredTenantContext
+    if ([string]::IsNullOrWhiteSpace($TenantId)) { $TenantId = $discovered.TenantId }
+    if ([string]::IsNullOrWhiteSpace($Domain)) { $Domain = $discovered.Domain }
+    $domain = $Domain
+    $labName = if ($discovered.OrgDisplay) { "Auto-Discover ($($discovered.OrgDisplay))" } else { "Auto-Discover ($Domain)" }
+
+    Write-Host "  Tenant: $($discovered.OrgDisplay) [$TenantId]" -ForegroundColor Green
+    Write-Host "  Domain: $Domain" -ForegroundColor Green
+
+    if (-not $Users -or $Users.Count -lt 2) {
+        Write-Host "  Discovering licensed mailbox users..." -ForegroundColor DarkGray
+        $Users = Get-DiscoveredLicensedUsers -MinCount 2 -MaxCount 3
+        Write-Host "  Users: $($Users -join ', ')`n" -ForegroundColor Green
+    }
+    else {
+        Write-Host "  Users (user-supplied): $($Users -join ', ')`n" -ForegroundColor Green
+    }
+
+    Write-Host "========================================" -ForegroundColor Yellow
+    Write-Host " Profile: $labName" -ForegroundColor Yellow
+    Write-Host " Prefix: $prefix | Domain: $domain" -ForegroundColor Yellow
+    Write-Host "========================================`n" -ForegroundColor Yellow
+}
+
 # Build test cases
 Write-Host "--- Building test cases ---" -ForegroundColor Cyan
 
-if ($standaloneMode) {
-    # Standalone: generate test cases for all SIT types
+if ($standaloneMode -or $autoDiscoverMode) {
+    # Standalone/auto-discover: generate test cases for all SIT types
     $testCases = [System.Collections.Generic.List[hashtable]]::new()
     $sitNames = @(
         'U.S. Social Security Number (SSN)'
@@ -843,7 +971,7 @@ Write-Host "  Sent at: $($sendTime.ToString('yyyy-MM-dd HH:mm:ss'))"
 
 # Burst activity for Insider Risk
 if ($BurstActivity) {
-    $burstUsers = if ($standaloneMode) {
+    $burstUsers = if ($standaloneMode -or $autoDiscoverMode) {
         $Users
     }
     else {
@@ -882,7 +1010,12 @@ if ($WaitMinutes -gt 0) {
     catch {
         Write-Host "  Could not connect to IPPS for validation: $_" -ForegroundColor DarkYellow
         Write-Host "  Validate later with:" -ForegroundColor DarkYellow
-        Write-Host "  ./scripts/Invoke-SmokeTest.ps1 -LabProfile $LabProfile -ValidateOnly -Since '$($sendTime.ToString('o'))'`n" -ForegroundColor White
+        if ($standaloneMode -or $autoDiscoverMode) {
+            Write-Host "  ./scripts/Invoke-SmokeTest.ps1 -ValidateOnly -Since '$($sendTime.ToString('o'))'`n" -ForegroundColor White
+        }
+        else {
+            Write-Host "  ./scripts/Invoke-SmokeTest.ps1 -LabProfile $LabProfile -ValidateOnly -Since '$($sendTime.ToString('o'))'`n" -ForegroundColor White
+        }
         exit 0
     }
 
@@ -916,7 +1049,12 @@ if ($WaitMinutes -gt 0) {
 }
 
 Write-Host "`n--- To validate later ---" -ForegroundColor Cyan
-Write-Host "  ./scripts/Invoke-SmokeTest.ps1 -LabProfile $LabProfile -ValidateOnly -Since '$($sendTime.ToString('o'))'`n" -ForegroundColor White
+if ($standaloneMode -or $autoDiscoverMode) {
+    Write-Host "  ./scripts/Invoke-SmokeTest.ps1 -ValidateOnly -Since '$($sendTime.ToString('o'))'`n" -ForegroundColor White
+}
+else {
+    Write-Host "  ./scripts/Invoke-SmokeTest.ps1 -LabProfile $LabProfile -ValidateOnly -Since '$($sendTime.ToString('o'))'`n" -ForegroundColor White
+}
 
 Write-Host "========================================" -ForegroundColor Yellow
 Write-Host " Smoke Test Complete" -ForegroundColor Yellow

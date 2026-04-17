@@ -5,7 +5,7 @@
     "description": "High-severity DLP alerts from Microsoft Purview surfaced via Defender XDR.",
     "severity": "{{severity}}",
     "enabled": true,
-    "query": "union isfuzzy=true SecurityAlert\n| where TimeGenerated > ago(1h)\n| where ProductName has 'Microsoft Data Loss Prevention' or ProductName has 'Microsoft 365 DLP'\n| where AlertSeverity in ('High','Medium')\n| project TimeGenerated, AlertName, AlertSeverity, CompromisedEntity, Description, Entities",
+    "query": "union isfuzzy=true SecurityAlert\n| where TimeGenerated > ago(1h)\n| where ProductName has 'Microsoft Data Loss Prevention' or ProductName has 'Microsoft 365 DLP'\n| where AlertSeverity in ('High','Medium')\n| extend AccountUpn = tostring(parse_json(tostring(column_ifexists('Entities',''))) [0].Name)\n| project TimeGenerated, AlertName, AlertSeverity, CompromisedEntity, AccountUpn, Description, Entities",
     "queryFrequency": "PT1H",
     "queryPeriod": "PT1H",
     "triggerOperator": "GreaterThan",
@@ -13,6 +13,26 @@
     "suppressionDuration": "PT1H",
     "suppressionEnabled": false,
     "tactics": ["Exfiltration"],
-    "eventGroupingSettings": { "aggregationKind": "SingleAlert" }
+    "eventGroupingSettings": { "aggregationKind": "SingleAlert" },
+    "entityMappings": [
+      {
+        "entityType": "Account",
+        "fieldMappings": [
+          { "identifier": "FullName", "columnName": "AccountUpn" }
+        ]
+      }
+    ],
+    "incidentConfiguration": {
+      "createIncident": true,
+      "groupingConfiguration": {
+        "enabled": true,
+        "reopenClosedIncident": false,
+        "lookbackDuration": "PT5H",
+        "matchingMethod": "Selected",
+        "groupByEntities": ["Account"],
+        "groupByAlertDetails": [],
+        "groupByCustomDetails": []
+      }
+    }
   }
 }

@@ -615,6 +615,212 @@ function Deploy-SentinelWorkbook {
     }
 }
 
+function Deploy-SentinelPlaybook {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter(Mandatory)]
+        [hashtable]$Scope,
+
+        [Parameter(Mandatory)]
+        [string]$LabPrefix,
+
+        [Parameter(Mandatory)]
+        [string]$Template,
+
+        [Parameter()]
+        [string]$NameSuffix = 'IRM-AutoTriage'
+    )
+
+    $playbookName = "$LabPrefix-$NameSuffix"
+    $assetPath = Join-Path $PSScriptRoot 'assets' 'sentinel' 'arm' 'playbooks' "$Template.json"
+    if (-not (Test-Path $assetPath)) {
+        Write-LabLog -Message "Playbook template '$Template' not found at $assetPath; skipping." -Level Warning
+        return $null
+    }
+
+    if (Test-SentinelWhatIf) {
+        Write-LabLog -Message "[WhatIf] Would deploy Logic App playbook '$playbookName'." -Level Info
+        return @{
+            name          = $playbookName
+            id            = "<planned-playbook:$playbookName>"
+            principalId   = $null
+            deploymentName = $null
+        }
+    }
+
+    $deploymentName = "pvsentinel-playbook-$playbookName".ToLower()
+    if ($deploymentName.Length -gt 64) { $deploymentName = $deploymentName.Substring(0, 64) }
+
+    $parameters = @{
+        '$schema'       = 'https://schema.management.azure.com/schemas/2019-04-26/deploymentParameters.json#'
+        contentVersion  = '1.0.0.0'
+        parameters      = @{
+            playbookName        = @{ value = $playbookName }
+            location            = @{ value = $Scope.Location }
+            workspaceResourceId = @{ value = $Scope.WorkspaceResourceId }
+        }
+    }
+
+    $tempDir = [System.IO.Path]::GetTempPath()
+    $templateFile = Join-Path $tempDir "pvsentinel-playbook-template-$([guid]::NewGuid().Guid).json"
+    $paramsFile   = Join-Path $tempDir "pvsentinel-playbook-params-$([guid]::NewGuid().Guid).json"
+    Copy-Item -Path $assetPath -Destination $templateFile -Force
+    $parameters | ConvertTo-Json -Depth 20 | Set-Content -Path $paramsFile -Encoding utf8
+
+    try {
+        Write-LabLog -Message "Deploying playbook '$playbookName'..." -Level Info
+        $raw = & az deployment group create `
+            --subscription $Scope.SubscriptionId `
+            --resource-group $Scope.ResourceGroup `
+            --name $deploymentName `
+            --template-file $templateFile `
+            --parameters "@$paramsFile" `
+            --only-show-errors 2>&1 | Out-String
+        $result = $raw | ConvertFrom-Json -ErrorAction Stop
+        $outputs = $result.properties.outputs
+        $principalId = [string]$outputs.principalId.value
+        $playbookResourceId = [string]$outputs.playbookResourceId.value
+        Write-LabLog -Message "Deployed playbook '$playbookName' (principalId=$principalId)." -Level Success
+
+        # Grant the playbook's managed identity "Microsoft Sentinel Responder" on the workspace
+        # so the HTTP action inside the Logic App can post incident comments.
+        try {
+            $roleAssignId = [guid]::NewGuid().Guid
+            $respondRoleId = '3e150937-b8fe-4cfb-8069-0eaf05ecd056' # Microsoft Sentinel Responder
+            $roleUrl = "$($Scope.ArmBase)$($Scope.WorkspaceResourceId)/providers/Microsoft.Authorization/roleAssignments/$roleAssignId`?api-version=2022-04-01"
+            $roleBody = @{
+                properties = @{
+                    roleDefinitionId = "/subscriptions/$($Scope.SubscriptionId)/providers/Microsoft.Authorization/roleDefinitions/$respondRoleId"
+                    principalId      = $principalId
+                    principalType    = 'ServicePrincipal'
+                }
+            }
+            Invoke-SentinelAzRest -Method PUT -Url $roleUrl -Body ($roleBody | ConvertTo-Json -Depth 10) | Out-Null
+            Write-LabLog -Message "Granted Microsoft Sentinel Responder to playbook identity on workspace." -Level Info
+        }
+        catch {
+            Write-LabLog -Message "Playbook role assignment (Sentinel Responder) failed (may already exist): $($_.Exception.Message)" -Level Warning
+        }
+
+        # Grant the Sentinel first-party app "Logic App Contributor" on the playbook's RG
+        # so the automation rule can invoke the Logic App. appId is the well-known Azure
+        # Security Insights first-party app id.
+        try {
+            $sentinelAppId = '98785600-1bb7-4fb9-b9fa-19afe2c8a360'
+            $spJson = & az ad sp show --id $sentinelAppId --only-show-errors 2>$null | Out-String
+            $sp = $null
+            if ($spJson) { $sp = $spJson | ConvertFrom-Json -ErrorAction SilentlyContinue }
+            if ($sp -and $sp.id) {
+                # Logic App Contributor at RG scope — lets Sentinel automation rules
+                # read & invoke the playbook. This is the same role the portal grants
+                # via "Manage playbook permissions".
+                $laContribRoleId = '87a39d53-fc1b-424a-814c-f7e04687dc9e'
+                $laAssignId = [guid]::NewGuid().Guid
+                $rgScope = "/subscriptions/$($Scope.SubscriptionId)/resourceGroups/$($Scope.ResourceGroup)"
+                $laUrl = "$($Scope.ArmBase)$rgScope/providers/Microsoft.Authorization/roleAssignments/$laAssignId`?api-version=2022-04-01"
+                $laBody = @{
+                    properties = @{
+                        roleDefinitionId = "/subscriptions/$($Scope.SubscriptionId)/providers/Microsoft.Authorization/roleDefinitions/$laContribRoleId"
+                        principalId      = $sp.id
+                        principalType    = 'ServicePrincipal'
+                    }
+                }
+                Invoke-SentinelAzRest -Method PUT -Url $laUrl -Body ($laBody | ConvertTo-Json -Depth 10) | Out-Null
+                Write-LabLog -Message "Granted Sentinel first-party app Logic App Contributor on RG (enables automation-rule playbook invocation)." -Level Info
+                # RBAC propagation is eventually consistent; pause before automation-rule PUT.
+                Start-Sleep -Seconds 20
+            }
+            else {
+                Write-LabLog -Message "Could not resolve Azure Security Insights service principal; automation rule may require manual playbook permissions in portal." -Level Warning
+            }
+        }
+        catch {
+            Write-LabLog -Message "Automation-rule role assignment failed (may already exist): $($_.Exception.Message)" -Level Warning
+        }
+
+        return @{
+            name           = $playbookName
+            id             = $playbookResourceId
+            principalId    = $principalId
+            deploymentName = $deploymentName
+        }
+    }
+    catch {
+        Write-LabLog -Message "Playbook '$playbookName' deployment failed: $($_.Exception.Message)" -Level Warning
+        return @{ name = $playbookName; id = $null; error = $_.Exception.Message }
+    }
+    finally {
+        if (Test-Path $templateFile) { Remove-Item $templateFile -Force -ErrorAction SilentlyContinue }
+        if (Test-Path $paramsFile)   { Remove-Item $paramsFile   -Force -ErrorAction SilentlyContinue }
+    }
+}
+
+function Deploy-SentinelAutomationRule {
+    [CmdletBinding()]
+    [OutputType([hashtable])]
+    param(
+        [Parameter(Mandatory)]
+        [hashtable]$Scope,
+
+        [Parameter(Mandatory)]
+        [string]$LabPrefix,
+
+        [Parameter(Mandatory)]
+        [string]$Template,
+
+        [Parameter(Mandatory)]
+        [string]$TriggerRuleResourceId,
+
+        [Parameter(Mandatory)]
+        [string]$PlaybookResourceId,
+
+        [Parameter(Mandatory)]
+        [string]$TenantId,
+
+        [Parameter()]
+        [string]$NameSuffix = 'IRM-AutoTriage'
+    )
+
+    $displayName = "$LabPrefix-$NameSuffix"
+    $assetPath = Join-Path $PSScriptRoot 'assets' 'sentinel' 'arm' 'automation-rules' "$Template.json"
+    if (-not (Test-Path $assetPath)) {
+        Write-LabLog -Message "Automation rule template '$Template' not found; skipping." -Level Warning
+        return $null
+    }
+
+    $md5 = [System.Security.Cryptography.MD5]::Create()
+    try { $hash = $md5.ComputeHash([System.Text.Encoding]::UTF8.GetBytes("purview-lab-deployer::automationRule::$displayName")) }
+    finally { $md5.Dispose() }
+    $ruleId = ([guid]::new($hash)).ToString()
+
+    $template = Read-SentinelAsset -Path $assetPath
+    $body = Expand-SentinelTemplate -Template $template -Tokens @{
+        displayName        = $displayName
+        ruleResourceId     = $TriggerRuleResourceId
+        playbookResourceId = $PlaybookResourceId
+        tenantId           = $TenantId
+    }
+
+    $url = "$($Scope.ArmBase)$($Scope.WorkspaceResourceId)/providers/Microsoft.SecurityInsights/automationRules/$ruleId`?api-version=2023-11-01"
+
+    if (Test-SentinelWhatIf) {
+        Write-LabLog -Message "[WhatIf] Would PUT automation rule '$displayName'." -Level Info
+        return @{ name = $displayName; id = "<planned-automation-rule:$displayName>"; ruleId = $ruleId }
+    }
+
+    try {
+        $result = Invoke-SentinelAzRest -Method PUT -Url $url -Body $body
+        Write-LabLog -Message "Deployed automation rule '$displayName'." -Level Success
+        return @{ name = $displayName; id = [string]$result.id; ruleId = $ruleId }
+    }
+    catch {
+        Write-LabLog -Message "Automation rule '$displayName' failed: $($_.Exception.Message)" -Level Warning
+        return @{ name = $displayName; id = $null; ruleId = $ruleId; error = $_.Exception.Message }
+    }
+}
+
+
 function Deploy-SentinelIntegration {
     [CmdletBinding(SupportsShouldProcess)]
     [OutputType([hashtable])]
@@ -657,6 +863,8 @@ function Deploy-SentinelIntegration {
         connectors            = @()
         rules                 = @()
         workbooks             = @()
+        playbooks             = @()
+        automationRules       = @()
     }
 
     # Resource group
@@ -684,6 +892,32 @@ function Deploy-SentinelIntegration {
     if ($s.PSObject.Properties['workbook']) {
         $wb = Deploy-SentinelWorkbook -Scope $scope -LabPrefix $labPrefix -WorkbookConfig $s.workbook
         if ($wb) { $manifest.workbooks = @($wb) }
+    }
+
+    # Playbook + automation rule (IRM auto-triage)
+    if ($s.PSObject.Properties['playbooks'] -and $s.playbooks -and
+        $s.playbooks.PSObject.Properties['irmAutoTriage'] -and
+        [bool]$s.playbooks.irmAutoTriage.enabled) {
+        $playbook = Deploy-SentinelPlaybook -Scope $scope -LabPrefix $labPrefix -Template 'irm-auto-triage' -NameSuffix 'IRM-AutoTriage'
+        if ($playbook) { $manifest.playbooks = @($playbook) }
+
+        if ($playbook -and $playbook.id -and -not $playbook.error) {
+            $irmRule = @($manifest.rules) | Where-Object { $_ -and $_.template -eq 'insider-risk-high-severity' -and $_.id } | Select-Object -First 1
+            if ($irmRule) {
+                $autoRule = Deploy-SentinelAutomationRule `
+                    -Scope $scope `
+                    -LabPrefix $labPrefix `
+                    -Template 'irm-auto-triage' `
+                    -TriggerRuleResourceId ([string]$irmRule.id) `
+                    -PlaybookResourceId   ([string]$playbook.id) `
+                    -TenantId $tenantId `
+                    -NameSuffix 'IRM-AutoTriage'
+                if ($autoRule) { $manifest.automationRules = @($autoRule) }
+            }
+            else {
+                Write-LabLog -Message "IRM analytics rule not available (did it deploy?); skipping automation-rule wiring." -Level Warning
+            }
+        }
     }
 
     if (-not (Test-SentinelWhatIf)) {
@@ -791,6 +1025,40 @@ function Remove-SentinelIntegration {
         }
     }
 
+    # 1b. Automation rules (before playbooks — they reference the playbook)
+    foreach ($ar in @($Manifest.automationRules)) {
+        if (-not $ar -or -not $ar.ruleId) { continue }
+        $url = "$($scope.ArmBase)$($scope.WorkspaceResourceId)/providers/Microsoft.SecurityInsights/automationRules/$($ar.ruleId)?api-version=2023-11-01"
+        if ($PSCmdlet.ShouldProcess($ar.name, 'Remove Sentinel automation rule')) {
+            if (Test-SentinelWhatIf) {
+                Write-LabLog -Message "[WhatIf] Would DELETE automation rule '$($ar.name)'." -Level Info
+            }
+            else {
+                Invoke-SentinelAzRest -Method DELETE -Url $url -AllowMissing | Out-Null
+                Write-LabLog -Message "Removed automation rule '$($ar.name)'." -Level Info
+            }
+        }
+    }
+
+    # 1c. Playbooks (Logic Apps) + their API connections
+    foreach ($pb in @($Manifest.playbooks)) {
+        if (-not $pb -or -not $pb.name) { continue }
+        $url = "$($scope.ArmBase)/subscriptions/$($scope.SubscriptionId)/resourceGroups/$($scope.ResourceGroup)/providers/Microsoft.Logic/workflows/$($pb.name)?api-version=2019-05-01"
+        if ($PSCmdlet.ShouldProcess($pb.name, 'Remove Sentinel playbook')) {
+            if (Test-SentinelWhatIf) {
+                Write-LabLog -Message "[WhatIf] Would DELETE playbook '$($pb.name)'." -Level Info
+            }
+            else {
+                Invoke-SentinelAzRest -Method DELETE -Url $url -AllowMissing | Out-Null
+                Write-LabLog -Message "Removed playbook '$($pb.name)'." -Level Info
+                # Best-effort cleanup of the associated azuresentinel API connection.
+                $connName = "azuresentinel-$($pb.name)"
+                $connUrl = "$($scope.ArmBase)/subscriptions/$($scope.SubscriptionId)/resourceGroups/$($scope.ResourceGroup)/providers/Microsoft.Web/connections/$connName`?api-version=2016-06-01"
+                Invoke-SentinelAzRest -Method DELETE -Url $connUrl -AllowMissing | Out-Null
+            }
+        }
+    }
+
     # 2. Analytics rules
     foreach ($rule in @($Manifest.rules)) {
         if (-not $rule -or -not $rule.ruleId) { continue }
@@ -876,6 +1144,8 @@ Export-ModuleMember -Function @(
     'Deploy-SentinelConnectors'
     'Deploy-SentinelAnalyticsRules'
     'Deploy-SentinelWorkbook'
+    'Deploy-SentinelPlaybook'
+    'Deploy-SentinelAutomationRule'
     'Install-SentinelContentHubSolution'
     'Invoke-SentinelAzRest'
 )

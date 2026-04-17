@@ -13,6 +13,38 @@
     "suppressionDuration": "PT1H",
     "suppressionEnabled": false,
     "tactics": ["DefenseEvasion"],
-    "eventGroupingSettings": { "aggregationKind": "SingleAlert" }
+    "eventGroupingSettings": { "aggregationKind": "SingleAlert" },
+    "entityMappings": [
+      {
+        "entityType": "Account",
+        "fieldMappings": [
+          { "identifier": "FullName", "columnName": "UserId" }
+        ]
+      },
+      {
+        "entityType": "IP",
+        "fieldMappings": [
+          { "identifier": "Address", "columnName": "ClientIP" }
+        ]
+      },
+      {
+        "entityType": "File",
+        "fieldMappings": [
+          { "identifier": "Name", "columnName": "OfficeObjectId" }
+        ]
+      }
+    ],
+    "incidentConfiguration": {
+      "createIncident": true,
+      "groupingConfiguration": {
+        "enabled": true,
+        "reopenClosedIncident": false,
+        "lookbackDuration": "PT5H",
+        "matchingMethod": "Selected",
+        "groupByEntities": ["Account"],
+        "groupByAlertDetails": [],
+        "groupByCustomDetails": []
+      }
+    }
   }
 }

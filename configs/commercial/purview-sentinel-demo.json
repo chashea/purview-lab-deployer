@@ -102,6 +102,11 @@
       "workbook": {
         "enabled": true,
         "name": "Purview Signals"
+      },
+      "playbooks": {
+        "irmAutoTriage": {
+          "enabled": true
+        }
       }
     },
     "testData": {

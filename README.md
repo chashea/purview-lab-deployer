@@ -127,7 +127,34 @@ az account set --subscription <subscription-id>
 
 # Tear down AND delete the Sentinel resource group (only if the module created it and tags match)
 ./Remove-Lab.ps1 -Cloud commercial -LabProfile purview-sentinel -ManifestPath ./manifests/commercial/<name>.json -ForceDeleteResourceGroup
+
+# Verify a deployed Sentinel lab end-to-end (read-only; exits non-zero on failure)
+pwsh ./scripts/Test-SentinelLab.ps1 -ConfigPath ./configs/commercial/purview-sentinel-demo.json
 ```
+
+### What the Sentinel lab builds
+
+Beyond the workspace + data connectors + analytics rules + workbook, the
+deployer also wires up investigation hygiene for you:
+
+- **Entity mappings & incident grouping** — all four analytics rules project
+  Account (and, for the sensitivity-label-downgrade rule, IP and File)
+  entities. A grouping configuration collapses alerts for the same Account
+  within a 5-hour window into a single incident, so a burst of DLP/IRM
+  activity from one user shows as one investigation item, not four.
+- **IRM auto-triage playbook** — a Logic App (`PVSentinel-IRM-AutoTriage`)
+  with a Microsoft Sentinel incident trigger, a system-assigned managed
+  identity, and an `azuresentinel` API connection. When the IRM high-severity
+  analytics rule fires, an automation rule runs the playbook, which posts an
+  enrichment comment to the incident with recommended next steps.
+- **RBAC wiring** — the deployer automatically grants the playbook MSI the
+  *Microsoft Sentinel Responder* role on the workspace and grants the Sentinel
+  first-party app *Logic App Contributor* on the resource group so the
+  automation rule is permitted to invoke the playbook.
+- **Smoke test** — `scripts/Test-SentinelLab.ps1` verifies the workspace,
+  Sentinel onboarding, expected connectors (live or installed via Content
+  Hub), every analytics rule (including that entity mappings are present),
+  the workbook, the playbook, and the automation rule. Suitable for CI.
 
 ## Supported clouds
 
