@@ -299,14 +299,13 @@ function Deploy-SentinelConnectors {
     $contentHubConnectors = @{
         microsoftDefenderXdr  = @{
             displayName = 'Microsoft Defender XDR'
-            # Match against contentProductPackages[].properties.displayName
             solutionDisplayName = 'Microsoft Defender XDR'
-            portalHint  = 'Content Hub solution installed. Finish activation: Sentinel portal > Data connectors > Microsoft Defender XDR > Connect (requires tenant admin consent).'
+            portalHint  = 'Solution + connector card installed. Finish activation: Sentinel portal > Data connectors > Microsoft Defender XDR > Connect (requires tenant admin consent for the M365D API).'
         }
         insiderRiskManagement = @{
             displayName = 'Microsoft Purview Insider Risk Management'
             solutionDisplayName = 'Microsoft Purview Insider Risk Management'
-            portalHint  = 'Content Hub solution installed. Finish activation: (1) Purview portal > Insider risk management > Settings > Export alerts (enable SIEM export), (2) Sentinel portal > Data connectors > Microsoft Purview Insider Risk Management > Connect.'
+            portalHint  = 'Solution + connector card installed. Finish activation: (1) Purview portal > Insider risk management > Settings > Export alerts (enable SIEM export), (2) Sentinel portal > Data connectors > Microsoft Purview Insider Risk Management > Connect.'
         }
     }
 
@@ -323,12 +322,10 @@ function Deploy-SentinelConnectors {
             $hub = $contentHubConnectors[$connectorName]
             $installed = Install-SentinelContentHubSolution -Scope $Scope -SolutionDisplayName $hub.solutionDisplayName
             if ($installed) {
-                Write-LabLog -Message "Content Hub solution '$($hub.solutionDisplayName)' installed (or already present). Finish activation in the Sentinel portal (tenant consent required)." -Level Info
-                $deployed.Add(@{ name = "$($Scope.WorkspaceName)-$connectorName"; kind = $connectorName; id = $null; status = 'content-hub-installed'; remediation = $hub.portalHint })
+                Write-LabLog -Message "Content Hub solution '$($hub.solutionDisplayName)' installed. Connector card now visible in Sentinel; tenant admin consent still required to activate data flow." -Level Info
+                $deployed.Add(@{ name = "$($Scope.WorkspaceName)-$connectorName"; kind = $connectorName; id = $null; status = 'content-hub-installed-pending-consent'; remediation = $hub.portalHint })
                 continue
             }
-            # Install failed; fall through to the PUT attempt so we still
-            # emit an informative error.
         }
 
         $assetFile = $connectorAssetMap[$connectorName]
@@ -383,13 +380,25 @@ function Install-SentinelContentHubSolution {
     Installs a Microsoft Sentinel Content Hub solution by displayName.
 
     .DESCRIPTION
-    Queries /contentProductPackages to locate the solution package, then PUTs
-    the package properties to /contentPackages/{contentId} to install it into
-    the workspace. Idempotent: re-running against an already-installed solution
-    simply refreshes the package definition.
+    This is the same operation the Sentinel portal performs when you click
+    "Install" on a Content Hub solution. Three steps:
 
-    Returns $true on success, $false on any failure (caller decides whether to
-    fall through or retry).
+      1. Locate the package in the catalog (/contentProductPackages) by
+         displayName and grab its `contentProductId` plus inline
+         `packagedContent` ARM template (only available on the per-package
+         GET, not in the list response).
+      2. PUT /contentPackages/{contentId} with the package metadata so the
+         workspace records the solution as installed.
+      3. Submit an ARM deployment of `packagedContent` against the workspace
+         resource group. This is what materializes all the inner resources
+         (data-connector definitions, analytics rule templates, hunting
+         queries, workbooks, playbooks). Without this step the connector
+         card never appears in the Data connectors blade.
+
+    Idempotent: ARM deployments are upserts. Re-running against an
+    already-installed solution simply re-applies the template.
+
+    Returns $true on success, $false on any failure.
     #>
     [CmdletBinding()]
     [OutputType([bool])]
@@ -406,6 +415,7 @@ function Install-SentinelContentHubSolution {
         return $true
     }
 
+    # Step 1a: list catalog and find the matching package
     $listUrl = "$($Scope.ArmBase)$($Scope.WorkspaceResourceId)/providers/Microsoft.SecurityInsights/contentProductPackages?api-version=2024-09-01"
     try {
         $list = Invoke-SentinelAzRest -Method GET -Url $listUrl
@@ -429,17 +439,60 @@ function Install-SentinelContentHubSolution {
     }
 
     $contentId = [string]$match.properties.contentId
+    $contentProductId = [string]$match.name
     $version = [string]$match.properties.version
-    $installUrl = "$($Scope.ArmBase)$($Scope.WorkspaceResourceId)/providers/Microsoft.SecurityInsights/contentPackages/$contentId`?api-version=2024-09-01"
-    $body = @{ properties = $match.properties } | ConvertTo-Json -Depth 50
 
+    # Step 1b: GET the specific package to retrieve the packagedContent template
+    $detailUrl = "$($Scope.ArmBase)$($Scope.WorkspaceResourceId)/providers/Microsoft.SecurityInsights/contentProductPackages/$contentProductId`?api-version=2024-09-01"
     try {
-        $null = Invoke-SentinelAzRest -Method PUT -Url $installUrl -Body $body
+        $detail = Invoke-SentinelAzRest -Method GET -Url $detailUrl
+    }
+    catch {
+        Write-LabLog -Message "Failed to fetch package detail for '$SolutionDisplayName': $($_.Exception.Message)" -Level Warning
+        return $false
+    }
+
+    $packagedContent = $detail.properties.packagedContent
+    if (-not $packagedContent) {
+        Write-LabLog -Message "Package '$SolutionDisplayName' is missing packagedContent; cannot install." -Level Warning
+        return $false
+    }
+
+    # Step 2: register solution as installed
+    $installUrl = "$($Scope.ArmBase)$($Scope.WorkspaceResourceId)/providers/Microsoft.SecurityInsights/contentPackages/$contentId`?api-version=2024-09-01"
+    $installBody = @{ properties = $detail.properties } | ConvertTo-Json -Depth 50
+    try {
+        $null = Invoke-SentinelAzRest -Method PUT -Url $installUrl -Body $installBody
+    }
+    catch {
+        Write-LabLog -Message "Failed to register Content Hub solution '$SolutionDisplayName': $($_.Exception.Message)" -Level Warning
+        return $false
+    }
+
+    # Step 3: deploy packagedContent (this is what materializes data connectors,
+    # analytics rule templates, hunting queries, workbooks, etc.)
+    $deploymentName = ('pvsentinel-content-' + ($contentId -replace '[^a-zA-Z0-9-]', '-'))
+    if ($deploymentName.Length -gt 64) { $deploymentName = $deploymentName.Substring(0, 64) }
+    $deployUrl = "$($Scope.ArmBase)/subscriptions/$($Scope.SubscriptionId)/resourceGroups/$($Scope.ResourceGroup)/providers/Microsoft.Resources/deployments/$deploymentName`?api-version=2021-04-01"
+    $deployBody = @{
+        properties = @{
+            mode       = 'Incremental'
+            template   = $packagedContent
+            parameters = @{
+                'workspace'          = @{ value = $Scope.WorkspaceName }
+                'workspace-location' = @{ value = $Scope.Location }
+            }
+        }
+    } | ConvertTo-Json -Depth 100
+
+    Write-LabLog -Message "Deploying Content Hub solution '$SolutionDisplayName' (version $version, ~$(@($packagedContent.resources).Count) resources)..." -Level Info
+    try {
+        $null = Invoke-SentinelAzRest -Method PUT -Url $deployUrl -Body $deployBody
         Write-LabLog -Message "Installed Content Hub solution '$SolutionDisplayName' (version $version)." -Level Success
         return $true
     }
     catch {
-        Write-LabLog -Message "Failed to install Content Hub solution '$SolutionDisplayName': $($_.Exception.Message)" -Level Warning
+        Write-LabLog -Message "Failed to deploy Content Hub solution '$SolutionDisplayName': $($_.Exception.Message)" -Level Warning
         return $false
     }
 }

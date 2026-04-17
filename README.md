@@ -72,9 +72,14 @@ subscription resources (resource group, Log Analytics workspace, Sentinel).
 **Content Hub solutions (auto-installed).** The Defender XDR and Purview
 Insider Risk Management data connectors cannot be provisioned by a direct ARM
 `PUT /dataConnectors` — Microsoft Sentinel routes them through Content Hub
-solution installs. The deployment script now **automatically installs** both
-solutions into the workspace (`Microsoft.SecurityInsights/contentPackages`),
-so the Content Hub step requires no manual portal work.
+solution installs. The deployment script performs the full 3-step install the
+portal does: lists the Content Hub catalog, fetches each solution's
+`packagedContent` ARM template, registers the package via
+`Microsoft.SecurityInsights/contentPackages`, then submits the packagedContent
+deployment so the connector card, hunting queries, analytics-rule templates,
+workbooks, and playbooks all materialize as `contentTemplates`. After this
+runs the connector cards are visible in the Sentinel **Data connectors**
+blade.
 
 What still requires a manual step (tenant-side consent, not ARM-configurable):
 

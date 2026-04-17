@@ -172,6 +172,9 @@ Describe 'Install-SentinelContentHubSolution' {
             ArmBase             = 'https://management.azure.com'
             WorkspaceResourceId = '/subscriptions/s/resourceGroups/rg/providers/Microsoft.OperationalInsights/workspaces/ws'
             WorkspaceName       = 'ws'
+            SubscriptionId      = 's'
+            ResourceGroup       = 'rg'
+            Location            = 'eastus'
         }
     }
 
@@ -183,20 +186,14 @@ Describe 'Install-SentinelContentHubSolution' {
         Should -Invoke -ModuleName SentinelIntegration Invoke-SentinelAzRest -Times 0
     }
 
-    It 'Installs matching solution by displayName and PUTs to contentPackages' {
+    It 'Lists catalog, fetches packagedContent, registers package, deploys template' {
         Mock -ModuleName SentinelIntegration Test-SentinelWhatIf { return $false }
         Mock -ModuleName SentinelIntegration Invoke-SentinelAzRest {
-            if ($Method -eq 'GET') {
+            if ($Method -eq 'GET' -and $Url -like '*contentProductPackages?api-version*') {
                 return [pscustomobject]@{
                     value = @(
                         [pscustomobject]@{
-                            properties = [pscustomobject]@{
-                                displayName = 'Some Other Solution'
-                                contentId   = 'other'
-                                version     = '1.0.0'
-                            }
-                        },
-                        [pscustomobject]@{
+                            name       = 'azuresentinel.azure-sentinel-solution-microsoft365-sl-abc'
                             properties = [pscustomobject]@{
                                 displayName = 'Microsoft Defender XDR'
                                 contentId   = 'azuresentinel.azure-sentinel-solution-microsoft365defender'
@@ -206,13 +203,32 @@ Describe 'Install-SentinelContentHubSolution' {
                     )
                 }
             }
-            return [pscustomobject]@{ id = 'installed' }
+            if ($Method -eq 'GET' -and $Url -like '*contentProductPackages/azuresentinel.azure-sentinel-solution-microsoft365-sl-abc*') {
+                return [pscustomobject]@{
+                    properties = [pscustomobject]@{
+                        displayName     = 'Microsoft Defender XDR'
+                        contentId       = 'azuresentinel.azure-sentinel-solution-microsoft365defender'
+                        version         = '3.0.13'
+                        packagedContent = [pscustomobject]@{
+                            '$schema'      = 'https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#'
+                            contentVersion = '1.0.0.0'
+                            parameters     = @{ workspace = @{ type = 'string' } }
+                            resources      = @()
+                        }
+                    }
+                }
+            }
+            return [pscustomobject]@{ id = 'ok' }
         }
 
         $result = Install-SentinelContentHubSolution -Scope $script:scope -SolutionDisplayName 'Microsoft Defender XDR'
         $result | Should -Be $true
+        # Both PUTs were issued: contentPackages register + Microsoft.Resources/deployments
         Should -Invoke -ModuleName SentinelIntegration Invoke-SentinelAzRest -Times 1 -ParameterFilter {
             $Method -eq 'PUT' -and $Url -like '*contentPackages/azuresentinel.azure-sentinel-solution-microsoft365defender*'
+        }
+        Should -Invoke -ModuleName SentinelIntegration Invoke-SentinelAzRest -Times 1 -ParameterFilter {
+            $Method -eq 'PUT' -and $Url -like '*Microsoft.Resources/deployments/pvsentinel-content-*'
         }
     }
 
@@ -225,13 +241,14 @@ Describe 'Install-SentinelContentHubSolution' {
         $result | Should -Be $false
     }
 
-    It 'Returns $false when the install PUT fails' {
+    It 'Returns $false when packagedContent is missing' {
         Mock -ModuleName SentinelIntegration Test-SentinelWhatIf { return $false }
         Mock -ModuleName SentinelIntegration Invoke-SentinelAzRest {
-            if ($Method -eq 'GET') {
+            if ($Url -like '*contentProductPackages?api-version*') {
                 return [pscustomobject]@{
                     value = @(
                         [pscustomobject]@{
+                            name       = 'azuresentinel.azure-sentinel-solution-microsoft365-sl-abc'
                             properties = [pscustomobject]@{
                                 displayName = 'Microsoft Defender XDR'
                                 contentId   = 'azuresentinel.azure-sentinel-solution-microsoft365defender'
@@ -241,7 +258,43 @@ Describe 'Install-SentinelContentHubSolution' {
                     )
                 }
             }
-            throw 'ARM install failed'
+            # detail GET returns no packagedContent
+            return [pscustomobject]@{ properties = [pscustomobject]@{ contentId = 'x'; version = '1.0' } }
+        }
+        $result = Install-SentinelContentHubSolution -Scope $script:scope -SolutionDisplayName 'Microsoft Defender XDR'
+        $result | Should -Be $false
+    }
+
+    It 'Returns $false when the deployment PUT fails' {
+        Mock -ModuleName SentinelIntegration Test-SentinelWhatIf { return $false }
+        Mock -ModuleName SentinelIntegration Invoke-SentinelAzRest {
+            if ($Method -eq 'GET' -and $Url -like '*contentProductPackages?api-version*') {
+                return [pscustomobject]@{
+                    value = @(
+                        [pscustomobject]@{
+                            name       = 'azuresentinel.azure-sentinel-solution-microsoft365-sl-abc'
+                            properties = [pscustomobject]@{
+                                displayName = 'Microsoft Defender XDR'
+                                contentId   = 'azuresentinel.azure-sentinel-solution-microsoft365defender'
+                                version     = '3.0.13'
+                            }
+                        }
+                    )
+                }
+            }
+            if ($Method -eq 'GET') {
+                return [pscustomobject]@{
+                    properties = [pscustomobject]@{
+                        contentId       = 'azuresentinel.azure-sentinel-solution-microsoft365defender'
+                        version         = '3.0.13'
+                        packagedContent = [pscustomobject]@{ resources = @() }
+                    }
+                }
+            }
+            if ($Method -eq 'PUT' -and $Url -like '*Microsoft.Resources/deployments/*') {
+                throw 'ARM deployment failed'
+            }
+            return [pscustomobject]@{ id = 'ok' }
         }
         $result = Install-SentinelContentHubSolution -Scope $script:scope -SolutionDisplayName 'Microsoft Defender XDR'
         $result | Should -Be $false
