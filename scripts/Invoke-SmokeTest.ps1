@@ -78,6 +78,9 @@
 #>
 
 [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Send')]
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+    'PSAvoidUsingConvertToSecureStringWithPlainText', '',
+    Justification = 'Converting a short-lived Graph access token obtained from az CLI to SecureString for Connect-MgGraph. This is the documented pattern; the token is not a long-lived secret.')]
 param(
     [Parameter()]
     [string]$TenantId,
@@ -338,7 +341,7 @@ function Send-SmokeTestEmails {
     )
 
     $context = Get-MgContext
-    if (-not $context -or (-not $context.Account -and -not $context.AppName -and -not $context.ClientId)) {
+    if (-not $context -or (-not $context.Account -and -not $context.AppName -and -not $context.ClientId -and -not $context.TenantId)) {
         throw 'Microsoft Graph context is not available.'
     }
 
@@ -404,7 +407,7 @@ function Send-SmokeTestFiles {
     )
 
     $context = Get-MgContext
-    if (-not $context -or (-not $context.Account -and -not $context.AppName -and -not $context.ClientId)) {
+    if (-not $context -or (-not $context.Account -and -not $context.AppName -and -not $context.ClientId -and -not $context.TenantId)) {
         throw 'Microsoft Graph context is not available.'
     }
 
@@ -704,7 +707,27 @@ if (-not $SkipAuth) {
     }
     else {
         Write-Host "--- Connecting to cloud services ---" -ForegroundColor Cyan
-        Connect-MgGraph -TenantId $authTenantId -Scopes 'Mail.Send', 'User.Read.All', 'Files.ReadWrite.All', 'Sites.ReadWrite.All' -NoWelcome -ErrorAction Stop
+        $graphScopes = @('Mail.Send', 'User.Read.All', 'Files.ReadWrite.All', 'Sites.ReadWrite.All')
+
+        # Prefer an existing az CLI session (works for OIDC in CI and `az login` locally).
+        # Fall back to interactive Connect-MgGraph when az is unavailable.
+        $azToken = $null
+        if (Get-Command az -ErrorAction SilentlyContinue) {
+            try {
+                $azToken = az account get-access-token --resource https://graph.microsoft.com --query accessToken -o tsv 2>$null
+            }
+            catch {
+                $azToken = $null
+            }
+        }
+
+        if ($azToken) {
+            $secureToken = ConvertTo-SecureString $azToken -AsPlainText -Force
+            Connect-MgGraph -AccessToken $secureToken -NoWelcome -ErrorAction Stop
+        }
+        else {
+            Connect-MgGraph -TenantId $authTenantId -Scopes $graphScopes -NoWelcome -ErrorAction Stop
+        }
         Write-Host "  Graph connected.`n" -ForegroundColor Green
     }
 }
