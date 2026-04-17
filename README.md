@@ -69,21 +69,24 @@ subscription resources (resource group, Log Analytics workspace, Sentinel).
 - Update `configs/commercial/purview-sentinel-demo.json` and fill in the
   `workloads.sentinelIntegration.subscriptionId` GUID
 
-**Content Hub solutions (required for 2 of 3 connectors).** Microsoft Sentinel
-now routes the Defender XDR and Purview Insider Risk Management data connectors
-through *Content Hub solution installs*, not direct ARM `PUT /dataConnectors`
-calls. Before you can finish wiring up those two connectors, install these
-solutions in the Sentinel portal:
+**Content Hub solutions (auto-installed).** The Defender XDR and Purview
+Insider Risk Management data connectors cannot be provisioned by a direct ARM
+`PUT /dataConnectors` — Microsoft Sentinel routes them through Content Hub
+solution installs. The deployment script now **automatically installs** both
+solutions into the workspace (`Microsoft.SecurityInsights/contentPackages`),
+so the Content Hub step requires no manual portal work.
 
-1. Open the Sentinel workspace → **Content hub**
-2. Search for **Microsoft Defender XDR** → *Install*
-3. Search for **Microsoft Purview Insider Risk Management** → *Install*
-4. Re-run `Deploy-Lab.ps1` (it is idempotent) *or* manually enable both data
-   connectors from the **Data connectors** blade
+What still requires a manual step (tenant-side consent, not ARM-configurable):
 
-The deployment script detects this situation and emits a clear remediation
-warning for each affected connector — the Office 365 connector, analytics
-rules and workbook deploy without any Content Hub prerequisite.
+1. **Microsoft Defender XDR connector** — Sentinel portal → **Data connectors**
+   → *Microsoft Defender XDR* → **Connect** (requires tenant admin consent).
+2. **Microsoft Purview Insider Risk Management connector** — (a) Purview portal
+   → *Insider risk management → Settings → Export alerts* → enable SIEM export,
+   then (b) Sentinel portal → **Data connectors** → *Microsoft Purview Insider
+   Risk Management* → **Connect**.
+
+The deployment log prints the exact remediation string for each after the
+Content Hub install succeeds.
 
 Tenant-side caveat (not ARM-configurable): to receive **Insider Risk
 Management** alerts in Sentinel, enable *SIEM export* in the Microsoft Purview
