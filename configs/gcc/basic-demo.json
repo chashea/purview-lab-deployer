@@ -363,6 +363,48 @@
               "sourceSearch": "Suspicious-Activity"
             }
           ]
+        },
+        {
+          "name": "HR-Investigation",
+          "description": "HR investigation into workplace conduct allegations including harassment, inappropriate communications, and policy violations.",
+          "custodians": [
+            "rtorres@MngEnvMCAP659995.onmicrosoft.com",
+            "pnair@MngEnvMCAP659995.onmicrosoft.com",
+            "nbrooks@MngEnvMCAP659995.onmicrosoft.com",
+            "msullivan@MngEnvMCAP659995.onmicrosoft.com"
+          ],
+          "holdQuery": "(subject:\"complaint\" OR subject:\"investigation\" OR body:\"harassment\" OR body:\"misconduct\" OR body:\"hostile\") AND received>=2025-01-01",
+          "searches": [
+            {
+              "name": "Harassment-Complaints",
+              "contentQuery": "body:\"harassment\" OR body:\"hostile\" OR body:\"inappropriate behavior\"",
+              "dataSourceScopes": "allCaseCustodians"
+            },
+            {
+              "name": "Termination-Records",
+              "contentQuery": "subject:\"termination\" OR body:\"severance\" OR body:\"departure\" OR body:\"resignation\"",
+              "dataSourceScopes": "allCaseCustodians"
+            },
+            {
+              "name": "Background-Check-PII",
+              "contentQuery": "body:\"social security\" OR body:\"SSN\" OR body:\"date of birth\" OR body:\"background check\"",
+              "dataSourceScopes": "allCaseCustodians"
+            }
+          ],
+          "reviewSets": [
+            {
+              "name": "Conduct-Review",
+              "sourceSearch": "Harassment-Complaints"
+            },
+            {
+              "name": "Separation-Review",
+              "sourceSearch": "Termination-Records"
+            },
+            {
+              "name": "PII-Review",
+              "sourceSearch": "Background-Check-PII"
+            }
+          ]
         }
       ]
     },
