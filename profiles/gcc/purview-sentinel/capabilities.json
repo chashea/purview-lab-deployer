@@ -1,0 +1,20 @@
+{
+  "profileType": "scenario-overlay",
+  "name": "purview-sentinel",
+  "baseCloud": "gcc",
+  "notes": [
+    "Sentinel integration lab for GCC. Mirror of commercial profile with GCC-specific Azure Government endpoints and feature availability caveats.",
+    "Azure resources deploy to Azure Government regions (e.g., usgovvirginia).",
+    "Defender portal availability in GCC is on a separate rollout schedule from commercial — validate before relying on it for this demo.",
+    "Microsoft Sentinel data lake tier availability in GCC may lag commercial."
+  ],
+  "workloads": {
+    "testUsers":           { "status": "required",  "note": "GCC test accounts." },
+    "sensitivityLabels":   { "status": "required",  "note": "Single Confidential label for label-downgrade rule." },
+    "dlp":                 { "status": "required",  "note": "SSN SIT detection to generate SecurityAlert rows." },
+    "insiderRisk":         { "status": "limited",   "note": "GCC IRM feature rollout may differ from commercial. Validate SIEM export availability in your tenant." },
+    "auditConfig":         { "status": "required",  "note": "Audit searches for DLP rule match correlation." },
+    "sentinelIntegration": { "status": "required",  "note": "Provisions Azure Government resources. Use Azure Government endpoints in az login (az cloud set --name AzureUSGovernment)." },
+    "testData":            { "status": "required",  "note": "Seed emails for DLP → Sentinel signal flow." }
+  }
+}

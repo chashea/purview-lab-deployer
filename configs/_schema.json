@@ -169,9 +169,20 @@
                     "items": {
                       "type": "object",
                       "required": [
-                        "name",
-                        "sensitiveInfoTypes",
-                        "minCount"
+                        "name"
+                      ],
+                      "anyOf": [
+                        {
+                          "required": [
+                            "sensitiveInfoTypes",
+                            "minCount"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "labels"
+                          ]
+                        }
                       ],
                       "properties": {
                         "name": {

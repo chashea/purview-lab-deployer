@@ -107,10 +107,14 @@ $dcItems   = if ($dc   -and $dc.value)   { @($dc.value) } else { @() }
 $tmplNames = if ($tmpl -and $tmpl.value) { @($tmpl.value | Where-Object { $_.properties.contentKind -eq 'DataConnector' } | ForEach-Object { [string]$_.properties.displayName }) } else { @() }
 
 # Map expected display names to dataConnector 'kind' values as a null-title fallback.
+# Per MS Learn Microsoft.SecurityInsights/dataConnectors (2025-07-01-preview):
+#   - Office 365 activity → kind: Office365
+#   - Microsoft Defender XDR → kind: MicrosoftThreatProtection
+#   - Microsoft 365 Insider Risk Management → kind: OfficeIRM
 $kindAliases = @{
-    'Office 365'                                = @('Office365','MicrosoftPurviewInformationProtection')
+    'Office 365'                                = @('Office365')
     'Microsoft Defender XDR'                    = @('MicrosoftThreatProtection','Microsoft365Defender')
-    'Microsoft 365 Insider Risk Management'     = @('IoTDeviceEntity','Microsoft365InsiderRiskManagement','InsiderRisk')
+    'Microsoft 365 Insider Risk Management'     = @('OfficeIRM')
 }
 
 foreach ($expected in $expectedConnectors) {
@@ -149,14 +153,29 @@ if ($s.PSObject.Properties['analyticsRules']) {
 
 # 5. Workbook
 if ($s.PSObject.Properties['workbook'] -and [bool]$s.workbook.enabled) {
-    $wbDisplayName = "$prefix-$($s.workbook.name)"
-    $wbResp = Invoke-Rest "$arm/subscriptions/$sub/resourceGroups/$rg/providers/Microsoft.Insights/workbooks?api-version=2023-06-01&category=sentinel"
-    $found = $false
-    if ($wbResp -and $wbResp.value) {
-        $found = ($wbResp.value | Where-Object { [string]$_.properties.displayName -eq $wbDisplayName }).Count -gt 0
+    # Support both single {name,...} and multi-workbook {workbooks:[{name,asset}, ...]} configs
+    $wbEntries = if ($s.workbook.PSObject.Properties['workbooks'] -and @($s.workbook.workbooks).Count -gt 0) {
+        @($s.workbook.workbooks)
     }
-    if ($found) { Add-Check -Name "Workbook: $wbDisplayName" -Status 'PASS' }
-    else        { Add-Check -Name "Workbook: $wbDisplayName" -Status 'FAIL' -Detail 'not found' }
+    else {
+        @([pscustomobject]@{ name = [string]$s.workbook.name })
+    }
+
+    $wbResp = Invoke-Rest "$arm/subscriptions/$sub/resourceGroups/$rg/providers/Microsoft.Insights/workbooks?api-version=2023-06-01&category=sentinel"
+    $deployedNames = @()
+    if ($wbResp -and $wbResp.value) {
+        $deployedNames = @($wbResp.value | ForEach-Object { [string]$_.properties.displayName })
+    }
+
+    foreach ($wbEntry in $wbEntries) {
+        $wbDisplayName = "$prefix-$($wbEntry.name)"
+        if ($deployedNames -contains $wbDisplayName) {
+            Add-Check -Name "Workbook: $wbDisplayName" -Status 'PASS'
+        }
+        else {
+            Add-Check -Name "Workbook: $wbDisplayName" -Status 'FAIL' -Detail 'not found'
+        }
+    }
 }
 
 # 6. Playbook + automation rule
@@ -181,6 +200,35 @@ if ($s.PSObject.Properties['playbooks'] -and $s.playbooks -and
     }
     if ($arFound) { Add-Check -Name "Automation rule: $arName" -Status 'PASS' }
     else          { Add-Check -Name "Automation rule: $arName" -Status 'FAIL' -Detail 'not found' }
+}
+
+# 7. Data-flow check: at least one SecurityAlert row or OfficeActivity row in
+#    the last 24h proves connectors are actually producing data. Without this
+#    check, a deploy can pass all structural tests yet be silently dead.
+try {
+    $wsForQuery = Invoke-Rest "$arm/subscriptions/$sub/resourceGroups/$rg/providers/Microsoft.OperationalInsights/workspaces/$($s.workspace.name)?api-version=2022-10-01"
+    $customerId = [string]$wsForQuery.properties.customerId
+    if ([string]::IsNullOrWhiteSpace($customerId)) {
+        Add-Check -Name 'Data flow (24h)' -Status 'WARN' -Detail 'workspace customerId not available yet'
+    }
+    else {
+        $query = 'union isfuzzy=true SecurityAlert, OfficeActivity | where TimeGenerated > ago(24h) | summarize rows=count()'
+        $escaped = [uri]::EscapeDataString($query)
+        $queryResp = Invoke-Rest "https://api.loganalytics.io/v1/workspaces/$customerId/query?query=$escaped"
+        $rowCount = 0
+        if ($queryResp -and $queryResp.tables -and $queryResp.tables[0].rows) {
+            $rowCount = [int]$queryResp.tables[0].rows[0][0]
+        }
+        if ($rowCount -gt 0) {
+            Add-Check -Name 'Data flow (24h)' -Status 'PASS' -Detail "$rowCount row(s) in SecurityAlert/OfficeActivity"
+        }
+        else {
+            Add-Check -Name 'Data flow (24h)' -Status 'WARN' -Detail 'no rows yet — confirm Defender XDR consent and IRM SIEM export; allow 60 min after first deploy'
+        }
+    }
+}
+catch {
+    Add-Check -Name 'Data flow (24h)' -Status 'WARN' -Detail "query failed: $($_.Exception.Message)"
 }
 
 # Render

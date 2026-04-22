@@ -50,6 +50,21 @@ function Deploy-Retention {
                     }
                 }
 
+                # AI apps retention (Microsoft Copilot experiences, Enterprise AI apps,
+                # Other AI apps) is opted into via the -Applications parameter with
+                # Microsoft-defined token strings. See MS Learn:
+                # https://learn.microsoft.com/purview/retention-policies-copilot
+                if ($policy.PSObject.Properties['applications'] -and @($policy.applications).Count -gt 0) {
+                    $newPolicyCmd = Get-Command -Name New-RetentionCompliancePolicy -ErrorAction SilentlyContinue
+                    if ($newPolicyCmd -and $newPolicyCmd.Parameters.ContainsKey('Applications')) {
+                        $policyParams['Applications'] = [string[]]@($policy.applications)
+                        Write-LabLog "Retention policy '$policyName' targeting applications: $(@($policy.applications) -join ', ')" -Level Info
+                    }
+                    else {
+                        Write-LabLog "Retention policy '$policyName' requested AI app targeting, but New-RetentionCompliancePolicy does not expose the -Applications parameter in this environment. AI app coverage will be skipped." -Level Warning
+                    }
+                }
+
                 New-RetentionCompliancePolicy @policyParams | Out-Null
                 Write-LabLog "Created retention policy: $policyName" -Level Success
 
@@ -159,13 +174,19 @@ function Deploy-Retention {
 }
 
 function Remove-Retention {
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'All')]
     param(
         [Parameter(Mandatory)]
         [PSCustomObject]$Config,
 
         [Parameter()]
-        [PSCustomObject]$Manifest  # Reserved for manifest-based removal
+        [PSCustomObject]$Manifest,  # Reserved for manifest-based removal
+
+        [Parameter(ParameterSetName = 'PoliciesOnly')]
+        [switch]$PoliciesOnly,
+
+        [Parameter(ParameterSetName = 'LabelsOnly')]
+        [switch]$LabelsOnly
     )
 
     $targetPolicies = @()
@@ -223,31 +244,39 @@ function Remove-Retention {
         }
     }
 
+    # --- Phase 1: label-publish rules and policies (skipped when -LabelsOnly) ---
+    if (-not $LabelsOnly) {
+        foreach ($labelInfo in $targetLabels) {
+            # Remove publish rule
+            try {
+                Get-RetentionComplianceRule -Identity $labelInfo.publishRuleName -ErrorAction Stop | Out-Null
+                if ($PSCmdlet.ShouldProcess($labelInfo.publishRuleName, 'Remove label publish rule')) {
+                    Remove-RetentionComplianceRule -Identity $labelInfo.publishRuleName -Confirm:$false -ErrorAction Stop
+                    Write-LabLog "Removed label publish rule: $($labelInfo.publishRuleName)" -Level Success
+                }
+            }
+            catch {
+                Write-LabLog "Label publish rule not found or already removed: $($labelInfo.publishRuleName)" -Level Info
+            }
+
+            # Remove publish policy
+            try {
+                Get-RetentionCompliancePolicy -Identity $labelInfo.publishPolicyName -ErrorAction Stop | Out-Null
+                if ($PSCmdlet.ShouldProcess($labelInfo.publishPolicyName, 'Remove label publish policy')) {
+                    Remove-RetentionCompliancePolicy -Identity $labelInfo.publishPolicyName -Confirm:$false -ErrorAction Stop
+                    Write-LabLog "Removed label publish policy: $($labelInfo.publishPolicyName)" -Level Success
+                }
+            }
+            catch {
+                Write-LabLog "Label publish policy not found or already removed: $($labelInfo.publishPolicyName)" -Level Info
+            }
+        }
+    }
+
+    # --- Phase 2: compliance tags + standalone retention policies (skipped when -PoliciesOnly) ---
+    if ($PoliciesOnly) { return }
+
     foreach ($labelInfo in $targetLabels) {
-        # Remove publish rule
-        try {
-            Get-RetentionComplianceRule -Identity $labelInfo.publishRuleName -ErrorAction Stop | Out-Null
-            if ($PSCmdlet.ShouldProcess($labelInfo.publishRuleName, 'Remove label publish rule')) {
-                Remove-RetentionComplianceRule -Identity $labelInfo.publishRuleName -Confirm:$false -ErrorAction Stop
-                Write-LabLog "Removed label publish rule: $($labelInfo.publishRuleName)" -Level Success
-            }
-        }
-        catch {
-            Write-LabLog "Label publish rule not found or already removed: $($labelInfo.publishRuleName)" -Level Info
-        }
-
-        # Remove publish policy
-        try {
-            Get-RetentionCompliancePolicy -Identity $labelInfo.publishPolicyName -ErrorAction Stop | Out-Null
-            if ($PSCmdlet.ShouldProcess($labelInfo.publishPolicyName, 'Remove label publish policy')) {
-                Remove-RetentionCompliancePolicy -Identity $labelInfo.publishPolicyName -Confirm:$false -ErrorAction Stop
-                Write-LabLog "Removed label publish policy: $($labelInfo.publishPolicyName)" -Level Success
-            }
-        }
-        catch {
-            Write-LabLog "Label publish policy not found or already removed: $($labelInfo.publishPolicyName)" -Level Info
-        }
-
         # Remove compliance tag
         try {
             Get-ComplianceTag -Identity $labelInfo.tagName -ErrorAction Stop | Out-Null

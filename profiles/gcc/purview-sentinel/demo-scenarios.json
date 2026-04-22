@@ -1,0 +1,112 @@
+{
+  "demoName": "Purview → Sentinel Integration (GCC)",
+  "version": "1.0",
+  "presentationFlow": [
+    {
+      "step": 0,
+      "title": "Azure Government context",
+      "talkTrack": "Same Sentinel + Purview integration model as commercial, deployed to Azure Government. Sentinel in the Defender portal rolls out separately in GCC — validate per-tenant. Azure portal Sentinel experience fully supported today.",
+      "showInPortal": [
+        "portal.azure.us > Microsoft Sentinel > PVSentinel-ws"
+      ],
+      "duration": "2 min",
+      "automated": false,
+      "gccNote": "Defender portal availability in GCC is on a separate rollout schedule from commercial."
+    },
+    {
+      "step": 1,
+      "title": "Three connectors (same kinds as commercial)",
+      "talkTrack": "Microsoft Defender XDR (MicrosoftThreatProtection), Microsoft 365 Insider Risk Management (OfficeIRM), Office 365 (Office365). IRM feature rollout in GCC can lag commercial — validate the SIEM export toggle in your Purview settings.",
+      "showInPortal": [
+        "Sentinel > Data connectors (3 Purview-related connectors)"
+      ],
+      "duration": "4 min",
+      "automated": true,
+      "gccNote": "IRM connector requires Purview > Settings > Insider Risk Management > Export alerts = On. This setting's availability depends on GCC feature rollout stage."
+    },
+    {
+      "step": 2,
+      "title": "Analytics rules",
+      "talkTrack": "Same four rules as commercial: PVSentinel-HighSevDLP, PVSentinel-IRMHighSev, PVSentinel-LabelDowngrade, PVSentinel-MassDownloadAfterDLP. All target SecurityAlert, OfficeActivity tables that are available in GCC.",
+      "showInPortal": [
+        "Sentinel > Analytics > 4 PVSentinel rules"
+      ],
+      "duration": "4 min",
+      "automated": true
+    },
+    {
+      "step": 3,
+      "title": "IRM auto-triage playbook",
+      "talkTrack": "Same playbook pattern. Logic App uses system-assigned managed identity. Sentinel first-party app gets Logic App Contributor on the GCC resource group. Incident-triggered enrichment.",
+      "showInPortal": [
+        "Sentinel > Automation > PVSentinel-IRM-AutoTriage"
+      ],
+      "duration": "3 min",
+      "automated": true
+    },
+    {
+      "step": 4,
+      "title": "Purview Signals workbook",
+      "talkTrack": "Same workbook. DLP + IRM + label movement + cross-signal users. Government CISOs use this for FISMA/FedRAMP-adjacent reporting.",
+      "showInPortal": [
+        "Sentinel > Workbooks > PVSentinel-Purview Signals"
+      ],
+      "duration": "2 min",
+      "automated": true
+    },
+    {
+      "step": 5,
+      "title": "GCC complementary stories",
+      "talkTrack": "Microsoft Purview Content Hub solution is available in GCC. DSPM for AI and Copilot DLP signal ingestion follows the same pattern when those labs are deployed in your GCC tenant. Sentinel data lake availability in GCC is pending — plan analytics-tier-only for now.",
+      "showInPortal": [
+        "Sentinel > Content Hub > Microsoft Purview solution (GCC)"
+      ],
+      "duration": "2 min",
+      "automated": false,
+      "gccNote": "Data lake tier commercially launched July 2025; GCC availability pending."
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "S1",
+      "name": "DLP → Sentinel incident (GCC)",
+      "description": "Send an SSN-containing email, flow to Defender XDR, land in Sentinel (GCC).",
+      "steps": [
+        "./scripts/Invoke-SmokeTest.ps1 -ConfigPath ./configs/gcc/purview-sentinel-demo.json",
+        "Wait 15-30 min for pipeline propagation",
+        "portal.azure.us > Sentinel > Incidents > filter to PVSentinel-HighSevDLP",
+        "Show entity-mapped incident"
+      ],
+      "expectedOutcome": "Same signal chain as commercial, flowing through GCC Azure Government endpoints",
+      "automatedArtifacts": ["DLP policy", "Defender XDR connector", "HighSevDLP rule"],
+      "manualPrep": ["Defender XDR consent", "30-60 min first-run lag"]
+    },
+    {
+      "id": "S2",
+      "name": "IRM auto-triage (GCC)",
+      "description": "Trigger IRM high-severity, playbook enriches. Requires IRM SIEM export available in your GCC tenant.",
+      "steps": [
+        "Generate IRM signal via smoke test",
+        "Wait 60-90 min for OfficeIRM alert to flow",
+        "Incident + auto-triage comment"
+      ],
+      "expectedOutcome": "Same auto-triage pattern as commercial",
+      "automatedArtifacts": ["IRM policy", "OfficeIRM connector", "IRMHighSev rule", "playbook"],
+      "manualPrep": ["Validate IRM availability in GCC tenant", "SIEM export toggled on"]
+    }
+  ],
+  "userExperienceTable": [
+    {
+      "scenario": "DLP match in GCC tenant",
+      "sentinelBehavior": "Same as commercial — SecurityAlert via MicrosoftThreatProtection connector, 15-30 min lag, incident creation by rule"
+    },
+    {
+      "scenario": "IRM alert in GCC tenant with SIEM export enabled",
+      "sentinelBehavior": "Same as commercial — SecurityAlert via OfficeIRM, rule creates incident, playbook enriches"
+    },
+    {
+      "scenario": "IRM alert in GCC tenant without SIEM export available",
+      "sentinelBehavior": "Connector installs but no alerts flow. Readiness script flags the gap."
+    }
+  ]
+}

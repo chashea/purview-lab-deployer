@@ -70,7 +70,7 @@
     },
     "sentinelIntegration": {
       "enabled": true,
-      "subscriptionId": "9d02bc65-7c0d-4c6a-b824-da0000cb7c7d",
+      "subscriptionId": "",
       "resourceGroup": {
         "name": "PVSentinel-rg",
         "location": "eastus"
@@ -80,6 +80,14 @@
         "retentionDays": 30,
         "sku": "PerGB2018"
       },
+      "additionalContentHubSolutions": [
+        "Microsoft Purview"
+      ],
+      "tableTiers": [
+        { "table": "SecurityAlert",               "tier": "Analytics", "reason": "Low volume, real-time rules need it." },
+        { "table": "OfficeActivity",              "tier": "Split",     "reason": "High volume — recent data in analytics for rules, older data in lake for compliance retention." },
+        { "table": "PurviewDataSensitivityLogs",  "tier": "Analytics", "reason": "Used by Microsoft Purview Content Hub solution rules." }
+      ],
       "connectors": {
         "microsoftDefenderXdr": {
           "enabled": true,
@@ -94,14 +102,20 @@
         }
       },
       "analyticsRules": [
-        { "name": "HighSevDLP",        "template": "dlp-high-severity",          "severity": "High" },
-        { "name": "IRMHighSev",        "template": "insider-risk-high-severity", "severity": "High" },
-        { "name": "LabelDowngrade",    "template": "sensitivity-label-downgrade","severity": "Medium" },
-        { "name": "MassDownloadAfterDLP", "template": "mass-download-after-dlp", "severity": "High" }
+        { "name": "HighSevDLP",            "template": "dlp-high-severity",            "severity": "High" },
+        { "name": "IRMHighSev",            "template": "insider-risk-high-severity",   "severity": "High" },
+        { "name": "LabelDowngrade",        "template": "sensitivity-label-downgrade",  "severity": "Medium" },
+        { "name": "MassDownloadAfterDLP",  "template": "mass-download-after-dlp",      "severity": "High" },
+        { "name": "CopilotDLPPromptBlock", "template": "copilot-dlp-prompt-block",     "severity": "High" },
+        { "name": "ShadowAIPasteUpload",   "template": "shadow-ai-paste-upload",       "severity": "High" },
+        { "name": "RiskyAIUsageCorrel",    "template": "risky-ai-usage-correlation",   "severity": "High" }
       ],
       "workbook": {
         "enabled": true,
-        "name": "Purview Signals"
+        "workbooks": [
+          { "name": "Purview Signals", "asset": "purview.json" },
+          { "name": "AI Risk Signals", "asset": "ai-signals.json" }
+        ]
       },
       "playbooks": {
         "irmAutoTriage": {

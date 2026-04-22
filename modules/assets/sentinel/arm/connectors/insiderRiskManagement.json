@@ -1,9 +1,9 @@
 {
-  "kind": "MicrosoftPurviewInformationProtection",
+  "kind": "OfficeIRM",
   "properties": {
     "tenantId": "{{tenantId}}",
     "dataTypes": {
-      "logs": { "state": "Enabled" }
+      "alerts": { "state": "Enabled" }
     }
   }
 }

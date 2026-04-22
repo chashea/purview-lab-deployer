@@ -1,0 +1,39 @@
+{
+  "kind": "Scheduled",
+  "properties": {
+    "displayName": "{{displayName}}",
+    "description": "Endpoint DLP blocks on paste/upload of sensitive content to external AI sites (ChatGPT, Claude, Gemini, etc.). Signals Shadow AI activity from managed devices via Defender for Endpoint.",
+    "severity": "{{severity}}",
+    "enabled": true,
+    "query": "union isfuzzy=true SecurityAlert\n| where TimeGenerated > ago(1h)\n| extend ProductName = tostring(column_ifexists('ProductName', ''))\n| extend AlertName = tostring(column_ifexists('AlertName', ''))\n| extend AlertSeverity = tostring(column_ifexists('AlertSeverity', ''))\n| extend Entities = tostring(column_ifexists('Entities', ''))\n| extend Description = tostring(column_ifexists('Description', ''))\n| extend CompromisedEntity = tostring(column_ifexists('CompromisedEntity', ''))\n| extend ExtendedProperties = tostring(column_ifexists('ExtendedProperties', ''))\n| where ProductName has 'Microsoft Data Loss Prevention' or ProductName has 'Microsoft 365 DLP'\n| where AlertName has 'Endpoint' or AlertName has 'Devices'\n| where ExtendedProperties has_any ('chat.openai.com','chatgpt.com','claude.ai','gemini.google.com','bard.google.com','copilot.microsoft.com','poe.com','perplexity.ai','huggingface.co','deepseek.com')\n| extend AccountUpn = tostring(parse_json(Entities) [0].Name)\n| project TimeGenerated, AlertName, AlertSeverity, CompromisedEntity, AccountUpn, Description, Entities, ExtendedProperties",
+    "queryFrequency": "PT1H",
+    "queryPeriod": "PT1H",
+    "triggerOperator": "GreaterThan",
+    "triggerThreshold": 0,
+    "suppressionDuration": "PT1H",
+    "suppressionEnabled": false,
+    "tactics": ["Exfiltration"],
+    "techniques": ["T1567"],
+    "eventGroupingSettings": { "aggregationKind": "SingleAlert" },
+    "entityMappings": [
+      {
+        "entityType": "Account",
+        "fieldMappings": [
+          { "identifier": "FullName", "columnName": "AccountUpn" }
+        ]
+      }
+    ],
+    "incidentConfiguration": {
+      "createIncident": true,
+      "groupingConfiguration": {
+        "enabled": true,
+        "reopenClosedIncident": false,
+        "lookbackDuration": "PT5H",
+        "matchingMethod": "Selected",
+        "groupByEntities": ["Account"],
+        "groupByAlertDetails": [],
+        "groupByCustomDetails": []
+      }
+    }
+  }
+}

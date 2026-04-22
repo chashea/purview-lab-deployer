@@ -1,0 +1,170 @@
+{
+  "demoName": "Purview → Sentinel Integration",
+  "version": "1.0",
+  "presentationFlow": [
+    {
+      "step": 0,
+      "title": "The Defender portal unified SecOps experience",
+      "talkTrack": "Microsoft Sentinel is GA in the Defender portal and retires from the Azure portal March 31, 2027. New customers after July 1, 2025 auto-onboard. The workspace, rules, workbooks, and playbooks in this lab work identically across both portals.",
+      "showInPortal": [
+        "security.microsoft.com > Microsoft Sentinel node",
+        "Advanced hunting across Sentinel + Defender XDR tables"
+      ],
+      "duration": "3 min",
+      "automated": false
+    },
+    {
+      "step": 1,
+      "title": "Three connectors stream Purview into Sentinel",
+      "talkTrack": "Microsoft Defender XDR (kind: MicrosoftThreatProtection) brings DLP alerts via the XDR pipeline. Microsoft 365 Insider Risk Management (kind: OfficeIRM) brings IRM high-severity alerts. Office 365 (kind: Office365) brings unified audit activity. Between them, full Purview signal coverage.",
+      "showInPortal": [
+        "Sentinel > Data connectors > Microsoft Defender XDR",
+        "Sentinel > Data connectors > Microsoft 365 Insider Risk Management",
+        "Sentinel > Data connectors > Office 365"
+      ],
+      "duration": "4 min",
+      "automated": true,
+      "expertCallout": "The correct IRM connector kind is OfficeIRM — not MicrosoftPurviewInformationProtection. The latter is for the Information Protection connector (different product)."
+    },
+    {
+      "step": 2,
+      "title": "Analytics rules: signal to incident",
+      "talkTrack": "Four rules turn raw signal into investigable incidents. PVSentinel-HighSevDLP catches high-severity DLP alerts. PVSentinel-IRMHighSev catches IRM escalations. PVSentinel-LabelDowngrade catches pre-exfiltration label stripping. PVSentinel-MassDownloadAfterDLP correlates across tables.",
+      "showInPortal": [
+        "Sentinel > Analytics > PVSentinel-HighSevDLP (rule logic + entity mappings)",
+        "Sentinel > Analytics > PVSentinel-IRMHighSev",
+        "Sentinel > Analytics > PVSentinel-LabelDowngrade",
+        "Sentinel > Analytics > PVSentinel-MassDownloadAfterDLP"
+      ],
+      "duration": "4 min",
+      "automated": true,
+      "expectedAuditRecordSample": {
+        "TimeGenerated": "2026-04-18T14:30:00Z",
+        "AlertName": "Microsoft 365 DLP - SSN detected in email",
+        "AlertSeverity": "High",
+        "ProductName": "Microsoft Data Loss Prevention",
+        "CompromisedEntity": "rtorres@contoso.onmicrosoft.com",
+        "Description": "Sensitive information type 'U.S. Social Security Number (SSN)' detected in email to external recipient.",
+        "_Source": "SecurityAlert (from MicrosoftThreatProtection connector)",
+        "_RuleTriggered": "PVSentinel-HighSevDLP"
+      }
+    },
+    {
+      "step": 3,
+      "title": "IRM auto-triage playbook",
+      "talkTrack": "A Logic App triggered by Sentinel incidents appends enrichment context automatically. Managed identity (no stored creds), Microsoft Sentinel Responder role on the workspace, Logic App Contributor granted to the Sentinel first-party app. Incident fires, comment appears in under a second.",
+      "showInPortal": [
+        "Sentinel > Automation > PVSentinel-IRM-AutoTriage (Logic App designer)",
+        "Sentinel > Automation > automation rule wiring IRMHighSev → playbook",
+        "Incident comment showing enrichment output"
+      ],
+      "duration": "3 min",
+      "automated": true,
+      "playbookIdentity": "system-assigned managed identity"
+    },
+    {
+      "step": 4,
+      "title": "Purview Signals workbook",
+      "talkTrack": "DLP alert volume, IRM severity distribution, top label downgrades by user, cross-table users with both DLP and IRM signals. Executive-ready dashboard for when the question is 'how is our data leaving?'",
+      "showInPortal": [
+        "Sentinel > Workbooks > PVSentinel-Purview Signals"
+      ],
+      "duration": "2 min",
+      "automated": true
+    },
+    {
+      "step": 5,
+      "title": "Complementary stories",
+      "talkTrack": "Microsoft Purview Content Hub solution adds MS-maintained analytics rules. DSPM for AI, Shadow AI, and Copilot DLP labs all stream into the same workspace. Sentinel data lake tier handles high-volume table cost optimization. Security Copilot for Purview is the AI-on-AI layer.",
+      "showInPortal": [
+        "Sentinel > Content Hub > Microsoft Purview solution",
+        "Defender portal > Sentinel > Tables (data lake tier config)"
+      ],
+      "duration": "2 min",
+      "automated": false
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "S1",
+      "name": "DLP → Sentinel incident",
+      "description": "Send an email with SSN, watch it flow through DLP → Defender XDR → Sentinel analytics rule → incident",
+      "steps": [
+        "Run Invoke-SmokeTest.ps1 to send seed email containing SSN 123-45-6789",
+        "Wait 15-30 min for DLP + Defender XDR pipeline propagation",
+        "Open Sentinel > Incidents > filter to PVSentinel-HighSevDLP",
+        "Show incident with entity-mapped user account",
+        "Pivot to SecurityAlert table, show the raw alert that triggered it"
+      ],
+      "expectedOutcome": "Audience sees the full signal chain from M365 email to Sentinel incident",
+      "automatedArtifacts": ["DLP policy", "Defender XDR connector", "HighSevDLP analytics rule"],
+      "manualPrep": ["Defender XDR connector consent", "30-60 min propagation window"]
+    },
+    {
+      "id": "S2",
+      "name": "IRM auto-triage",
+      "description": "Trigger an IRM high-severity alert, watch the playbook auto-enrich the Sentinel incident",
+      "steps": [
+        "Generate IRM signal via Invoke-SmokeTest.ps1 or manual risky behavior on test account",
+        "IRM scores user to Elevated (or manually escalate)",
+        "Alert flows to Sentinel via OfficeIRM connector (requires SIEM export enabled)",
+        "PVSentinel-IRMHighSev rule creates incident",
+        "PVSentinel-IRM-AutoTriage playbook fires, comment appears on incident"
+      ],
+      "expectedOutcome": "Audience sees auto-triage — SOC analyst gets triage context before reading the alert",
+      "automatedArtifacts": ["IRM policy", "OfficeIRM connector", "IRMHighSev rule", "playbook", "automation rule"],
+      "manualPrep": ["Insider Risk > Settings > Export alerts = On", "60-90 min for first IRM alert to flow"]
+    },
+    {
+      "id": "S3",
+      "name": "Cross-table correlation",
+      "description": "Demonstrate the MassDownloadAfterDLP rule catching a multi-signal scenario",
+      "steps": [
+        "User A triggers a DLP match (email with SSN) — creates SecurityAlert row",
+        "Within 4 hours, User A downloads 50+ files from SharePoint — generates OfficeActivity rows",
+        "MassDownloadAfterDLP rule joins the tables, creates high-severity incident",
+        "Show the incident with both SecurityAlert and OfficeActivity entities"
+      ],
+      "expectedOutcome": "Audience sees that signals noise-on-their-own become signal-together",
+      "automatedArtifacts": ["MassDownloadAfterDLP rule"],
+      "manualPrep": ["Generate both signals from same user within the 4h window"]
+    },
+    {
+      "id": "S4",
+      "name": "Defender portal migration preview",
+      "description": "Show the same workspace in the Defender portal to preview the unified SecOps experience",
+      "steps": [
+        "Sign into security.microsoft.com",
+        "Navigate to Microsoft Sentinel node",
+        "Confirm workspace PVSentinel-ws appears",
+        "Show advanced hunting querying both Sentinel and Defender XDR tables",
+        "Show blast-radius analysis (preview) for an incident"
+      ],
+      "expectedOutcome": "Audience sees Microsoft's recommended SIEM experience",
+      "automatedArtifacts": [],
+      "manualPrep": ["Workspace must be onboarded to Defender portal — see RUNBOOK section 4"]
+    }
+  ],
+  "userExperienceTable": [
+    {
+      "scenario": "DLP match on high-severity SIT",
+      "sentinelBehavior": "SecurityAlert row appears within 15-30 min, HighSevDLP rule creates incident within the next hour"
+    },
+    {
+      "scenario": "IRM score crosses high severity",
+      "sentinelBehavior": "Alert flows via OfficeIRM within 60 min of SIEM export enabled, IRMHighSev rule creates incident, playbook enriches"
+    },
+    {
+      "scenario": "User downgrades sensitivity label",
+      "sentinelBehavior": "OfficeActivity row, LabelDowngrade rule creates medium-severity incident, entity mapped to user"
+    },
+    {
+      "scenario": "DLP + mass download same user within 4h",
+      "sentinelBehavior": "MassDownloadAfterDLP correlates across tables, creates high-severity incident with both entities"
+    },
+    {
+      "scenario": "Clean activity (no sensitive data)",
+      "sentinelBehavior": "No incident, workbook counts unchanged"
+    }
+  ]
+}

@@ -6,17 +6,24 @@ Complete these steps after running `Deploy-Lab.ps1` to prepare the full demo exp
 
 ## Pre-Flight Checks (Commercial)
 
-Before presenting, verify:
+Run the automated readiness check — it verifies policies, labels, label publishing, and Copilot licenses in one pass:
 
-1. `CopilotLocation` (or equivalent) is available to DLP policy cmdlets:
+```powershell
+./scripts/Test-CopilotDlpReady.ps1 -LabProfile copilot-protection -Cloud commercial
+```
+
+The script reports a `READY / WAIT / BLOCKED` verdict per check and prints an ETA when policies are still inside the 4-hour propagation window. Green across the board = safe to present.
+
+Manual spot-checks (only if the script flags something):
+
+1. Policy location is correctly set to Microsoft 365 Copilot and Copilot Chat:
    ```powershell
-   (Get-Command New-DlpCompliancePolicy).Parameters.Keys | Where-Object { $_ -like '*Copilot*' }
+   Get-DlpCompliancePolicy -Identity 'PVCopilotDLP-Copilot Prompt SIT Block' | Select-Object Name, Mode, EnforcementPlanes, Locations
    ```
-2. Sensitivity labels are published to demo users:
+2. Sensitivity labels exist:
    ```powershell
    Get-Label | Where-Object { $_.DisplayName -like 'PVCopilotDLP*' }
    ```
-3. If you plan to run the web-search segment, confirm your intended web-search state in Cloud Policy (**Allow web search in Copilot**) before the demo.
 
 > DLP policy changes can take up to 4 hours to fully appear in Copilot and Copilot Chat experiences.
 
@@ -41,9 +48,9 @@ The baseline creates the before/after contrast. Show Copilot working without gua
 
 ---
 
-## Phase 1 — Verify DLP Prompt Blocking (Automated)
+## Phase 1 — Verify DLP Prompt Blocking (Automated, Public Preview)
 
-After policy propagation, verify the "Copilot Prompt SIT Block" policy is active.
+After policy propagation, verify the "Copilot Prompt SIT Block" policy is active. This control is in **public preview** per Microsoft Learn — rollout reaches tenants on a schedule, so confirm availability before the demo.
 
 ### Verification Steps
 
@@ -54,7 +61,7 @@ After policy propagation, verify the "Copilot Prompt SIT Block" policy is active
 5. Repeat with a credit card number: `"What charges were made on card 4532-8721-0034-6619?"`
 6. Repeat with medical terms: `"Summarize the treatment plan for diabetes mellitus"`
 
-> Prompt SIT blocking evaluates text typed directly in prompts. Uploaded file contents in prompts are not DLP-scanned.
+> Prompt SIT blocking evaluates text typed directly in prompts. Uploaded file contents in prompts are not DLP-scanned. The same policy also prevents the sensitive prompt text from being used for internal or external web searches — no separate web-search policy is required.
 
 ### Expected Behavior
 
@@ -71,12 +78,15 @@ After policy propagation, verify the "Copilot Prompt SIT Block" policy is active
 
 ### Pre-Demo File Labeling
 
-The auto-label policy catches SSN content automatically. For the demo, also manually label test files:
+Documents are uploaded to the owner's OneDrive and labeled automatically during deployment via the Microsoft Graph `assignSensitivityLabel` API. The SSN auto-label policy also catches sensitive content.
 
-1. Navigate to **SharePoint > Lab document library**
-2. Apply label **Highly Confidential > Restricted** to `Q4-Revenue-Forecast.txt`
-3. Apply label **Highly Confidential > Regulated Data** to `Employee-Benefits-Summary.txt` (may auto-label via SSN detection)
-4. Leave `Patient-Intake-Notes.txt` unlabeled initially (for before/after contrast)
+| File | Owner | Label applied at deploy |
+|---|---|---|
+| `Q4-Revenue-Forecast.txt` | rtorres | Highly Confidential > Restricted |
+| `Employee-Benefits-Summary.txt` | rtorres | Highly Confidential > Regulated Data (redundant with auto-label) |
+| `Patient-Intake-Notes.txt` | mchen | Unlabeled (for before/after contrast) |
+
+If the Graph call fails (e.g., tenant hasn't enabled sensitivity labels for Office files in SharePoint/OneDrive, or the signed-in principal lacks `Files.ReadWrite.All`), the deployer logs a warning and you can apply the labels manually in the OneDrive web UI.
 
 ### Verification Steps
 
@@ -103,36 +113,7 @@ The auto-label policy catches SSN content automatically. For the demo, also manu
 
 ---
 
-## Phase 3 — Web Search Prevention (Private Preview)
-
-This capability prevents Copilot from using sensitive data for external web search queries. It is currently in **Private Preview**.
-
-> Web search behavior is controlled by tenant policy. Confirm your **Allow web search in Copilot** setting before the demo flow.
-
-### If Preview-Enrolled
-
-1. Navigate to **Microsoft Purview > DLP > Policies**
-2. Create a new policy manually:
-   - Location: **Microsoft 365 Copilot (web search)**
-   - Condition: Content contains sensitive info types (SSN, Credit Card)
-   - Action: Block
-3. Test by asking Copilot a question that would trigger web search with sensitive context
-4. Copilot should be prevented from sending sensitive data to web search
-
-### If Not Preview-Enrolled
-
-Walk through the policy logic on screen (portal UI) and explain:
-
-> "Even if Copilot could answer the question by searching the web, Purview decides it shouldn't — because the prompt contains sensitive data that would leave the compliance boundary."
-
-### References
-
-- [Learn about using Microsoft Purview DLP to protect interactions with Microsoft 365 Copilot and Copilot Chat](https://learn.microsoft.com/purview/dlp-microsoft365-copilot-location-learn-about)
-- [Data, privacy, and security for web search in Microsoft 365 Copilot and Copilot Chat](https://learn.microsoft.com/microsoft-365/copilot/manage-public-web-access#web-search)
-
----
-
-## Phase 4 — Evidence & Investigations (Automated)
+## Phase 3 — Evidence & Investigations (Automated)
 
 ### Audit Trail
 
@@ -161,14 +142,33 @@ Walk through the policy logic on screen (portal UI) and explain:
 
 ## Pre-Demo Checklist
 
-- [ ] DLP policies propagated (allow up to 4 hours after deploy)
+- [ ] `Test-CopilotDlpReady.ps1` returns a READY verdict (green across the board)
+- [ ] DLP policies propagated (up to 4 hours after deploy; re-check after any mode switch)
 - [ ] Sensitivity labels published to demo users
-- [ ] Copilot licenses assigned to test users (mtorres, jkim)
-- [ ] Test documents uploaded to SharePoint
-- [ ] At least one document manually labeled Highly Confidential > Restricted
-- [ ] Auto-label policy has applied to SSN-containing documents
+- [ ] Microsoft 365 Copilot licenses assigned to demo users (rtorres, mchen)
+- [ ] Test documents uploaded to OneDrive and auto-labeled (check deploy log for `assignSensitivityLabel` successes)
+- [ ] Auto-label policy has applied to any SSN-containing documents that missed Graph labeling
 - [ ] Baseline demo completed (Phase 0) before policy enforcement
 - [ ] Audit logging enabled and searches returning results
+
+---
+
+## Optional: Activate DSPM for AI
+
+Data Security Posture Management for AI (DSPM for AI) layers on top of this lab and is the Microsoft-recommended "front door" for AI data security. It's optional for the demo, but strong natural follow-up.
+
+1. Sign into **[Microsoft Purview portal](https://purview.microsoft.com/)** as a user in the **Compliance Administrator** role (or equivalent).
+2. Go to **Solutions > DSPM for AI**.
+3. From **Overview**, review the **Get started** section and complete the prerequisites that aren't already green (audit is auto-on for new tenants; browser extension and device onboarding are required for third-party AI site visibility).
+4. Under **Recommendations**, activate the one-click policies that match your demo story:
+   - **Protect your data with sensitivity labels** — creates a default label taxonomy if you don't already have one.
+   - **Extend your insights for data discovery** — turns on the third-party AI site collection policies (Gemini, ChatGPT, etc.).
+   - **Detect risky AI usage** — creates Insider Risk policies focused on AI activity.
+5. After 24 hours, return to DSPM for AI > **Reports** to see **Sensitive interactions per generative AI app**, AI activity volume, and the default weekly data risk assessment for the top 100 SharePoint sites.
+
+> **Demo framing:** "This lab shows the enforcement surface — DLP stopping Copilot in the moment. DSPM for AI shows the posture surface — where oversharing still lives, which users take the most AI risk, and which SharePoint sites need labeling before Copilot touches them. Enforcement + posture is the complete story."
+
+> **GCC note:** DSPM for AI is available on commercial today. GCC availability is rolling out — validate in your tenant before referencing in a government demo.
 
 ---
 
@@ -182,3 +182,5 @@ DLP policies deploy in simulation mode by default. To enable enforcement for liv
 4. Allow up to 4 hours for full propagation
 
 Or redeploy without simulation mode by setting `"simulationMode": false` in the config.
+
+> **Caution:** Switching a policy from simulation to enforced restarts the 4-hour propagation window. Rerun `./scripts/Test-CopilotDlpReady.ps1` and wait for a READY verdict before presenting.

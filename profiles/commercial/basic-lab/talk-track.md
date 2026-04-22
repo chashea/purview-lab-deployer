@@ -1,0 +1,213 @@
+# Basic Purview Lab — Customer Talk Track
+
+## Overview
+
+**Duration:** 20–30 minutes (expandable to 60 with hands-on)
+**Audience:** CISO, Compliance leadership, IT decision-makers new to Microsoft Purview
+**Goal:** Show the core Purview compliance stack end-to-end — labels, DLP, retention, eDiscovery, communication compliance, insider risk — on a realistic data set. No AI-specific scenarios; this is the foundation everything else builds on.
+
+**Exec tagline:** "This is what Purview looks like when it's doing its job — classifying, protecting, retaining, and investigating your data, with a single policy surface and a single audit trail."
+
+---
+
+## Opening (2 min)
+
+> "Every compliance conversation eventually lands on the same five questions:
+> 1. Do we know what data we have?
+> 2. Is it labeled and protected?
+> 3. Can we stop it from leaving?
+> 4. Can we keep what we need to keep, and delete what we need to delete?
+> 5. If something goes wrong, can we find out who did what, and build a case?
+>
+> That's the whole Purview story. This lab deploys a working version of each piece on the same tenant — one config, one command, removable. Let's walk through it."
+
+---
+
+## The demo personas (1 min)
+
+**Show:** Purview → Settings → Role groups (or Entra → Users filtered to `PVLab-`)
+
+| User | Role | Why they matter |
+|---|---|---|
+| rtorres | Chief Compliance Officer | The admin driving the lab |
+| mchen | Finance Analyst | Generates financial records (retention + DLP) |
+| nbrooks | General Counsel | Legal privilege content (labels + eDiscovery) |
+| dokafor | IT Manager | Target of insider-risk monitoring |
+| sreeves | HR Director | Handles case data (SSN + medical) |
+| jblake, msullivan, pnair | Sales / Marketing / Eng | Everyday-user volume |
+
+**Groups:** `PVLab-Executives`, `PVLab-Finance-Team`, `PVLab-Legal-Team` — the basic scoping model every Purview workload inherits.
+
+> "Eight users, three groups. Enough variety to show group-based scoping without getting lost in a huge directory."
+
+---
+
+## Act 1: Sensitivity Labels — "Classify once, protect everywhere" (5 min)
+
+**Portal:** Purview → Information Protection → Labels
+
+**Show the taxonomy:**
+
+| Parent | Sublabels | Use case |
+|---|---|---|
+| Confidential | Internal, Recipients-Only, Anyone-No-Forwarding, Financial-Data, Legal-Privileged | Everyday sensitive business content |
+| Highly Confidential | Internal, Recipients-Only, Anyone-No-Forwarding, Board-Only, Regulated-Data | Restricted content (PII, financials, IP) |
+
+> "Two parent labels, ten sublabels. Flat enough that users don't freeze at the dropdown, rich enough to express real protection tiers. Each sublabel carries its own encryption, watermarking, and access rules — the user picks the label, the platform does the enforcement."
+
+**Show the two auto-label policies:**
+- SSN auto-apply → `Highly Confidential - Regulated-Data`
+- Credit card auto-apply → `Highly Confidential - Regulated-Data`
+
+> "Users don't need to remember to label. When they save a document that contains an SSN or credit card, Purview applies the label automatically. That label then drives everything downstream — DLP rules, retention, Copilot access, Sentinel signals."
+
+---
+
+## Act 2: DLP — "Four policies covering the regulated-data footprint" (5 min)
+
+**Portal:** Purview → Data Loss Prevention → Policies
+
+**Show the 4 policies:**
+
+| Policy | Locations | What it catches |
+|---|---|---|
+| US PII Protection | Exchange, SharePoint, OneDrive, Teams | Messages or files with ≥5 SSNs |
+| Financial Data Protection | Exchange, SharePoint, OneDrive | Any document with a credit card number |
+| HR Case Data Protection | Exchange, SharePoint | Any message/file with an SSN |
+| Workplace Health Record Protection | Exchange, SharePoint | SSN + medical keyword proximity |
+
+> "Four policies, different thresholds for different business units. HR gets a threshold of 1 — every case matters. Sales gets a threshold of 5 — catch the bulk leak, not the one-off. Same SIT (Social Security Number), scoped differently to the workloads and groups where each business unit works."
+
+**Show what a DLP hit looks like:**
+- Policy tip in Outlook ("This message contains sensitive info and can't be sent to external recipients")
+- Policy tip in Word/Excel when opening a file
+- Alert in Purview → DLP → Alerts
+
+> "The user sees the policy tip before they hit send. The compliance team sees the alert after. Same event, two audiences."
+
+---
+
+## Act 3: Retention — "Keep what you need, delete what you don't" (3 min)
+
+**Portal:** Purview → Data Lifecycle Management → Retention Policies
+
+**Show the 2 policies:**
+
+| Policy | Duration | Scope |
+|---|---|---|
+| Financial Records Retention | 7 years | Finance-Team content in Exchange + SharePoint |
+| Legal Hold | 1 year | Legal-Team + flagged content |
+
+> "Two time horizons for two regulatory regimes. Finance content lives 7 years because SOX says so. Legal-team holds are 1 year. Deleted users' content is preserved automatically — no admin intervention. Both policies are automatic — no user decisions, no forgotten retention tags."
+
+---
+
+## Act 4: eDiscovery — "From alert to legal production" (4 min)
+
+**Portal:** Purview → eDiscovery → Cases → `PVLab-Data-Breach-Investigation`
+
+**Show the case structure:**
+- **Custodians:** rtorres, mchen, nbrooks (pre-attached — the people under investigation)
+- **Hold:** all their mailboxes + OneDrive sites frozen
+- **Search:** pre-built query for sensitive terms
+
+> "A real case takes hours to set up. The config deploys the whole thing — custodians, hold, search — in one call. Your legal team can clone this structure the next time HR flags a departure or an incident fires."
+
+**Show:** Review set → filtered results → export as PST or CSV
+
+> "One workflow from 'we think something happened' to 'here's the legal production'. No bouncing between mailbox tools, SharePoint admin, and manual exports."
+
+---
+
+## Act 5: Communication Compliance — "Policy for what people say" (3 min)
+
+**Portal:** Purview → Communication Compliance → Policies → `PVLab-Offensive Language Monitoring`
+
+> "DLP is about what's in the content. Communication Compliance is about the conduct — harassment language, code of conduct violations, regulated conversations in Teams or email. This lab deploys one baseline policy; production tenants add more for regulated-speech categories like FINRA or HIPAA."
+
+**Show:**
+- Pending review queue (alerts from the deployed test data)
+- Reviewer workflow: flag → resolve → document
+
+---
+
+## Act 6: Insider Risk — "Behavior over time, not a single event" (4 min)
+
+**Portal:** Purview → Insider Risk Management → Policies → `PVLab-Departing User Data Theft`
+
+> "DLP catches an event. Insider Risk catches a pattern. This policy uses the *Data theft by departing users* template — when someone's about to leave, we watch for unusual download, share, and copy activity in the 30 days around their HR departure date."
+
+**Wizard-step defaults to call out** (matches how most customers configure in the portal):
+- **Users and groups:** All users and groups in your organization — no priority-user scoping. Keeps the demo simple and matches the portal default.
+- **Content to prioritize:** one randomly-selected sensitivity label + one SIT + one trainable classifier (skip SharePoint sites — content-specific and brittle across tenants).
+- **Detection options:** every indicator and triggering event the template exposes is selected — maximizes the signal surface for the demo.
+
+> "The policy enriches with HR departure signals from your identity system. When someone's 30 days out and their copy-to-personal-email count jumps 5x, the user's IRM score escalates and appears on the investigator queue."
+
+---
+
+## The integration moment (1 min)
+
+> "You've seen six workloads. Here's the thing to take away — they're not six products. They're six views of the same underlying classification + audit stream.
+>
+> - A document gets **auto-labeled** as Regulated-Data.
+> - That label triggers **DLP** when someone tries to send it externally.
+> - **Retention** keeps it 7 years.
+> - When a case opens, **eDiscovery** freezes the mailbox.
+> - If the conversation around it turns hostile, **Communication Compliance** flags it.
+> - If the user starts downloading lots of labeled content, **Insider Risk** escalates their score.
+>
+> One label drove six enforcement paths. That's the point."
+
+---
+
+## Natural Follow-Ups
+
+1. **Copilot DLP Guardrails** (separate lab profile) — extend this foundation to block Copilot from processing sensitive prompts and labeled content.
+2. **Shadow AI Prevention** (separate lab profile) — extend DLP to endpoint + network to catch paste/upload to ChatGPT, Claude, Gemini.
+3. **Sentinel Integration** (separate lab profile) — stream DLP and IRM signals into Sentinel for SOC correlation.
+4. **AI Security** (integrated lab profile) — the whole AI story (Copilot + Shadow AI + Sentinel) under one prefix.
+5. **DSPM** — oversharing discovery and remediation across your SharePoint and OneDrive footprint.
+
+---
+
+## Objection Handling
+
+**Q: "We have a GCC/GCC-High tenant — does this still work?"**
+> "Commercial is the default. GCC has its own config variant with the same workloads minus a couple of feature-parity gaps. GCC-High isn't supported by this lab today."
+
+**Q: "How do we scope this to one department first, then expand?"**
+> "Every workload supports group-based scoping. The config already uses `PVLab-Finance-Team` and `PVLab-Legal-Team` as example scopes. Replace the group names with yours, run a single department first, measure, expand."
+
+**Q: "We already have some of these policies deployed. Will this overwrite?"**
+> "No. Every resource is prefixed `PVLab-` and is idempotent — running the deploy twice is a no-op on existing resources, and `Remove-Lab.ps1` only removes what this lab created. Your existing policies are untouched."
+
+**Q: "How long does a fresh deploy take?"**
+> "5–10 minutes end-to-end on a clean tenant, most of it waiting on the Exchange Online + Graph sessions. Test data (6 sample emails) runs at the end."
+
+**Q: "Can I deploy without creating test users?"**
+> "Yes — `-SkipTestUsers` flag. The rest of the lab deploys against your existing identities. Group-based scoping still works because the deploy creates the groups (`PVLab-Executives`, etc.) and you can populate them however you want."
+
+---
+
+## Demo Environment Quick Reference
+
+| Component | Count | Examples |
+|---|---|---|
+| Test users | 8 | rtorres (CCO), mchen (Finance), nbrooks (Legal), dokafor (IT), sreeves (HR), jblake/msullivan/pnair |
+| Groups | 3 | PVLab-Executives, PVLab-Finance-Team, PVLab-Legal-Team |
+| Sensitivity labels | 2 parents + 10 sublabels | Confidential (5), Highly Confidential (5) |
+| Auto-label policies | 2 | SSN, Credit Card → Highly Confidential - Regulated-Data |
+| DLP policies | 4 | US PII, Financial, HR Case, Workplace Health |
+| Retention policies | 2 | Financial (7y), Legal Hold (1y) |
+| eDiscovery case | 1 | Data-Breach-Investigation (custodians + hold + search) |
+| Communication Compliance | 1 | Offensive Language Monitoring |
+| Insider Risk policy | 1 | Departing User Data Theft |
+| Test emails | 6 | PII, financial, sensitive content |
+
+**Deploy / teardown:**
+
+```powershell
+./Deploy-Lab.ps1 -Cloud commercial -LabProfile basic-lab -TenantId <tenant-guid>
+./Remove-Lab.ps1 -Cloud commercial -LabProfile basic-lab -Confirm:$false -TenantId <tenant-guid>
+```

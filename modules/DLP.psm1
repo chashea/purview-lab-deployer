@@ -11,15 +11,14 @@ $script:LocationParamCandidates = @{
     'OneDrive'            = @('OneDriveLocation')
     'Teams'               = @('TeamsLocation')
     'Devices'             = @('EndpointDlpLocation', 'DevicesLocation', 'DeviceLocation')
-    'Copilot'             = @('CopilotLocation', 'M365CopilotLocation', 'ThirdPartyAppDlpLocation')
-    'CopilotExperiences'  = @('CopilotLocation', 'M365CopilotLocation')
+    'Copilot'             = @('ThirdPartyAppDlpLocation')
     'Browser'             = @('ThirdPartyAppDlpLocation', 'BrowserDlpLocation', 'BrowserLocation')
     'Network'             = @('NetworkDlpLocation', 'NetworkLocation')
-    'EnterpriseAI'        = @('CopilotLocation', 'M365CopilotLocation')
 }
 
-# Fixed GUID for "Microsoft 365 Copilot and Copilot Chat" in the -Locations JSON payload.
-# Used as fallback when no dedicated CopilotLocation parameter exists on the cmdlet.
+# Microsoft 365 Copilot and Copilot Chat location GUID — used in the -Locations
+# JSON payload per New-DlpCompliancePolicy Example 4 on MS Learn. CopilotExperiences
+# always uses this JSON + -EnforcementPlanes pattern; there is no dedicated parameter.
 $script:CopilotLocationGuid = '470f2276-e011-4e9d-a6ec-20768be3a4b0'
 
 function Get-LabSupportedParameterName {
@@ -80,15 +79,19 @@ function Get-LabDlpLocationParameters {
     )
 
     $locationParams = @{}
-    $unresolvedCopilotExperiences = $false
+    $useCopilotJsonLocation = $false
 
     foreach ($location in @($Locations | Sort-Object -Unique)) {
+        # CopilotExperiences always uses -Locations JSON + -EnforcementPlanes per
+        # MS Learn (New-DlpCompliancePolicy Example 4). There is no dedicated
+        # CopilotLocation parameter — the JSON payload is the canonical GA path.
+        if ($location -eq 'CopilotExperiences') {
+            $useCopilotJsonLocation = $true
+            continue
+        }
+
         $baseParam = Get-LabDlpLocationParameter -Location $location -CommandInfo $CommandInfo
         if (-not $baseParam) {
-            if ($location -eq 'CopilotExperiences') {
-                $unresolvedCopilotExperiences = $true
-                continue
-            }
             Write-LabLog -Message "DLP location '$location' is not supported by cmdlet '$($CommandInfo.Name)' in this environment for policy '$PolicyName'. Skipping this location." -Level Warning
             continue
         }
@@ -110,17 +113,16 @@ function Get-LabDlpLocationParameters {
         $locationParams[$targetParam] = 'All'
     }
 
-    # CopilotExperiences fallback: when no dedicated CopilotLocation parameter
-    # exists, use the -Locations JSON payload + -EnforcementPlanes approach
-    # documented in New-DlpCompliancePolicy Example 4 on Microsoft Learn.
-    if ($unresolvedCopilotExperiences) {
+    # Microsoft 365 Copilot and Copilot Chat location: always use the -Locations
+    # JSON payload + -EnforcementPlanes per MS Learn GA guidance.
+    if ($useCopilotJsonLocation) {
         if ($CommandInfo.Parameters.ContainsKey('Locations')) {
             $copilotPayload = '[{"Workload":"Applications","Location":"' + $script:CopilotLocationGuid + '","Inclusions":[{"Type":"Tenant","Identity":"All"}]}]'
             $locationParams['Locations'] = $copilotPayload
-            Write-LabLog -Message "Copilot location resolved via -Locations JSON payload for policy '$PolicyName' (Microsoft 365 Copilot and Copilot Chat)." -Level Info
+            Write-LabLog -Message "Copilot location set via -Locations JSON for policy '$PolicyName' (Microsoft 365 Copilot and Copilot Chat)." -Level Info
         }
         else {
-            Write-LabLog -Message "DLP location 'CopilotExperiences' could not be resolved for policy '$PolicyName'. Neither a dedicated CopilotLocation parameter nor the generic -Locations parameter is available on '$($CommandInfo.Name)'." -Level Warning
+            Write-LabLog -Message "DLP location 'CopilotExperiences' requires the -Locations parameter on '$($CommandInfo.Name)' but it is not available. Policy '$PolicyName' may deploy without Copilot scope." -Level Warning
         }
         if ($CommandInfo.Parameters.ContainsKey('EnforcementPlanes')) {
             $locationParams['EnforcementPlanes'] = @('CopilotExperiences')
@@ -128,6 +130,45 @@ function Get-LabDlpLocationParameters {
     }
 
     return $locationParams
+}
+
+function ConvertTo-LabCopilotLabelAdvancedRule {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter(Mandatory)]
+        [string[]]$LabelGuids
+    )
+
+    $labelEntries = @()
+    foreach ($guid in $LabelGuids) {
+        $labelEntries += @{ name = $guid; type = 'Sensitivity' }
+    }
+
+    $advancedRule = [ordered]@{
+        Version   = '1.0'
+        Condition = [ordered]@{
+            Operator      = 'And'
+            SubConditions = @(
+                [ordered]@{
+                    ConditionName = 'ContentContainsSensitiveInformation'
+                    Value         = @(
+                        [ordered]@{
+                            groups = @(
+                                [ordered]@{
+                                    Operator = 'Or'
+                                    labels   = $labelEntries
+                                    name     = 'Default'
+                                }
+                            )
+                        }
+                    )
+                }
+            )
+        }
+    }
+
+    return ($advancedRule | ConvertTo-Json -Depth 100 -Compress)
 }
 
 function Get-LabPolicyScopeParameters {
@@ -200,6 +241,8 @@ function Get-LabDlpRuleOptionalParameters {
 
     $optionalParams = @{}
 
+    $isCopilotPolicy = ($Policy.PSObject.Properties.Name -contains 'locations') -and (@($Policy.locations) -contains 'CopilotExperiences')
+
     $labelSet = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
     foreach ($labelValue in @($Policy.labels) + @($Rule.labels)) {
         if (-not [string]::IsNullOrWhiteSpace([string]$labelValue)) {
@@ -209,12 +252,40 @@ function Get-LabDlpRuleOptionalParameters {
 
     $labels = [string[]]@($labelSet | Sort-Object -Unique)
     if ($labels.Count -gt 0) {
-        $labelParameter = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('SensitivityLabels', 'SensitivityLabel', 'Labels')
-        if ($labelParameter) {
-            $optionalParams[$labelParameter] = $labels
+        if ($isCopilotPolicy) {
+            # Copilot label-based rules require -AdvancedRule with label GUIDs
+            # per MS Learn New-DlpComplianceRule Example 4. -SensitivityLabels
+            # is not honored on the Microsoft 365 Copilot and Copilot Chat location.
+            $resolvedGuids = @()
+            foreach ($label in $labels) {
+                $guid = Resolve-LabSensitivityLabelGuid -LabelName $label
+                if ($guid) {
+                    $resolvedGuids += $guid
+                }
+                else {
+                    Write-LabLog -Message "Could not resolve sensitivity label '$label' to a GUID for Copilot rule '$RuleName'. Label must exist before DLP rule creation." -Level Warning
+                }
+            }
+
+            if ($resolvedGuids.Count -gt 0) {
+                $advancedParam = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('AdvancedRule')
+                if ($advancedParam) {
+                    $optionalParams[$advancedParam] = ConvertTo-LabCopilotLabelAdvancedRule -LabelGuids $resolvedGuids
+                    Write-LabLog -Message "Copilot rule '$RuleName' scoped to $($resolvedGuids.Count) sensitivity label(s) via -AdvancedRule." -Level Info
+                }
+                else {
+                    Write-LabLog -Message "Rule '$RuleName' needs -AdvancedRule for Copilot label scoping, but '$($CommandInfo.Name)' does not support that parameter. Label condition will not be applied." -Level Warning
+                }
+            }
         }
         else {
-            Write-LabLog -Message "Rule '$RuleName' includes label conditions, but '$($CommandInfo.Name)' has no supported label parameter." -Level Warning
+            $labelParameter = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('SensitivityLabels', 'SensitivityLabel', 'Labels')
+            if ($labelParameter) {
+                $optionalParams[$labelParameter] = $labels
+            }
+            else {
+                Write-LabLog -Message "Rule '$RuleName' includes label conditions, but '$($CommandInfo.Name)' has no supported label parameter." -Level Warning
+            }
         }
     }
 
@@ -231,38 +302,72 @@ function Get-LabDlpRuleOptionalParameters {
     }
 
     if ($enforcementAction) {
-        $actionSwitchParameter = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('BlockAccess')
-        if ($actionSwitchParameter) {
-            switch ($enforcementAction) {
-                'block' {
-                    $optionalParams[$actionSwitchParameter] = $true
-                }
-                'auditOnly' {
-                    $optionalParams[$actionSwitchParameter] = $false
-                }
-                'allowWithJustification' {
-                    $optionalParams[$actionSwitchParameter] = $false
+        # Copilot (M365Copilot) location: the engine only accepts the RestrictAccess
+        # action for activity 'ExcludeContentProcessing'. BlockAccess / Mode /
+        # EnforcementMode / NotifyUser / GenerateAlert / GenerateIncidentReport are all
+        # rejected with ErrorExcludeContentProcessingInRestrictAccessActionSupportException.
+        # Skip the entire BlockAccess/Mode block for Copilot — RestrictAccess set further below.
+        if (-not $isCopilotPolicy) {
+            $actionSwitchParameter = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('BlockAccess')
+            if ($actionSwitchParameter) {
+                switch ($enforcementAction) {
+                    'block' {
+                        $optionalParams[$actionSwitchParameter] = $true
+                    }
+                    'auditOnly' {
+                        $optionalParams[$actionSwitchParameter] = $false
+                    }
+                    'allowWithJustification' {
+                        $optionalParams[$actionSwitchParameter] = $false
+                    }
                 }
             }
-        }
-        else {
-            $modeParameter = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('Mode', 'EnforcementMode', 'Action')
-            if ($modeParameter) {
-                $optionalParams[$modeParameter] = switch ($enforcementAction) {
-                    'block' { 'Enforce' }
-                    'auditOnly' { 'Audit' }
-                    'allowWithJustification' { 'Audit' }
-                    default { $null }
+            else {
+                $modeParameter = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('Mode', 'EnforcementMode', 'Action')
+                if ($modeParameter) {
+                    $optionalParams[$modeParameter] = switch ($enforcementAction) {
+                        'block' { 'Enforce' }
+                        'auditOnly' { 'Audit' }
+                        'allowWithJustification' { 'Audit' }
+                        default { $null }
+                    }
                 }
             }
         }
 
-        # CopilotExperiences block: add -RestrictAccess ExcludeContentProcessing per MS Learn guidance
-        $isCopilotPolicy = ($Policy.PSObject.Properties.Name -contains 'locations') -and (@($Policy.locations) -contains 'CopilotExperiences')
+        # CopilotExperiences block: the Microsoft 365 Copilot and Copilot Chat
+        # location requires -RestrictAccess (or -RestrictWebGrounding) on every
+        # block rule per MS Learn. The required *value* differs by rule type:
+        #   - Label-based rule (AdvancedRule + label GUIDs): ExcludeContentProcessing / Block
+        #     works per New-DlpCompliancePolicy Example 4.
+        #   - SIT-based rule (ContentContainsSensitiveInformation on prompts):
+        #     Microsoft's UX names this "Processing prompts"; the ARM setting
+        #     corresponds to a different value. The policy engine returns
+        #     ErrorMissingRestrictActionForCopilotException if the wrong value
+        #     is supplied — treat SIT+Copilot as an edge case and let the
+        #     operator configure in the portal if the default value is rejected.
         if ($enforcementAction -eq 'block' -and $isCopilotPolicy) {
             $restrictParam = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('RestrictAccess')
             if ($restrictParam) {
-                $optionalParams[$restrictParam] = @(@{ setting = 'ExcludeContentProcessing'; value = 'Block' })
+                $hasLabels = $labelSet.Count -gt 0
+                $hasSits = (
+                    ($Rule.PSObject.Properties['sensitiveInfoTypes']) -and
+                    @($Rule.sensitiveInfoTypes | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) }).Count -gt 0
+                )
+
+                if ($hasLabels) {
+                    # Label-based Copilot rule: block content processing
+                    $optionalParams[$restrictParam] = @(@{ setting = 'ExcludeContentProcessing'; value = 'Block' })
+                }
+                elseif ($hasSits) {
+                    # SIT-based Copilot prompt rule: block prompt processing.
+                    # Portal UX: "Restrict Copilot from processing content > Processing prompts".
+                    $optionalParams[$restrictParam] = @(@{ setting = 'ExcludeContentProcessing'; value = 'PromptProcessing' })
+                }
+                else {
+                    # Fall back to Block for other Copilot rule shapes
+                    $optionalParams[$restrictParam] = @(@{ setting = 'ExcludeContentProcessing'; value = 'Block' })
+                }
             }
         }
 
@@ -300,10 +405,44 @@ function Get-LabDlpRuleOptionalParameters {
         $notificationMessage = $defaultPolicyTip
     }
 
+    # Resolve a notification recipient for parameters that demand a real SMTP.
+    # Copilot rules do not have a Site/Owner/LastModifier concept — the engine rejects
+    # those tokens with "should be vaild SMTP address" — so always use a real UPN
+    # for Copilot. Non-Copilot rules accept the Owner/LastModifier/SiteAdmin tokens.
+    $notificationRecipients = @()
+    if (($enforcement.PSObject.Properties.Name -contains 'notificationRecipients') -and @($enforcement.notificationRecipients).Count -gt 0) {
+        $notificationRecipients = @($enforcement.notificationRecipients | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
+    }
+    elseif ($isCopilotPolicy) {
+        $ctx = Get-MgContext -ErrorAction SilentlyContinue
+        if ($ctx -and -not [string]::IsNullOrWhiteSpace([string]$ctx.Account)) {
+            $notificationRecipients = @([string]$ctx.Account)
+        }
+    }
+    if (-not $isCopilotPolicy -and $notificationRecipients.Count -eq 0) {
+        $notificationRecipients = @('SiteAdmin', 'LastModifier')
+    }
+
+    # Copilot rules: skip notification, policy tip, alert, and incident report params.
+    # M365Copilot location only honors the RestrictAccess action; any of these decoration
+    # params get rejected by the engine. Skip the entire block early for Copilot.
+    if ($isCopilotPolicy) {
+        return $optionalParams
+    }
+
     if ($notificationEnabled) {
         $notifyParam = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('NotifyUser', 'UserNotificationEnabled')
         if ($notifyParam) {
-            $optionalParams[$notifyParam] = $true
+            # NotifyUser takes a string[] of recipients (Owner|LastModifier|SiteAdmin|<smtp>)
+            # per MS Learn New-DlpComplianceRule. UserNotificationEnabled is a boolean.
+            if ($notifyParam -eq 'NotifyUser') {
+                if ($notificationRecipients.Count -gt 0) {
+                    $optionalParams[$notifyParam] = $notificationRecipients
+                }
+            }
+            else {
+                $optionalParams[$notifyParam] = $true
+            }
         }
         $messageParam = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('NotifyUserMessage', 'UserNotificationText')
         if ($messageParam) {
@@ -328,7 +467,15 @@ function Get-LabDlpRuleOptionalParameters {
         if (($alert.PSObject.Properties.Name -contains 'enabled') -and [bool]$alert.enabled) {
             $alertEnabledParam = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('GenerateAlert', 'AlertEnabled')
             if ($alertEnabledParam) {
-                $optionalParams[$alertEnabledParam] = $true
+                # GenerateAlert takes a string[] of recipients; AlertEnabled is the boolean variant
+                if ($alertEnabledParam -eq 'GenerateAlert') {
+                    if ($notificationRecipients.Count -gt 0) {
+                        $optionalParams[$alertEnabledParam] = $notificationRecipients
+                    }
+                }
+                else {
+                    $optionalParams[$alertEnabledParam] = $true
+                }
             }
             $severity = if (($alert.PSObject.Properties.Name -contains 'severity') -and -not [string]::IsNullOrWhiteSpace([string]$alert.severity)) {
                 (([string]$alert.severity).Trim().Substring(0, 1).ToUpperInvariant() + ([string]$alert.severity).Trim().Substring(1).ToLowerInvariant())
@@ -350,7 +497,15 @@ function Get-LabDlpRuleOptionalParameters {
         if (($incident.PSObject.Properties.Name -contains 'enabled') -and [bool]$incident.enabled) {
             $incidentEnabledParam = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('IncidentReportEnabled', 'GenerateIncidentReport')
             if ($incidentEnabledParam) {
-                $optionalParams[$incidentEnabledParam] = $true
+                # GenerateIncidentReport takes a string[] of recipients; IncidentReportEnabled is the boolean variant
+                if ($incidentEnabledParam -eq 'GenerateIncidentReport') {
+                    if ($notificationRecipients.Count -gt 0) {
+                        $optionalParams[$incidentEnabledParam] = $notificationRecipients
+                    }
+                }
+                else {
+                    $optionalParams[$incidentEnabledParam] = $true
+                }
             }
             $incidentSeverity = if (($incident.PSObject.Properties.Name -contains 'severity') -and -not [string]::IsNullOrWhiteSpace([string]$incident.severity)) {
                 (([string]$incident.severity).Trim().Substring(0, 1).ToUpperInvariant() + ([string]$incident.severity).Trim().Substring(1).ToLowerInvariant())
@@ -552,8 +707,17 @@ function Deploy-DLP {
                 $null = $_ # Rule does not exist
             }
 
+            $isCopilotRule = ($policy.PSObject.Properties.Name -contains 'locations') -and (@($policy.locations) -contains 'CopilotExperiences')
+
             if ($existingRule) {
                 Write-LabLog -Message "DLP rule already exists: $ruleName" -Level Info
+                # Copilot (M365Copilot) rules: cannot Set-update — engine rejects param combinations
+                # post-create with ErrorExcludeContentProcessingInRestrictAccessActionSupportException.
+                # Skip the Set update entirely; rule should be correct from initial create.
+                if ($isCopilotRule) {
+                    $createdRules.Add($ruleName)
+                    continue
+                }
                 $ruleUpdateParams = if ($setRuleCommand) {
                     Get-LabDlpRuleOptionalParameters -Policy $policy -Rule $rule -CommandInfo $setRuleCommand -RuleName $ruleName
                 }
@@ -606,6 +770,27 @@ function Deploy-DLP {
                 }
 
                 $optionalRuleParams = Get-LabDlpRuleOptionalParameters -Policy $policy -Rule $rule -CommandInfo $newRuleCommand -RuleName $ruleName
+
+                # Split optional params into essential vs enforcement-decoration buckets.
+                # Essential = the mandatory-predicate plus, for Copilot, the RestrictAccess
+                # action (which is the *only* enforcement allowed on M365Copilot location).
+                # Mandatory predicate satisfied by either a base predicate
+                # (ContentContainsSensitiveInformation, already in $baseRuleParams) or a
+                # label predicate (AdvancedRule for Copilot, SensitivityLabels/SensitivityLabel/Labels
+                # otherwise). On retry we preserve essentials and drop only the decoration
+                # (BlockAccess, NotifyUser, GenerateAlert, IncidentReport*, etc.).
+                $predicateParamNames = @('AdvancedRule', 'SensitivityLabels', 'SensitivityLabel', 'Labels', 'RestrictAccess')
+                $predicateParams = @{}
+                $enforcementParams = @{}
+                foreach ($entry in $optionalRuleParams.GetEnumerator()) {
+                    if ($predicateParamNames -contains $entry.Key) {
+                        $predicateParams[$entry.Key] = $entry.Value
+                    }
+                    else {
+                        $enforcementParams[$entry.Key] = $entry.Value
+                    }
+                }
+
                 $ruleParams = @{}
                 foreach ($entry in $baseRuleParams.GetEnumerator()) {
                     $ruleParams[$entry.Key] = $entry.Value
@@ -619,9 +804,17 @@ function Deploy-DLP {
                     New-DlpComplianceRule @ruleParams | Out-Null
                 }
                 catch {
-                    if ($optionalRuleParams.Count -gt 0) {
-                        Write-LabLog -Message "Rule creation with optional enforcement settings failed for $ruleName. Retrying with baseline settings only." -Level Warning
-                        New-DlpComplianceRule @baseRuleParams | Out-Null
+                    $originalError = $_.Exception.Message
+                    if ($enforcementParams.Count -gt 0) {
+                        Write-LabLog -Message "Rule creation with enforcement settings failed for $ruleName. Original error: $originalError. Retrying with predicates only (preserving label/SIT conditions, dropping enforcement decoration)." -Level Warning
+                        $retryParams = @{}
+                        foreach ($entry in $baseRuleParams.GetEnumerator()) {
+                            $retryParams[$entry.Key] = $entry.Value
+                        }
+                        foreach ($entry in $predicateParams.GetEnumerator()) {
+                            $retryParams[$entry.Key] = $entry.Value
+                        }
+                        New-DlpComplianceRule @retryParams | Out-Null
                         $createdWithBaseline = $true
                     }
                     else {
@@ -629,9 +822,15 @@ function Deploy-DLP {
                     }
                 }
 
-                if ($createdWithBaseline -and $setRuleCommand -and $optionalRuleParams.Count -gt 0) {
-                    $setEnforcementParams = Get-LabDlpRuleOptionalParameters -Policy $policy -Rule $rule -CommandInfo $setRuleCommand -RuleName $ruleName
-                    if ($setEnforcementParams.Count -gt 0 -and $PSCmdlet.ShouldProcess($ruleName, 'Apply enforcement settings via Set-DlpComplianceRule')) {
+                if ($createdWithBaseline -and $setRuleCommand -and $enforcementParams.Count -gt 0 -and $PSCmdlet.ShouldProcess($ruleName, 'Apply enforcement settings via Set-DlpComplianceRule')) {
+                    $setEnforcementParams = @{}
+                    $setOptionalParams = Get-LabDlpRuleOptionalParameters -Policy $policy -Rule $rule -CommandInfo $setRuleCommand -RuleName $ruleName
+                    foreach ($entry in $setOptionalParams.GetEnumerator()) {
+                        if ($predicateParamNames -notcontains $entry.Key) {
+                            $setEnforcementParams[$entry.Key] = $entry.Value
+                        }
+                    }
+                    if ($setEnforcementParams.Count -gt 0) {
                         try {
                             Set-DlpComplianceRule -Identity $ruleName @setEnforcementParams -Confirm:$false -ErrorAction Stop | Out-Null
                             Write-LabLog -Message "Applied enforcement settings to rule: $ruleName" -Level Success

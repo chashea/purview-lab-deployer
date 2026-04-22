@@ -39,36 +39,45 @@
             "enabled": {
               "type": "boolean"
             },
+            "mode": {
+              "type": "string",
+              "enum": ["create", "existing"],
+              "default": "create"
+            },
             "users": {
               "type": "array",
               "items": {
-                "type": "object",
-                "required": [
-                  "displayName",
-                  "mailNickname",
-                  "department",
-                  "jobTitle",
-                  "usageLocation"
-                ],
-                "properties": {
-                  "displayName": {
-                    "type": "string"
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "required": [
+                      "displayName",
+                      "mailNickname",
+                      "department",
+                      "jobTitle",
+                      "usageLocation"
+                    ],
+                    "properties": {
+                      "displayName": { "type": "string" },
+                      "mailNickname": { "type": "string" },
+                      "department": { "type": "string" },
+                      "jobTitle": { "type": "string" },
+                      "usageLocation": {
+                        "type": "string",
+                        "minLength": 2,
+                        "maxLength": 2
+                      }
+                    }
                   },
-                  "mailNickname": {
-                    "type": "string"
-                  },
-                  "department": {
-                    "type": "string"
-                  },
-                  "jobTitle": {
-                    "type": "string"
-                  },
-                  "usageLocation": {
-                    "type": "string",
-                    "minLength": 2,
-                    "maxLength": 2
+                  {
+                    "type": "object",
+                    "required": ["upn"],
+                    "properties": {
+                      "upn": { "type": "string" }
+                    },
+                    "additionalProperties": false
                   }
-                }
+                ]
               }
             },
             "groups": {
@@ -141,9 +150,20 @@
                     "items": {
                       "type": "object",
                       "required": [
-                        "name",
-                        "sensitiveInfoTypes",
-                        "minCount"
+                        "name"
+                      ],
+                      "anyOf": [
+                        {
+                          "required": [
+                            "sensitiveInfoTypes",
+                            "minCount"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "labels"
+                          ]
+                        }
                       ],
                       "properties": {
                         "name": {
@@ -640,4 +660,4 @@
       }
     }
   }
-}
+

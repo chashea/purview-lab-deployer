@@ -14,6 +14,7 @@ This lab demonstrates how Microsoft Purview DLP enforces data boundaries for Mic
 | Auto-label policies | 1 | SSN content → Highly Confidential\Regulated Data |
 | DLP policies | 2 | Copilot Prompt SIT Block (3 rules), Copilot Labeled Content Block (2 rules) |
 | Retention policies | 1 | Copilot interaction retention (365 days) |
+| Insider Risk policies | 1 | Risky AI Usage — escalates users who repeatedly trigger Copilot guardrails |
 | eDiscovery cases | 1 | Copilot DLP incident review |
 | Audit searches | 3 | CopilotInteraction, DlpRuleMatch, DlpRuleUndo |
 | Test emails | 4 | Seeded with SSNs, credit cards, Copilot interaction context |
@@ -46,65 +47,46 @@ This lab demonstrates how Microsoft Purview DLP enforces data boundaries for Mic
 
 Legacy alias: `copilot-dlp` remains supported for backward compatibility.
 
-## Lab Phases (90–120 minutes, modular)
+## Lab Phases (75–90 minutes, modular)
 
 | Phase | Title | Duration | Automated? |
 |---|---|---|---|
 | 0 | Baseline — Copilot without guardrails | 5 min | Manual (see RUNBOOK) |
-| 1 | Block sensitive prompts (SIT-based) | 20 min | Automated (DLP policy) |
-| 2 | Block labeled files from Copilot | 20 min | Automated (DLP policy) |
-| 3 | Stop Copilot web search with sensitive data | 15 min | Manual/Preview (see RUNBOOK) |
-| 4 | Evidence & investigations | 15 min | Automated (audit + eDiscovery) |
+| 1 | Block sensitive prompts (SIT-based, includes web-search protection) | 20 min | Automated (DLP policy, public preview) |
+| 2 | Block labeled files from Copilot | 20 min | Automated (DLP policy, GA) |
+| 3 | Evidence & investigations | 15 min | Automated (audit + eDiscovery) |
 
-## Post-Deploy Manual Steps
+> **Feature status (per Microsoft Learn):** Prompt SIT blocking is in public preview and rolls out per tenant. Label-based file blocking is generally available. The same prompt SIT policy also prevents Copilot from using the sensitive prompt text in internal or web searches — no separate web-search policy is required.
 
-The following items require manual configuration in the Purview compliance portal because the PowerShell cmdlets do not yet support them.
+## Post-Deploy Verification
 
-### 1. Create label-based DLP rules for Copilot
+Both SIT-based and label-based DLP rules now deploy end-to-end from PowerShell:
 
-`New-DlpComplianceRule` has no parameter for sensitivity label conditions scoped to Copilot. The automated deployment creates the **Copilot Labeled Content Block** policy shell, but the two label-based rules must be added manually.
+- **SIT rules** use `ContentContainsSensitiveInformation` with `RestrictAccess = ExcludeContentProcessing/Block`.
+- **Label rules** use `-AdvancedRule` with resolved sensitivity label GUIDs per MS Learn Example 4.
+- **Location** is set via `-Locations` JSON + `-EnforcementPlanes @("CopilotExperiences")`.
 
-1. Open **Microsoft Purview** → **Data loss prevention** → **Policies**
-2. Edit **PVCopilotDLP-Copilot Labeled Content Block**
-3. Add rule **Block Copilot from Restricted Content**:
-   - Condition: Content contains sensitivity label = `PVCopilotDLP-Highly-Confidential-Restricted`
-   - Action: Block
-   - User notification: _"Copilot cannot access this content. The file is labeled Highly Confidential — Restricted, which prevents Copilot from summarizing or referencing it."_
-   - Alert severity: High
-4. Add rule **Block Copilot from Regulated Data**:
-   - Condition: Content contains sensitivity label = `PVCopilotDLP-Highly-Confidential-Regulated-Data`
-   - Action: Block
-   - User notification: _"Copilot cannot access this content. The file contains regulated data that is blocked from AI processing by policy."_
-   - Alert severity: High
-5. Save and publish the policy
+After deployment, run the readiness check to confirm the tenant is demo-ready (accounts for the 4-hour propagation window):
 
-### 2. Verify DLP enforcement settings on SIT rules
+```powershell
+./scripts/Test-CopilotDlpReady.ps1 -LabProfile copilot-protection -Cloud commercial
+```
 
-The three SIT-based rules (Block SSN / Credit Card / PHI in Copilot Prompts) may deploy with baseline settings only if the cmdlet does not support enforcement parameters for Copilot-scoped policies. Verify in the portal:
+Exit codes: `0` = ready, `1` = wait (propagating or unpublished labels), `2` = blocked (missing policy, label, or license — action required).
 
-1. Open **PVCopilotDLP-Copilot Prompt SIT Block** policy
-2. For each rule, confirm:
-   - **Block access** is enabled
-   - **User notifications** are enabled with the configured message
-   - **Alert generation** is set to High severity
-3. If any are missing, edit the rule and enable them manually
+If any item is flagged Blocked:
 
-### 3. Scope DLP policies to Copilot location
-
-If the `CopilotLocation` parameter is not yet available in your tenant's PowerShell module, the DLP policies may deploy without a Copilot location scope. Verify:
-
-1. Open each DLP policy in the portal
-2. Under **Locations**, confirm **Microsoft 365 Copilot & Copilot Chat** is selected
-3. If missing, add the location and re-publish
+1. **Missing policy** — run `Deploy-Lab.ps1` again, or check the deployment log in `logs/` for cmdlet errors.
+2. **Missing label** — ensure SensitivityLabels workload deployed before DLP; re-run with `-LabProfile copilot-protection`.
+3. **Missing Copilot license** — assign `Microsoft_365_Copilot` SKU to the demo users in Entra ID before running the demo.
 
 ## Key Technical Notes
 
-- **SIT + label conditions cannot be mixed in the same DLP rule** for Copilot. This lab uses separate policies/rules for each condition type.
-- Prompt SIT controls evaluate text typed directly in prompts. Uploaded file contents in prompts are not DLP-scanned.
-- DLP policies deploy in **simulation mode** (TestWithNotifications) by default. Switch to enforce for live demos.
-- DLP updates can take up to 4 hours to fully appear in Copilot and Copilot Chat.
-- Phase 3 (web search prevention) requires **Private Preview** enrollment — documented in RUNBOOK.md.
-- This lab focuses on Microsoft 365 Copilot + Copilot Chat. Teams Channel Agent has separate Purview considerations.
+- **SIT + label conditions cannot be mixed in the same DLP rule** for Copilot. This lab uses separate policies/rules for each condition type — SIT rules use `ContentContainsSensitiveInformation`, label rules use `-AdvancedRule` with label GUIDs per MS Learn Example 4.
+- Prompt SIT controls evaluate text typed directly in prompts. Uploaded file contents in prompts are not DLP-scanned. The same control prevents the sensitive prompt text from being used in internal or external web searches.
+- DLP policies deploy in **simulation mode** (TestWithNotifications) by default. Switch to enforce for live demos — and budget another 4h propagation window after the switch.
+- DLP updates can take up to 4 hours to fully appear in Copilot and Copilot Chat. Run `./scripts/Test-CopilotDlpReady.ps1` before the demo to confirm readiness.
+- DLP for Copilot also covers **prebuilt agents in Microsoft 365 Copilot and Copilot Chat**. Teams Channel Agent has separate considerations.
 
 ## References
 

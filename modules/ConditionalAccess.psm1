@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+﻿#Requires -Version 7.0
 
 <#
 .SYNOPSIS
@@ -45,9 +45,19 @@ function Deploy-ConditionalAccess {
                 continue
             }
 
-            # Build conditions
+            # Build conditions. Conditional Access always requires
+            # applications.includeApplications to be non-empty — Microsoft Graph
+            # rejects the policy otherwise with:
+            #   1011: 'applications' condition must specify the applications to include.
+            #   Try 'includeApplications' = ['none'] to start with.
+            # Use 'none' when config omits target app IDs so the policy deploys
+            # as a scaffold that the operator can point at real enterprise apps
+            # post-deploy.
+            $targetApps = @($policy.targetAppIds | Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
+            if ($targetApps.Count -eq 0) { $targetApps = @('none') }
+
             $conditions = @{
-                Applications = @{ IncludeApplications = @($policy.targetAppIds) }
+                Applications = @{ IncludeApplications = $targetApps }
                 Users        = @{ IncludeUsers = @('All') }
             }
 
@@ -60,20 +70,36 @@ function Deploy-ConditionalAccess {
                 $conditions['SignInRiskLevels'] = @($policy.signInRiskLevels)
             }
 
-            # Build grant controls
+            # Build grant controls. Accept either legacy shorthand
+            # ({ action: "block" }) or the Graph-native nested shape
+            # ({ grantControls: { builtInControls: ["block"] } }).
             $grantControls = @{
                 Operator = 'OR'
             }
 
-            if ($policy.action -eq 'block') {
-                $grantControls['BuiltInControls'] = @('block')
+            $builtIns = @()
+            if ($policy.PSObject.Properties['grantControls'] -and
+                $policy.grantControls -and
+                $policy.grantControls.PSObject.Properties['builtInControls']) {
+                $builtIns = @($policy.grantControls.builtInControls |
+                    Where-Object { -not [string]::IsNullOrWhiteSpace([string]$_) })
             }
-            elseif ($policy.action -eq 'mfa') {
-                $grantControls['BuiltInControls'] = @('mfa')
+            elseif ($policy.PSObject.Properties['action']) {
+                switch ([string]$policy.action) {
+                    'block'           { $builtIns = @('block') }
+                    'mfa'             { $builtIns = @('mfa') }
+                    'compliantDevice' { $builtIns = @('compliantDevice') }
+                }
             }
-            elseif ($policy.action -eq 'compliantDevice') {
-                $grantControls['BuiltInControls'] = @('compliantDevice')
+
+            if ($builtIns.Count -eq 0) {
+                # Graph requires at least one control. Default to block for
+                # policies that don't specify — safer than silently shipping
+                # a policy with no effect.
+                $builtIns = @('block')
+                Write-LabLog -Message "Conditional Access policy '$name' has no grant controls specified; defaulting to 'block'." -Level Warning
             }
+            $grantControls['BuiltInControls'] = $builtIns
 
             # Use report-only mode for lab safety
             $state = if ($policy.PSObject.Properties['state'] -and $policy.state) {

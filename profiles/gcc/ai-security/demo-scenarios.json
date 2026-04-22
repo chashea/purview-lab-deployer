@@ -1,0 +1,68 @@
+{
+  "demoName": "Integrated AI Security (GCC)",
+  "version": "1.0",
+  "presentationFlow": [
+    { "step": 0, "title": "Azure Government context",                    "talkTrack": "Same integrated model as commercial, running inside Azure Government. FedRAMP-authorized SIEM, G5 Copilot, GCC compliance boundary.",                                                                                                 "showInPortal": ["portal.azure.us"],                                                              "duration": "3 min",  "automated": false, "gccNote": "Defender portal availability in GCC is on a separate rollout schedule." },
+    { "step": 1, "title": "Discovery",                                    "talkTrack": "Audit searches + AI Risk Signals workbook give baseline. Validate IRM and Copilot availability in the readiness scripts before demoing.",                                                                                     "showInPortal": ["Purview audit", "Sentinel workbook"],                                           "duration": "5 min",  "automated": true },
+    { "step": 2, "title": "Copilot DLP (label-based GA; prompt SIT varies)", "talkTrack": "Label-based Copilot DLP is GA in GCC — safe to demo unconditionally. Prompt SIT blocking is public preview commercial; validate tenant availability in GCC before demoing live.",                                        "showInPortal": ["Purview > DLP > Copilot policies"],                                             "duration": "10 min", "automated": true, "gccNote": "Check feature rollout timing for prompt SIT blocking." },
+    { "step": 3, "title": "Shadow AI",                                    "talkTrack": "Same three layers. Endpoint DLP requires Defender for Endpoint on device. Browser Data Security in Edge for Business available in GCC.",                                                                                        "showInPortal": ["Purview > DLP > Shadow AI policies"],                                           "duration": "12 min", "automated": true },
+    { "step": 4, "title": "Insider Risk adaptive bridge",                 "talkTrack": "Risky AI Usage IRM template availability in GCC can vary. Data Leaks and Departing User templates are more broadly available. Adaptive enforcement loop works identically when IRM signals flow.",                            "showInPortal": ["Purview > Insider Risk > PVAISec policies"],                                    "duration": "5 min",  "automated": true, "gccNote": "IRM feature rollout in GCC may lag commercial." },
+    { "step": 5, "title": "Sentinel unified pane",                         "talkTrack": "Sentinel GA in GCC via portal.azure.us. Same 3 connectors, 7 rules, 2 workbooks, IRM auto-triage playbook. Defender portal experience rolling out separately.",                                                         "showInPortal": ["portal.azure.us > Sentinel"],                                                   "duration": "15 min", "automated": true },
+    { "step": 6, "title": "The integrated loop",                           "talkTrack": "Same 6-step cycle. Cross-signal correlation fires when both sides flow.",                                                                                                                                                 "showInPortal": ["Sentinel incidents filtered to PVAISec-RiskyAIUsageCorrel"],                    "duration": "3 min",  "automated": false },
+    { "step": 7, "title": "GCC-specific follow-ups",                       "talkTrack": "Microsoft Purview Content Hub solution (available in GCC). DSPM for AI when rollout reaches your tenant. Defender portal onboarding when GCC rollout is available. Compliance Manager FedRAMP High template.", "showInPortal": ["Sentinel > Content Hub", "Purview > Solutions > DSPM for AI (when available)"], "duration": "5 min",  "automated": false }
+  ],
+  "scenarios": [
+    {
+      "id": "S1",
+      "name": "Label-based Copilot block (GA — reliable GCC demo)",
+      "description": "Label-based Copilot DLP is GA; works identically in GCC.",
+      "steps": [
+        "Open M365 Copilot in GCC tenant as rtorres",
+        "Ask Copilot to summarize the Q4 Financial Forecast (labeled Highly Confidential > AI Blocked from External Tools)",
+        "Copilot refuses with label-based policy message",
+        "Alert flows to Sentinel"
+      ],
+      "expectedOutcome": "Reliable GCC demo path — label-based DLP is the GA control",
+      "automatedArtifacts": ["Copilot Labeled Content Block policy"],
+      "manualPrep": ["Copilot for GCC license assigned to rtorres"]
+    },
+    {
+      "id": "S2",
+      "name": "Shadow AI paste block (GCC)",
+      "description": "Device-layer block on paste to external AI sites — works in GCC identically to commercial.",
+      "steps": [
+        "Managed device (MDE onboarded), open chat.openai.com",
+        "Paste sensitive content",
+        "Endpoint DLP blocks",
+        "Sentinel incident fires"
+      ],
+      "expectedOutcome": "Same block experience, GCC Sentinel workspace",
+      "automatedArtifacts": ["Endpoint DLP policy", "Sentinel rule"],
+      "manualPrep": ["Device onboarded to MDE", "Endpoint DLP domain list pushed"]
+    },
+    {
+      "id": "S3",
+      "name": "GCC feature validation",
+      "description": "Before demo day, confirm which features are available in your specific GCC tenant.",
+      "steps": [
+        "Run all three readiness scripts (Copilot, Shadow AI, Sentinel)",
+        "Check Purview > DLP > location picker for Copilot availability",
+        "Check Purview > Insider Risk > templates for Risky AI Usage availability",
+        "Check Sentinel > Content Hub for Microsoft Purview solution",
+        "Check security.microsoft.com for Sentinel node (Defender portal availability)",
+        "Document which features are demo-ready vs. pending per-tenant"
+      ],
+      "expectedOutcome": "Presenter knows which scenarios work live in this GCC tenant",
+      "automatedArtifacts": ["Test-CopilotDlpReady.ps1", "Test-ShadowAiReady.ps1", "Test-SentinelReady.ps1"],
+      "manualPrep": ["Run 30-60 min before demo"]
+    }
+  ],
+  "userExperienceTable": [
+    { "scenario": "Paste into Copilot chat with SSN",                              "systemBehavior": "Copilot block works if prompt SIT DLP is available in your GCC tenant — validate first." },
+    { "scenario": "Ask Copilot to summarize Highly Confidential file",             "systemBehavior": "Label-based block — GA, works reliably in GCC." },
+    { "scenario": "Paste into ChatGPT from managed GCC device",                    "systemBehavior": "Endpoint DLP blocks. Sentinel incident on portal.azure.us." },
+    { "scenario": "IRM Risky AI alert + Copilot DLP block same user in 4h",       "systemBehavior": "Cross-signal correlation rule fires when both sides flowing. IRM availability in GCC affects this." },
+    { "scenario": "Downgrade sensitivity label",                                   "systemBehavior": "PVAISec-LabelDowngrade rule fires in GCC identically." },
+    { "scenario": "Clean Copilot prompt",                                          "systemBehavior": "Normal response — sanctioned GCC Copilot works." }
+  ]
+}

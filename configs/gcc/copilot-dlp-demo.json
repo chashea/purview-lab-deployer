@@ -6,28 +6,11 @@
   "workloads": {
     "testUsers": {
       "enabled": true,
+      "mode": "existing",
       "users": [
-        {
-          "displayName": "Megan Torres",
-          "mailNickname": "mtorres",
-          "department": "Finance",
-          "jobTitle": "Financial Analyst",
-          "usageLocation": "US"
-        },
-        {
-          "displayName": "Jordan Kim",
-          "mailNickname": "jkim",
-          "department": "Marketing",
-          "jobTitle": "Brand Strategist",
-          "usageLocation": "US"
-        },
-        {
-          "displayName": "Nadia Shah",
-          "mailNickname": "nshah",
-          "department": "Compliance",
-          "jobTitle": "Data Security Admin",
-          "usageLocation": "US"
-        }
+        { "upn": "mtorres@MngEnvMCAP659995.onmicrosoft.com" },
+        { "upn": "jkim@MngEnvMCAP659995.onmicrosoft.com" },
+        { "upn": "nshah@MngEnvMCAP659995.onmicrosoft.com" }
       ],
       "groups": [
         {
@@ -210,6 +193,16 @@
         }
       ]
     },
+    "insiderRisk": {
+      "enabled": true,
+      "policies": [
+        {
+          "name": "Copilot Risky AI Usage",
+          "template": "Risky AI usage",
+          "description": "Correlates repeated DLP blocks on Copilot labeled-content access attempts with insider risk scoring. GCC feature availability for Risky AI Usage may lag commercial — validate before relying on this policy."
+        }
+      ]
+    },
     "auditConfig": {
       "enabled": true,
       "searches": [
@@ -261,23 +254,7 @@
           "body": "Hi Megan, yes — that is working as designed. In GCC, our Copilot DLP policy blocks Copilot from processing files with protected sensitivity labels like Highly Confidential. You can still use Copilot with allowed content, but labeled restricted files are intentionally blocked. I can see the audit trail for the block in the compliance portal."
         }
       ],
-      "documents": [
-        {
-          "name": "Q4-Revenue-Forecast.txt",
-          "content": "Q4 Revenue Forecast — Confidential\n\nProjected Revenue: $2,400,000\nOutstanding Accounts: Contoso (4532-8721-0034-6619), Fabrikam (5105-1051-0510-5100)\nKey Risk: Delayed payment from enterprise accounts.\n\nThis document contains financial projections for internal use only.",
-          "uploadTo": "SharePoint"
-        },
-        {
-          "name": "Employee-Benefits-Summary.txt",
-          "content": "Employee Benefits Enrollment Summary\n\nEmployee: Jane Doe, SSN: 078-05-1120\nEmployee: John Smith, SSN: 219-09-9999\nPlan: Premium Health Plus\nDependent Coverage: Family\n\nThis document contains protected personally identifiable information.",
-          "uploadTo": "SharePoint"
-        },
-        {
-          "name": "Patient-Intake-Notes.txt",
-          "content": "Patient Intake Notes — CONFIDENTIAL\n\nPatient: Maria Garcia\nDiagnosis: Type 2 Diabetes Mellitus, Hypertension\nMedications: Metformin 500mg, Lisinopril 10mg\nAllergies: Penicillin\nInsurance ID: BCBS-447291\n\nThis document contains protected health information (PHI).",
-          "uploadTo": "SharePoint"
-        }
-      ]
+      "documents": []
     }
   }
 }

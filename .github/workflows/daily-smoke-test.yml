@@ -6,13 +6,15 @@ on:
   workflow_dispatch:
     inputs:
       profile:
-        description: 'Lab profile to test'
-        required: true
-        default: 'basic-lab'
+        description: 'Lab profile to test (leave blank for auto-discover — works against any Purview tenant)'
+        required: false
+        default: ''
         type: choice
         options:
+          - ''
           - basic-lab
           - copilot-protection
+          - shadow-ai
 
 permissions:
   id-token: write
@@ -47,13 +49,19 @@ jobs:
       - name: Run DLP smoke test
         shell: pwsh
         run: |
-          $profile = '${{ github.event.inputs.profile || 'basic-lab' }}'
+          $profile = '${{ github.event.inputs.profile }}'
 
           foreach ($mod in Get-ChildItem modules/*.psm1) {
               Import-Module $mod.FullName -Force
           }
 
-          ./scripts/Invoke-SmokeTest.ps1 -LabProfile $profile -Cloud commercial
+          if ([string]::IsNullOrWhiteSpace($profile)) {
+              # Auto-discover mode — tenant-agnostic, works against any Purview tenant
+              ./scripts/Invoke-SmokeTest.ps1 -Cloud commercial
+          }
+          else {
+              ./scripts/Invoke-SmokeTest.ps1 -LabProfile $profile -Cloud commercial
+          }
 
       - name: Upload run summary
         if: always()

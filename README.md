@@ -12,7 +12,8 @@ Config-driven Microsoft Purview demo lab deployment. PowerShell 7+, modular by w
 | **basic-lab** | Core compliance workloads (DLP, labels, retention, eDiscovery, insider risk) | [profiles/commercial/basic-lab/README.md](profiles/commercial/basic-lab/README.md) |
 | **shadow-ai** | Shadow AI detection and governance (AI app blocking, discovery, session monitoring) | [profiles/commercial/shadow-ai/README.md](profiles/commercial/shadow-ai/README.md) |
 | **copilot-protection** | Copilot DLP guardrails for Copilot + Copilot Chat (prompt blocking, labeled content protection, web-search boundaries, audit evidence) | [profiles/commercial/copilot-dlp/README.md](profiles/commercial/copilot-dlp/README.md) |
-| **purview-sentinel** | Send Purview DLP / Insider Risk / sensitivity-label signals into a Microsoft Sentinel workspace (Log Analytics + data connectors + analytics rules + workbook). Requires an Azure subscription. | [configs/commercial/purview-sentinel-demo.json](configs/commercial/purview-sentinel-demo.json) |
+| **purview-sentinel** | Send Purview DLP / Insider Risk / sensitivity-label signals into a Microsoft Sentinel workspace (Log Analytics + data connectors + analytics rules + workbook). Requires an Azure subscription. | [profiles/commercial/purview-sentinel/README.md](profiles/commercial/purview-sentinel/README.md) |
+| **ai-security** | **Integrated** Copilot DLP + Shadow AI + Sentinel deployment under one `PVAISec` prefix. Ships cross-signal correlation analytics rules, two Sentinel workbooks (Purview Signals + AI Risk Signals), IRM auto-triage playbook. Requires an Azure subscription. | [profiles/commercial/ai-security/README.md](profiles/commercial/ai-security/README.md) |
 
 Each profile is a self-contained deployment with its own prefix, config, and lifecycle. See the profile README for setup instructions.
 
@@ -66,8 +67,10 @@ subscription resources (resource group, Log Analytics workspace, Sentinel).
   `az account set --subscription <id>` before running
 - Providers registered: `Microsoft.OperationalInsights`, `Microsoft.SecurityInsights`
   (run `az provider register --namespace <ns>` if needed)
-- Update `configs/commercial/purview-sentinel-demo.json` and fill in the
-  `workloads.sentinelIntegration.subscriptionId` GUID
+- Pass `-SubscriptionId <guid>` to `Deploy-Lab.ps1` (or set `PURVIEW_SUBSCRIPTION_ID`).
+  The config ships with an empty subscription ID — no tenant-specific GUIDs in the repo.
+
+> **Defender portal transition (MS Learn):** New Sentinel customers onboarded after **July 1, 2025** are auto-onboarded to the Microsoft Defender portal. Microsoft Sentinel in the Azure portal retires **March 31, 2027**. The lab's artifacts deploy via ARM and work in both portals — onboard the workspace to the Defender portal to use the unified SecOps experience.
 
 **Content Hub solutions (auto-installed).** The Defender XDR and Purview
 Insider Risk Management data connectors cannot be provisioned by a direct ARM
@@ -102,6 +105,31 @@ The Microsoft Purview (Azure) data-sensitivity product is a separate service
 and is out of scope for this lab — the `purview-sentinel` profile targets
 Microsoft Purview (M365) compliance signals only.
 
+### Additional prerequisites for `ai-security`
+
+The `ai-security` profile is the integrated deployment covering Copilot DLP +
+Shadow AI + Sentinel under one `PVAISec` prefix. It has the same Azure/Sentinel
+prerequisites as `purview-sentinel` plus the following:
+
+- **Microsoft 365 Copilot licenses** for demo users (the Copilot DLP guardrails
+  only produce signal if users can actually use Copilot). Deploy-Lab prints a
+  preflight warning if demo users are missing the SKU.
+- **Microsoft Defender for Endpoint** onboarded on at least one test device —
+  required for Endpoint DLP paste/upload blocks on external AI sites (ChatGPT,
+  Claude, Gemini, etc.) to fire live during demos.
+- After deploy, run `./scripts/Set-ShadowAiEndpointDlpDomains.ps1 -Apply` to
+  merge the AI-site domain list into the tenant's shared Endpoint DLP global
+  settings. Preview first — this touches tenant-wide settings.
+- Pre-demo readiness: run `Test-CopilotDlpReady.ps1`, `Test-ShadowAiReady.ps1`,
+  and `Test-SentinelReady.ps1` against the unified config. Each gives a
+  per-surface READY/WAIT/BLOCKED verdict.
+- Known manual portal step: the Copilot **Prompt SIT** DLP rules (SSN, Credit
+  Card, PHI) fail ARM creation with
+  `ErrorMissingRestrictActionForCopilotException` — the correct
+  `-RestrictAccess` value is undocumented for SIT+Copilot. The deployer logs
+  a warning and moves on; configure in the Purview portal if you need live
+  prompt-SIT enforcement.
+
 ## Quick start
 
 ```powershell
@@ -130,6 +158,20 @@ az account set --subscription <subscription-id>
 
 # Verify a deployed Sentinel lab end-to-end (read-only; exits non-zero on failure)
 pwsh ./scripts/Test-SentinelLab.ps1 -ConfigPath ./configs/commercial/purview-sentinel-demo.json
+
+# Integrated AI Security lab (Copilot DLP + Shadow AI + Sentinel under one prefix)
+az login
+az account set --subscription <subscription-id>
+./Deploy-Lab.ps1 -Cloud commercial -LabProfile ai-security -SubscriptionId <subscription-id>
+
+# Post-deploy readiness (run all three against the unified config)
+./scripts/Test-CopilotDlpReady.ps1 -ConfigPath ./configs/commercial/ai-security-demo.json -Cloud commercial
+./scripts/Test-ShadowAiReady.ps1   -ConfigPath ./configs/commercial/ai-security-demo.json -Cloud commercial
+./scripts/Test-SentinelReady.ps1   -ConfigPath ./configs/commercial/ai-security-demo.json -Cloud commercial -SubscriptionId <sub>
+
+# Push Endpoint DLP AI domain block list (tenant-wide; preview first, then Apply)
+./scripts/Set-ShadowAiEndpointDlpDomains.ps1 -ConfigPath ./configs/commercial/ai-security-demo.json
+./scripts/Set-ShadowAiEndpointDlpDomains.ps1 -ConfigPath ./configs/commercial/ai-security-demo.json -Apply
 ```
 
 ### What the Sentinel lab builds
@@ -156,6 +198,22 @@ deployer also wires up investigation hygiene for you:
   Hub), every analytics rule (including that entity mappings are present),
   the workbook, the playbook, and the automation rule. Suitable for CI.
 
+### What the AI Security lab adds on top of Sentinel
+
+The `ai-security` profile unifies `copilot-protection` + `shadow-ai` + `purview-sentinel` into a single deployment under prefix `PVAISec`. Additions beyond the Sentinel profile:
+
+- **Copilot DLP** — label-based block rule for files tagged `Highly Confidential > AI Blocked from External Tools` / `AI Regulated Data`; Copilot Prompt SIT Block policy scaffold (rules need manual portal config per the prereq caveat).
+- **Shadow AI DLP** — 3 policies across Devices (Endpoint DLP paste/upload block), Browser (Edge for Business inline prompt inspection), Network (SASE/SSE), each risk-tiered by Insider Risk score.
+- **Unified sensitivity-label taxonomy** — 2 parents + 10 AI-specific sublabels (AI Internal Use, AI Restricted Recipients, AI Blocked from External Tools, AI Regulated Data × Confidential and Highly Confidential).
+- **3 AI-specific Sentinel analytics rules** (on top of the 4 already shipped by `purview-sentinel`): `CopilotDLPPromptBlock`, `ShadowAIPasteUpload`, `RiskyAIUsageCorrel` (cross-table join of IRM Risky-AI alerts with DLP blocks on AI surfaces in the same 4-hour window).
+- **Second Sentinel workbook** — `AI Risk Signals` with panels for Copilot DLP blocks, Shadow AI paste attempts by target AI site, Risky AI usage IRM alerts, and cross-signal users.
+- **Microsoft Purview Content Hub solution** — auto-installed alongside Defender XDR + IRM + Microsoft 365, giving you the MS-maintained `PurviewDataSensitivityLogs` analytics rules alongside this lab's custom ones.
+- **3 IRM policies** using `Risky AI usage`, `Data leaks`, and `Data theft by departing users` templates, scoped to **All users and groups**.
+- **5 retention policies** including three AI-Applications-scoped ones: `MicrosoftCopilotExperiences`, `EnterpriseAIApps`, `OtherAIApps`.
+- **Test data** — 5 OneDrive documents auto-labeled at deploy via Graph `assignSensitivityLabel`, seeding the label-based Copilot block demo.
+
+Use the `ai-security` profile when a single demo needs to cover the full integrated narrative — Copilot DLP + Shadow AI + Sentinel with cross-signal correlation. Use the focused profiles when a specific audience (Copilot CISO, SOC lead, compliance director) wants a tighter 20-minute demo.
+
 ## Supported clouds
 
 | Cloud | Configs | Notes |
@@ -170,7 +228,13 @@ Scripts in `scripts/` generate DLP alerts and Copilot activity for validating de
 | Script | What it does |
 |--------|-------------|
 | `Invoke-SmokeTest.ps1` | Send emails + upload OneDrive files with fake sensitive data (SSN, CC, bank, medical) to trigger Exchange/SharePoint/OneDrive DLP |
-| `copilot-test-prompts.md` | 13 ready-to-paste prompts for M365 Copilot Chat testing |
+| `copilot-test-prompts.md` | Copy-paste prompts for M365 Copilot Chat — SSN/CC/PHI, labeled-file scenarios, subtlety tests, clean control prompts |
+| `shadow-ai-test-prompts.md` | Copy-paste prompts targeting external AI sites (ChatGPT, Claude, Gemini, etc.) for Endpoint/Browser/Network DLP + IRM escalation flow |
+| `Test-CopilotDlpReady.ps1` | Pre-demo readiness gate — validates Copilot DLP policies, labels, licenses (exit codes 0/1/2) |
+| `Test-ShadowAiReady.ps1` | Pre-demo readiness gate — validates Shadow AI DLP policies, IRM, Endpoint DLP domain list |
+| `Test-SentinelReady.ps1` | Pre-demo readiness gate for the Sentinel stack — workspace, connectors, rules, 24h data-flow check |
+| `Test-SentinelLab.ps1` | Deep end-to-end smoke test for a deployed Sentinel lab (CI-grade) |
+| `Set-ShadowAiEndpointDlpDomains.ps1` | Push AI-site block list to tenant-wide Endpoint DLP global settings (discover → `-Apply`) |
 
 ```powershell
 # Auto-discover mode (zero args) — works in ANY Purview tenant. Discovers

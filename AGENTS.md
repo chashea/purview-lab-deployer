@@ -6,7 +6,8 @@ This file provides guidance to AI coding agents (Codex, Jules, OpenCode, Copilot
 
 Automated Microsoft Purview demo lab deployment via PowerShell 7+.
 Config-driven, modular by workload, deploy + teardown symmetry.
-Three deployment profiles: basic-lab, shadow-ai, copilot-protection (alias: copilot-dlp) — each with commercial and GCC variants.
+Five deployment profiles: basic-lab, shadow-ai, copilot-protection (alias: copilot-dlp), purview-sentinel, ai-security — each with commercial and GCC variants.
+`ai-security` is the integrated profile combining Copilot DLP + Shadow AI + Sentinel under a single `PVAISec` prefix; the others remain focused labs.
 
 ## Stack
 

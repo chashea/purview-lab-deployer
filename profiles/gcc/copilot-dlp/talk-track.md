@@ -16,7 +16,7 @@
 Before delivering this talk track in a GCC environment, confirm:
 
 1. **Copilot is available and licensed** in the GCC tenant
-2. **DLP CopilotLocation parameter** is available (run pre-flight from RUNBOOK)
+2. **DLP `Locations` + `EnforcementPlanes` parameters** are available on `New-DlpCompliancePolicy` (run pre-flight from RUNBOOK)
 3. **CopilotInteraction audit events** are flowing (run pre-flight from RUNBOOK)
 
 If any feature is not yet available in GCC, use the **"coming to GCC"** callout pattern:
@@ -39,7 +39,6 @@ This positions the demo as forward-looking without losing credibility.
 >
 > By the end of this session, you'll see how to:
 > - Prevent Copilot from summarizing or reasoning over labeled content
-> - Stop Copilot from using sensitive data for web search
 > - See the full audit trail when Copilot is constrained
 >
 > The core governance model is the same in GCC, but there are feature differences to call out clearly: GCC currently supports label-based Copilot DLP, while SIT-based Copilot prompt blocking remains commercial-only.
@@ -93,21 +92,7 @@ This positions the demo as forward-looking without losing credibility.
 
 ---
 
-## Phase 2: Web Search Prevention — "Even the web has boundaries" (5 min)
-
-> "This capability is currently in Private Preview. For government organizations, this is especially relevant — you don't want Copilot sending CUI-adjacent prompts to web search endpoints."
-
-**Explain the control:**
-- Inline DLP prevents Copilot from using sensitive data for external web search queries
-- Even if Copilot could answer the question, Purview decides it shouldn't
-- The prompt itself would carry sensitive data outside the compliance boundary
-- In GCC, web search is off by default unless enabled via Cloud Policy (**Allow web search in Copilot**)
-
-> "Even if Copilot could answer the question, Purview decides it shouldn't. The sensitive data stays inside the boundary. This is the same model whether you're commercial or GCC."
-
----
-
-## Phase 3: Evidence & Investigations — "Prove it works" (5 min)
+## Phase 2: Evidence & Investigations — "Prove it works" (5 min)
 
 **Portal:** Microsoft Purview > Audit > Search
 
@@ -132,8 +117,7 @@ This positions the demo as forward-looking without losing credibility.
 >
 > 1. **Copilot without guardrails** — full access to everything
 > 2. **Guardrail #1** — DLP blocks Copilot from labeled content (Highly Confidential)
-> 3. **Guardrail #2** — DLP prevents sensitive data in web search (preview)
-> 4. **Full audit trail** — every blocked event is recorded and investigable
+> 3. **Full audit trail** — every blocked event is recorded and investigable
 >
 > We didn't turn Copilot off. We taught it what it's allowed to see, summarize, and search.
 >
@@ -146,7 +130,7 @@ This positions the demo as forward-looking without losing credibility.
 ## Anticipated Questions
 
 **Q: "Is this the same in GCC as commercial?"**
-> "The label-based DLP enforcement, sensitivity labels, and audit infrastructure are the same. The key differences in GCC are: SIT-based Copilot prompt DLP isn't available today, web search is off by default unless policy-enabled, and feature rollout can lag commercial."
+> "The label-based DLP enforcement, sensitivity labels, and audit infrastructure are the same. The key differences in GCC: SIT-based Copilot prompt DLP — which is public preview on commercial and also blocks the sensitive prompt text from reaching web search — isn't available in GCC yet. When it rolls out, the same policy model applies. Feature rollout in GCC typically lags commercial by weeks to months."
 
 **Q: "Does this work with GCC High or DoD?"**
 > "This demo targets GCC (not GCC High or DoD). GCC High and DoD have different endpoint configurations and more restrictive feature availability. Contact your Microsoft account team for GCC High/DoD guidance."
@@ -162,6 +146,9 @@ This positions the demo as forward-looking without losing credibility.
 
 **Q: "What if Copilot features aren't available in our GCC tenant yet?"**
 > "The deployer degrades gracefully — it creates the policies without the Copilot location and logs a warning. When the feature rolls out to your tenant, you add the location and enforcement begins immediately. No policy rewrite needed."
+
+**Q: "Does this cover prebuilt agents running inside Copilot?"**
+> "Yes. The Microsoft 365 Copilot and Copilot Chat location per Microsoft's documentation extends the same DLP enforcement to prebuilt agents available inside M365 Copilot. In GCC, agent availability tracks the underlying Copilot rollout — when the agents show up, they inherit these same guardrails."
 
 **Q: "What licenses do we need?"**
 > "Microsoft 365 G5 or G5 Compliance for Purview DLP. Copilot for Microsoft 365 for the Copilot license. Both are required."

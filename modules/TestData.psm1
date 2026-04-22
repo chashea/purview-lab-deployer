@@ -1,10 +1,74 @@
-#Requires -Version 7.0
+﻿#Requires -Version 7.0
 
 <#
 .SYNOPSIS
     Test data workload module for purview-lab-deployer.
     Sends test emails via Microsoft Graph to trigger Purview policies.
 #>
+
+function Set-LabDriveItemSensitivityLabel {
+    [CmdletBinding(SupportsShouldProcess)]
+    [OutputType([bool])]
+    param(
+        [Parameter(Mandatory)]
+        [string]$OwnerUpn,
+
+        [Parameter(Mandatory)]
+        [string]$FileName,
+
+        [Parameter(Mandatory)]
+        [string]$LabelIdentity
+    )
+
+    if (-not $PSCmdlet.ShouldProcess("$FileName for $OwnerUpn", "Assign sensitivity label '$LabelIdentity'")) {
+        return $false
+    }
+
+    $labelGuid = Resolve-LabSensitivityLabelGuid -LabelName $LabelIdentity
+    if (-not $labelGuid) {
+        Write-LabLog -Message "Skipping label assignment for '$FileName' — could not resolve label '$LabelIdentity' to a GUID." -Level Warning
+        return $false
+    }
+
+    try {
+        $encodedName = [uri]::EscapeDataString($FileName)
+        $item = Invoke-MgGraphRequest -Method GET `
+            -Uri "/v1.0/users/$OwnerUpn/drive/root:/$encodedName" `
+            -ErrorAction Stop
+
+        $driveId = [string]$item.parentReference.driveId
+        $itemId = [string]$item.id
+        if ([string]::IsNullOrWhiteSpace($driveId) -or [string]::IsNullOrWhiteSpace($itemId)) {
+            Write-LabLog -Message "Could not resolve drive/item IDs for '$FileName' in $OwnerUpn's drive. Skipping label assignment." -Level Warning
+            return $false
+        }
+
+        $body = @{
+            sensitivityLabelId = $labelGuid
+            assignmentMethod   = 'standard'
+            justificationText  = 'Purview lab demo seeding'
+        }
+
+        Invoke-MgGraphRequest -Method POST `
+            -Uri "/v1.0/drives/$driveId/items/$itemId/assignSensitivityLabel" `
+            -Body $body `
+            -ContentType 'application/json' `
+            -ErrorAction Stop | Out-Null
+
+        Write-LabLog -Message "Applied sensitivity label '$LabelIdentity' to '$FileName' ($OwnerUpn)." -Level Success
+        return $true
+    }
+    catch {
+        $msg = $_.Exception.Message
+        if ($msg -match '403|Forbidden|NotSupported|not available') {
+            Write-LabLog -Message "Cannot apply label to '$FileName' — Graph assignSensitivityLabel is not available in this cloud or the app lacks Files.ReadWrite.All. Apply the label manually in the portal." -Level Warning
+        }
+        else {
+            Write-LabLog -Message "Failed to apply sensitivity label to '$FileName' for $OwnerUpn`: $msg" -Level Warning
+        }
+        return $false
+    }
+}
 
 function Send-TestData {
     [CmdletBinding(SupportsShouldProcess)]
@@ -132,45 +196,86 @@ function Send-TestData {
     $createdDocs = [System.Collections.Generic.List[hashtable]]::new()
 
     if ($Config.workloads.testData.PSObject.Properties['documents'] -and $Config.workloads.testData.documents) {
+        # Default owner (for configs that omit per-document owner): first resolved test user
+        $defaultOwnerUpn = if ($userPrincipalNameLookup.Values.Count -gt 0) {
+            [string]($userPrincipalNameLookup.Values | Select-Object -First 1)
+        }
+        else {
+            $null
+        }
+
         foreach ($doc in $Config.workloads.testData.documents) {
-            $ownerUpn = [string]$userPrincipalNameLookup[[string]$doc.owner]
-            if ([string]::IsNullOrWhiteSpace($ownerUpn)) {
-                Write-LabLog -Message "Document owner not found, skipping: $($doc.owner)" -Level Warning
+            $fileName = if ($doc.PSObject.Properties['fileName'] -and -not [string]::IsNullOrWhiteSpace([string]$doc.fileName)) {
+                [string]$doc.fileName
+            }
+            elseif ($doc.PSObject.Properties['name'] -and -not [string]::IsNullOrWhiteSpace([string]$doc.name)) {
+                [string]$doc.name
+            }
+            else {
+                $null
+            }
+            if ([string]::IsNullOrWhiteSpace($fileName)) {
+                Write-LabLog -Message 'Document entry missing fileName/name, skipping.' -Level Warning
                 continue
             }
 
-            if ($PSCmdlet.ShouldProcess("$($doc.fileName) for $ownerUpn", 'Create and upload document')) {
-                try {
-                    # Create document content as plain text (Word upload via Graph)
-                    $contentBytes = [System.Text.Encoding]::UTF8.GetBytes($doc.content)
+            $ownerUpn = if ($doc.PSObject.Properties['owner'] -and $userPrincipalNameLookup.ContainsKey([string]$doc.owner)) {
+                [string]$userPrincipalNameLookup[[string]$doc.owner]
+            }
+            else {
+                $defaultOwnerUpn
+            }
 
-                    # Upload to user's OneDrive root
-                    $uploadUri = "/v1.0/users/$ownerUpn/drive/root:/$($doc.fileName):/content"
+            if ([string]::IsNullOrWhiteSpace($ownerUpn)) {
+                Write-LabLog -Message "Document owner not resolved for '$fileName', skipping." -Level Warning
+                continue
+            }
+
+            $labelIdentity = if ($doc.PSObject.Properties['labelIdentity'] -and -not [string]::IsNullOrWhiteSpace([string]$doc.labelIdentity)) {
+                [string]$doc.labelIdentity
+            }
+            elseif ($doc.PSObject.Properties['label'] -and -not [string]::IsNullOrWhiteSpace([string]$doc.label)) {
+                [string]$doc.label
+            }
+            else {
+                $null
+            }
+
+            if ($PSCmdlet.ShouldProcess("$fileName for $ownerUpn", 'Create and upload document')) {
+                try {
+                    $contentBytes = [System.Text.Encoding]::UTF8.GetBytes($doc.content)
+                    $encodedName = [uri]::EscapeDataString($fileName)
+                    $uploadUri = "/v1.0/users/$ownerUpn/drive/root:/$encodedName`:/content"
                     Invoke-MgGraphRequest -Method PUT `
                         -Uri $uploadUri `
-                        -ContentType 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' `
+                        -ContentType 'text/plain' `
                         -Body $contentBytes `
                         -ErrorAction Stop | Out-Null
 
-                    Write-LabLog -Message "Uploaded document $($doc.fileName) to $ownerUpn OneDrive" -Level Success
+                    Write-LabLog -Message "Uploaded document $fileName to $ownerUpn OneDrive." -Level Success
 
-                    if (-not [string]::IsNullOrWhiteSpace($doc.label)) {
-                        Write-LabLog -Message "Note: Sensitivity label '$($doc.label)' for $($doc.fileName) must be applied via Purview auto-labeling or manually." -Level Info
+                    $appliedLabel = $null
+                    if ($labelIdentity) {
+                        # Small delay so the drive item is visible before labeling
+                        Start-Sleep -Seconds 2
+                        if (Set-LabDriveItemSensitivityLabel -OwnerUpn $ownerUpn -FileName $fileName -LabelIdentity $labelIdentity) {
+                            $appliedLabel = $labelIdentity
+                        }
                     }
 
                     $createdDocs.Add(@{
-                        fileName = $doc.fileName
+                        fileName = $fileName
                         owner    = $ownerUpn
-                        label    = $doc.label
+                        label    = $appliedLabel
                     })
                 }
                 catch {
                     $errMsg = $_.Exception.Message
                     if ($errMsg -match 'mysite not found|NotFound') {
-                        Write-LabLog -Message "Skipping document upload '$($doc.fileName)' for $ownerUpn - OneDrive not provisioned (requires SharePoint license). Assign license and re-run." -Level Warning
+                        Write-LabLog -Message "Skipping document upload '$fileName' for $ownerUpn - OneDrive not provisioned (requires SharePoint license). Assign license and re-run." -Level Warning
                     }
                     else {
-                        Write-LabLog -Message "Failed to upload document $($doc.fileName) for $ownerUpn`: $errMsg" -Level Warning
+                        Write-LabLog -Message "Failed to upload document $fileName for $ownerUpn`: $errMsg" -Level Warning
                     }
                 }
 

@@ -1,0 +1,25 @@
+{
+  "profileType": "scenario-overlay",
+  "name": "ai-security",
+  "baseCloud": "gcc",
+  "notes": [
+    "GCC (Moderate) variant of the Integrated AI Security lab.",
+    "Feature availability verified against MS Learn GCC service descriptions (April 2025 Purview-for-Copilot wave + DSPM for AI GCC GA).",
+    "Real GCC gaps (not yet itemized in MS Learn GCC tables): Browser Data Security inline block, Network Data Security SASE/SSE integration, Sentinel data lake tier, Sentinel in Defender portal.",
+    "Copilot prompt SIT DLP remains preview even on commercial — expect GCC rollout lag.",
+    "Graph assignSensitivityLabel is unavailable in US Gov L4/L5 per MS Learn; on GCC Moderate it may succeed."
+  ],
+  "workloads": {
+    "testUsers":              { "status": "available", "note": "Same 5-persona set as commercial." },
+    "sensitivityLabels":      { "status": "available", "note": "Same unified AI taxonomy. Purview-for-Copilot GA in GCC April 2025." },
+    "dlp":                    { "status": "limited",   "note": "Copilot label-based DLP (Apr 2025 wave) works; Copilot prompt SIT and Browser/Network Data Security may lag. Endpoint DLP is GA in GCC." },
+    "retention":              { "status": "available", "note": "AI-Applications locations (MicrosoftCopilotExperiences, EnterpriseAIApps, OtherAIApps) part of Purview-for-Copilot Apr 2025 GCC wave." },
+    "eDiscovery":             { "status": "available", "note": "GA in GCC (April 2025 wave added Copilot interaction coverage)." },
+    "communicationCompliance": { "status": "available", "note": "GA in GCC with most classifiers and templates." },
+    "insiderRisk":            { "status": "available", "note": "Risky AI Usage template is available in GCC." },
+    "conditionalAccess":      { "status": "available", "note": "Report-only policies via Entra." },
+    "auditConfig":            { "status": "available", "note": "CopilotInteraction audit GA in GCC per April 2025 wave." },
+    "sentinelIntegration":    { "status": "available", "note": "Azure Government Sentinel workspace + 3 connectors + 7 analytics rules + 2 workbooks + IRM auto-triage playbook. Defender portal Sentinel rollout separate; data lake tier pending in GCC." },
+    "testData":               { "status": "available", "note": "Graph assignSensitivityLabel: L4/L5 unavailable per MS Learn; GCC Moderate may succeed. Module falls back gracefully." }
+  }
+}

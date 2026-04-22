@@ -229,25 +229,36 @@ function Set-LabLabelPublication {
                 Write-LabLog "Preserving existing label group assignments on publication policy '$policyName' to avoid unsupported unpublish operations." -Level Info
             }
 
-            if ($setLabelPolicyCommand.Parameters.ContainsKey('Labels')) {
+            # Prefer -AddLabels/-RemoveLabels delta over -Labels wholesale
+            # replace. Passing -Labels with values already in the policy throws
+            # LabelAlreadyPublishedException; the delta path is idempotent.
+            # Only fall back to wholesale replace if neither AddLabels nor
+            # RemoveLabels are supported on this cmdlet build.
+            $labelsToAdd = @($effectiveLabels | Where-Object { $_ -notin $existingPolicyLabels })
+            $labelsToRemove = @($existingPolicyLabels | Where-Object { $_ -notin $effectiveLabels })
+            $hasAddLabels = $setLabelPolicyCommand.Parameters.ContainsKey('AddLabels')
+            $hasRemoveLabels = $setLabelPolicyCommand.Parameters.ContainsKey('RemoveLabels')
+
+            if ($hasAddLabels -or $hasRemoveLabels) {
+                if ($hasAddLabels -and $labelsToAdd.Count -gt 0) {
+                    $setParams['AddLabels'] = $labelsToAdd
+                    $hasSetUpdates = $true
+                }
+                if ($hasRemoveLabels -and $labelsToRemove.Count -gt 0) {
+                    $setParams['RemoveLabels'] = $labelsToRemove
+                    $hasSetUpdates = $true
+                }
+                if (-not $hasSetUpdates) {
+                    Write-LabLog "Label publication policy '$policyName' already publishes all desired labels; no delta to apply." -Level Info
+                }
+            }
+            elseif ($setLabelPolicyCommand.Parameters.ContainsKey('Labels')) {
                 $setParams['Labels'] = $effectiveLabels
                 $hasSetUpdates = $true
             }
             elseif ($setLabelPolicyCommand.Parameters.ContainsKey('ScopedLabels')) {
                 $setParams['ScopedLabels'] = $effectiveLabels
                 $hasSetUpdates = $true
-            }
-            else {
-                $labelsToAdd = @($effectiveLabels | Where-Object { $_ -notin $existingPolicyLabels })
-                $labelsToRemove = @($existingPolicyLabels | Where-Object { $_ -notin $effectiveLabels })
-                if ($setLabelPolicyCommand.Parameters.ContainsKey('AddLabels') -and $labelsToAdd.Count -gt 0) {
-                    $setParams['AddLabels'] = $labelsToAdd
-                    $hasSetUpdates = $true
-                }
-                if ($setLabelPolicyCommand.Parameters.ContainsKey('RemoveLabels') -and $labelsToRemove.Count -gt 0) {
-                    $setParams['RemoveLabels'] = $labelsToRemove
-                    $hasSetUpdates = $true
-                }
             }
 
             foreach ($entry in $createLocationParams.GetEnumerator()) {
@@ -265,8 +276,23 @@ function Set-LabLabelPublication {
             }
 
             if ($hasSetUpdates) {
-                Set-LabelPolicy @setParams | Out-Null
-                Write-LabLog "Updated label publication policy: $policyName" -Level Success
+                try {
+                    Set-LabelPolicy @setParams | Out-Null
+                    Write-LabLog "Updated label publication policy: $policyName" -Level Success
+                }
+                catch {
+                    # LabelAlreadyPublishedException means the AddLabels delta
+                    # collided with labels the server already has but didn't
+                    # surface in Get-LabelPolicy's Labels/ScopedLabels property.
+                    # That's a benign no-op — the labels ARE already published.
+                    $exText = "$($_.Exception.Message) $($_.FullyQualifiedErrorId)"
+                    if ($exText -match 'LabelAlreadyPublishedException|already published') {
+                        Write-LabLog "Labels already published on '$policyName' (server reports no-op)." -Level Info
+                    }
+                    else {
+                        throw
+                    }
+                }
             }
             else {
                 Write-LabLog "No supported Set-LabelPolicy parameters were available to update labels/locations for: $policyName" -Level Warning
@@ -645,13 +671,19 @@ function Deploy-SensitivityLabels {
 }
 
 function Remove-SensitivityLabels {
-    [CmdletBinding(SupportsShouldProcess)]
+    [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'All')]
     param(
         [Parameter(Mandatory)]
         [PSCustomObject]$Config,
 
         [Parameter()]
-        [PSCustomObject]$Manifest  # Reserved for manifest-based removal
+        [PSCustomObject]$Manifest,  # Reserved for manifest-based removal
+
+        [Parameter(ParameterSetName = 'PoliciesOnly')]
+        [switch]$PoliciesOnly,
+
+        [Parameter(ParameterSetName = 'LabelsOnly')]
+        [switch]$LabelsOnly
     )
 
     $targetAutoLabelPolicies = @()
@@ -721,6 +753,8 @@ function Remove-SensitivityLabels {
         }
     }
 
+    # --- Phase 1: policy removal (skipped when -LabelsOnly) ---
+    if (-not $LabelsOnly) {
     # --- Remove auto-label policies and rules first ---
     foreach ($policy in $targetAutoLabelPolicies) {
         $policyName = $policy.name
@@ -773,6 +807,10 @@ function Remove-SensitivityLabels {
     catch {
         Write-LabLog "Label publication policy not found or already removed: $($targetPublicationPolicy.name)" -Level Info
     }
+    } # end -LabelsOnly guard
+
+    # --- Phase 2: terminal label removal (skipped when -PoliciesOnly) ---
+    if ($PoliciesOnly) { return }
 
     # --- Remove sublabels first, then parent labels (reverse order) ---
     $reversedLabels = @($targetLabels)

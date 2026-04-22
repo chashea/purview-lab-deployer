@@ -36,12 +36,14 @@ Status values: `available`, `limited` (warns), `delayed` (warns), `unavailable` 
 
 ## Existing profiles
 
-| Profile | Commercial | GCC | Prefix | Config |
-|---------|-----------|-----|--------|--------|
-| basic-lab | Yes | Yes | PVLab | basic-lab-demo.json |
-| shadow-ai | Yes | Yes | PVShadowAI | shadow-ai-demo.json |
-| copilot-protection | Yes | Yes | PVCopilotDLP | copilot-dlp-demo.json |
-| foundry | Yes | No | PVFoundry | foundry-demo.json |
+| Profile | Commercial | GCC | Prefix | Config | Notes |
+|---------|-----------|-----|--------|--------|-------|
+| basic-lab | Yes | Yes | PVLab | basic-lab-demo.json | Core Purview (non-AI) |
+| shadow-ai | Yes | Yes | PVShadowAI | shadow-ai-demo.json | 5 DLP policies across Devices/Browser/Network/CopilotExperiences |
+| copilot-protection | Yes | Yes | PVCopilotDLP | copilot-dlp-demo.json | 2 Copilot DLP policies (prompt SIT + label block) |
+| purview-sentinel | Yes | Yes | PVSentinel | purview-sentinel-demo.json | Sentinel + Purview signal integration. Requires Azure subscription. |
+| ai-security | Yes | Yes | PVAISec | ai-security-demo.json | **Integrated** profile combining Copilot DLP + Shadow AI + Sentinel under one prefix. 11 workloads, 7 Sentinel analytics rules (3 AI-specific), 2 workbooks. |
+| foundry | Yes | No | PVFoundry | foundry-demo.json | AI Foundry agent security (separate repo sibling) |
 
 ## README conventions
 

@@ -1,0 +1,39 @@
+{
+  "kind": "Scheduled",
+  "properties": {
+    "displayName": "{{displayName}}",
+    "description": "Correlates Risky AI Usage IRM alerts with DLP blocks on AI prompts or external AI paste/upload within the last 4 hours. A user with both signals is an elevated AI-risk candidate for investigator triage.",
+    "severity": "{{severity}}",
+    "enabled": true,
+    "query": "let irmRiskyAi = union isfuzzy=true SecurityAlert\n  | where TimeGenerated > ago(4h)\n  | extend ProductName = tostring(column_ifexists('ProductName', ''))\n  | extend AlertName = tostring(column_ifexists('AlertName', ''))\n  | extend Entities = tostring(column_ifexists('Entities', ''))\n  | extend ExtendedProperties = tostring(column_ifexists('ExtendedProperties', ''))\n  | where ProductName has 'Insider Risk' and (AlertName has 'Risky AI' or ExtendedProperties has 'RiskyAIUsage')\n  | extend IrmUpn = tostring(parse_json(Entities) [0].Name)\n  | project IrmTime=TimeGenerated, IrmAlertName=AlertName, IrmUpn;\nlet dlpAi = union isfuzzy=true SecurityAlert\n  | where TimeGenerated > ago(4h)\n  | extend ProductName = tostring(column_ifexists('ProductName', ''))\n  | extend AlertName = tostring(column_ifexists('AlertName', ''))\n  | extend Entities = tostring(column_ifexists('Entities', ''))\n  | extend ExtendedProperties = tostring(column_ifexists('ExtendedProperties', ''))\n  | where ProductName has 'Microsoft Data Loss Prevention' or ProductName has 'Microsoft 365 DLP'\n  | where AlertName has 'Copilot' or ExtendedProperties has_any ('chat.openai.com','chatgpt.com','claude.ai','gemini.google.com','copilotPromptBlock','copilotLabelBlock')\n  | extend DlpUpn = tostring(parse_json(Entities) [0].Name)\n  | project DlpTime=TimeGenerated, DlpAlertName=AlertName, DlpUpn;\nirmRiskyAi\n| join kind=inner (dlpAi) on $left.IrmUpn == $right.DlpUpn\n| project TimeGenerated=IrmTime, AccountUpn=IrmUpn, IrmAlertName, DlpAlertName, DlpTime",
+    "queryFrequency": "PT1H",
+    "queryPeriod": "PT4H",
+    "triggerOperator": "GreaterThan",
+    "triggerThreshold": 0,
+    "suppressionDuration": "PT1H",
+    "suppressionEnabled": false,
+    "tactics": ["Exfiltration", "Impact"],
+    "techniques": ["T1567"],
+    "eventGroupingSettings": { "aggregationKind": "SingleAlert" },
+    "entityMappings": [
+      {
+        "entityType": "Account",
+        "fieldMappings": [
+          { "identifier": "FullName", "columnName": "AccountUpn" }
+        ]
+      }
+    ],
+    "incidentConfiguration": {
+      "createIncident": true,
+      "groupingConfiguration": {
+        "enabled": true,
+        "reopenClosedIncident": false,
+        "lookbackDuration": "PT5H",
+        "matchingMethod": "Selected",
+        "groupByEntities": ["Account"],
+        "groupByAlertDetails": [],
+        "groupByCustomDetails": []
+      }
+    }
+  }
+}

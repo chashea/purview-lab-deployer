@@ -293,10 +293,10 @@
           ]
         },
         {
-          "name": "Shadow AI - Enterprise AI Prompt Protection",
-          "policyMode": "enterpriseAIProtection",
+          "name": "Shadow AI - Copilot Prompt Protection",
+          "policyMode": "copilotPromptBlock",
           "locations": [
-            "EnterpriseAI"
+            "CopilotExperiences"
           ],
           "rules": [
             {
@@ -368,10 +368,10 @@
           ]
         },
         {
-          "name": "Shadow AI - Enterprise AI Label Protection",
-          "policyMode": "labelProtection",
+          "name": "Shadow AI - Copilot Label Protection",
+          "policyMode": "copilotLabelBlock",
           "locations": [
-            "EnterpriseAI"
+            "CopilotExperiences"
           ],
           "labels": [
             "PVShadowAI-Highly-Confidential-All-Employees",
@@ -584,6 +584,33 @@
           "locations": [
             "Exchange",
             "OneDrive"
+          ]
+        },
+        {
+          "name": "Copilot Experiences Retention",
+          "retentionDays": 365,
+          "retentionAction": "retainOnly",
+          "locations": [],
+          "applications": [
+            "MicrosoftCopilotExperiences"
+          ]
+        },
+        {
+          "name": "Enterprise AI Apps Retention",
+          "retentionDays": 1095,
+          "retentionAction": "retainAndDelete",
+          "locations": [],
+          "applications": [
+            "EnterpriseAIApps"
+          ]
+        },
+        {
+          "name": "Other AI Apps Retention",
+          "retentionDays": 365,
+          "retentionAction": "retainOnly",
+          "locations": [],
+          "applications": [
+            "OtherAIApps"
           ]
         }
       ],
@@ -952,31 +979,31 @@
         {
           "fileName": "Q4-Financial-Forecast.docx",
           "owner": "mchen",
-          "label": "PVShadowAI-Confidential",
+          "labelIdentity": "PVShadowAI-Confidential-All-Employees",
           "content": "Q4 Financial Forecast - CONFIDENTIAL\n\nProjected Revenue: $14.2M\nCustomer ID: CUST-482917\nPayroll routing: 021000021\nAccount: 0012345678\n\nDo not share externally or with AI tools."
         },
         {
           "fileName": "Customer-Data-Export.docx",
           "owner": "rtorres",
-          "label": "PVShadowAI-Highly-Confidential-AI-Regulated-Data",
+          "labelIdentity": "PVShadowAI-Highly-Confidential-AI-Regulated-Data",
           "content": "Customer Data Export - HIGHLY CONFIDENTIAL\n\nCustomer: Jane Smith\nSSN: 287-44-9921\nCredit Card: 4532-1111-2222-3333\nCustomer ID: CUST-193847\nAPI Key: sk-proj-abc123def456ghi789jkl"
         },
         {
           "fileName": "Engineering-Specs.docx",
           "owner": "dokafor",
-          "label": "PVShadowAI-Confidential",
+          "labelIdentity": "PVShadowAI-Confidential-AI-Internal-Use",
           "content": "Internal Engineering Specifications\n\nProject: PRJ-NOVA2025\nAPI Endpoint Key: api_live_xK9mN2pQ4rS6tU8v\nArchitecture notes for internal review only.\nDo not paste into external AI services."
         },
         {
           "fileName": "HR-Compensation-Analysis.docx",
           "owner": "mchen",
-          "label": "PVShadowAI-Highly-Confidential-AI-Blocked-from-External-Tools",
+          "labelIdentity": "PVShadowAI-Highly-Confidential-AI-Blocked-from-External-Tools",
           "content": "HR Compensation Analysis - HIGHLY CONFIDENTIAL\n\nEmployee: Sarah Johnson\nSSN: 441-28-7736\nBase Salary: $142,000\nStock Grant: 2,500 RSUs (vest Q2 2026)\nBonus Target: 18%\n\nEmployee: Michael Chen\nSSN: 553-91-2248\nBase Salary: $168,000\nStock Grant: 3,200 RSUs (vest Q3 2026)\nBonus Target: 22%\n\nThis document contains compensation data subject to HR confidentiality requirements. Do not share with AI tools."
         },
         {
           "fileName": "AI-Usage-Policy-Draft.docx",
           "owner": "sreeves",
-          "label": "PVShadowAI-Confidential",
+          "labelIdentity": "PVShadowAI-Confidential-All-Employees",
           "content": "DRAFT - Organizational AI Usage Policy v2.1\n\nSection 1: Approved AI Tools\n- Microsoft Copilot (M365 integrated)\n- Azure OpenAI Service (enterprise deployment)\n\nSection 2: Prohibited Activities\n- Pasting organizational data into public AI services\n- Using AI tools to process data labeled Highly Confidential\n- Sharing AI-generated summaries of regulated data externally\n\nSection 3: Incident Response\n- DLP alerts trigger automatic insider risk scoring\n- Repeated violations escalate to mandatory training and access review\n- Data exposure incidents follow the standard breach notification process\n\nDRAFT - For internal review by AI Governance team only."
         }
       ]

@@ -2,11 +2,13 @@
 
 ## Overview
 
-**Duration:** 20–30 minutes (expandable to 90–120 with hands-on)
+**Duration:** 20–30 minutes (expandable to 75–90 with hands-on)
 **Audience:** CISO, Security/Compliance leadership, IT decision-makers, Copilot stakeholders
 **Goal:** Show how Purview DLP enforces data boundaries for M365 Copilot — and what actually happens when those guardrails trigger.
 
 **Exec tagline:** "We're not turning Copilot off — we're teaching it what it's allowed to see, summarize, and search."
+
+**Feature status (per Microsoft Learn):** Label-based file blocking is GA. Prompt SIT blocking — which also prevents sensitive prompt text from being used in internal or external web searches — is in public preview and rolling out to tenants. Validate availability before demo day with `./scripts/Test-CopilotDlpReady.ps1`.
 
 ---
 
@@ -47,14 +49,15 @@
 
 **Portal:** Microsoft Purview > DLP > Policies > `PVCopilotDLP-Copilot Prompt SIT Block`
 
-> "The first guardrail: if a user types sensitive information directly into a Copilot prompt, DLP intercepts it."
+> "The first guardrail: if a user types sensitive information directly into a Copilot prompt, DLP intercepts it. The same control stops that sensitive text from being sent to internal or external web searches — so the data never leaves the compliance boundary."
 
 **Show the policy:**
 - Location: Microsoft 365 Copilot & Copilot Chat
 - Condition: Content contains sensitive info types
 - 3 rules: SSN, Credit Card, PHI
-- Action: Block Copilot response
+- Action: Block Copilot response (and block web-search use of the sensitive prompt text)
 - Scope note: typed prompt text is evaluated; uploaded file contents in prompts are not DLP-scanned
+- Status: public preview — rolling out tenant-by-tenant
 
 **Live demo:**
 
@@ -66,6 +69,8 @@
 | "What are our Q4 revenue projections?" | Normal response — no sensitive data |
 
 > "The user sees a clear, policy-driven message — not a vague error. They know exactly why Copilot can't answer, and they know it's intentional."
+
+> "One control, three protections: prompt blocked, internal search blocked, web search blocked. The sensitive string never leaves the guardrail."
 
 **Transition:** "That covers what users type. Now let's talk about what Copilot can see."
 
@@ -97,31 +102,11 @@
 
 > "Important technical note: you cannot mix sensitive info type conditions and label conditions in the same DLP rule. But you can use multiple rules in one policy, or separate policies — which is exactly what we've done here. One policy for prompt content, one for file labels."
 
-**Transition:** "We've protected prompts and files. What about web search?"
-
----
-
-## Phase 3: Web Search Prevention — "Even the web has boundaries" (5 min)
-
-> "This capability is currently in Private Preview, but it's important to understand the model."
-
-**Explain the control:**
-- Inline DLP prevents Copilot from using sensitive data for external web search queries
-- Even if Copilot could answer the question, Purview decides it shouldn't
-- The prompt itself would carry sensitive data outside the compliance boundary
-- Web search availability is governed by Cloud Policy (**Allow web search in Copilot**)
-- Generated web queries can be audited and investigated alongside prompts/responses
-
-**If preview-enabled:** Demonstrate with a live prompt
-**If not:** Walk through the policy configuration in the portal
-
-> "Even if Copilot could answer the question, Purview decides it shouldn't. The sensitive data stays inside the boundary."
-
 **Transition:** "Now let's look at what security teams care about most — the evidence."
 
 ---
 
-## Phase 4: Evidence & Investigations — "Prove it works" (5 min)
+## Phase 3: Evidence & Investigations — "Prove it works" (5 min)
 
 **Portal:** Microsoft Purview > Audit > Search
 
@@ -150,10 +135,9 @@
 > "To recap — what you've seen today:
 >
 > 1. **Copilot without guardrails** — full access to everything
-> 2. **Guardrail #1** — DLP blocks sensitive data in prompts (SSN, credit card, PHI)
+> 2. **Guardrail #1** — DLP blocks sensitive data in prompts (SSN, credit card, PHI) AND blocks that sensitive text from being used in internal or web searches — one policy, three protections
 > 3. **Guardrail #2** — DLP blocks Copilot from labeled content (Highly Confidential)
-> 4. **Guardrail #3** — DLP prevents sensitive data in web search (preview)
-> 5. **Full audit trail** — every blocked event is recorded and investigable
+> 4. **Full audit trail** — every blocked event is recorded and investigable
 >
 > We didn't turn Copilot off. We taught it what it's allowed to see, summarize, and search. That's the Microsoft data-centric AI security model.
 >
@@ -176,13 +160,19 @@
 > "That's exactly why we use label-specific rules. 'Confidential > General' allows Copilot access. 'Highly Confidential > Restricted' blocks it. The label is the control surface."
 
 **Q: "How long until DLP policies take effect on Copilot?"**
-> "Plan for up to 4 hours after policy creation or change for full Copilot/Copilot Chat propagation. For demos, deploy ahead of time and verify with the runbook."
+> "Plan for up to 4 hours after policy creation or change for full Copilot/Copilot Chat propagation. For demos, deploy ahead of time and verify with `Test-CopilotDlpReady.ps1`."
+
+**Q: "What about web search? Does sensitive prompt data leak out to Bing or the open web?"**
+> "No — and this is an important point. The same prompt SIT policy that blocks the Copilot response also blocks that sensitive text from being used in internal or external web searches. One control, three protections. Microsoft documents this as a built-in behavior of the Copilot prompt location, not a separate add-on policy."
 
 **Q: "Are uploaded files in prompts scanned by Copilot DLP prompt controls?"**
 > "Not for prompt SIT scanning. Prompt controls evaluate text typed directly in the prompt. Uploaded file contents aren't scanned by that control, so we rely on label-based controls and existing access protections for file content."
 
 **Q: "What licenses do we need?"**
 > "Microsoft 365 E5 or E5 Compliance for Purview DLP. Copilot for Microsoft 365 for the Copilot license. Both are required."
+
+**Q: "Does this cover agents — like the prebuilt Copilot agents or ones we build in Copilot Studio?"**
+> "The Microsoft 365 Copilot and Copilot Chat location covers prebuilt agents available in M365 Copilot and Copilot Chat — those run under the same DLP enforcement you're seeing today. Custom Copilot Studio agents and declarative agents have their own controls under Dataverse data policies and agent-specific settings, which DSPM for AI and Purview's agent governance layer extend to. The model is the same — sensitivity labels travel, SITs are honored — but the control surface changes per agent type."
 
 **Q: "Can we scope DLP to specific users or departments?"**
 > "Yes. DLP policies support group-based scoping. You could enable Copilot DLP for Finance first, then roll out to the full organization."
@@ -191,10 +181,12 @@
 
 ## Natural Follow-Ups
 
-1. **DSPM for AI Risk Assessments** — oversharing discovery and remediation
-2. **Endpoint DLP for Copilot** — paste/upload scenarios on managed devices
-3. **Security Copilot for DLP triage** — AI-on-AI investigation story
-4. **Shadow AI Prevention Demo** — complementary lab covering external AI tools (separate lab profile)
+1. **Insider Risk — Risky AI Usage** — already deployed as part of this lab profile. Users who repeatedly trigger Copilot DLP guardrails get scored as higher risk and surface to investigators automatically. Great second-half of the demo for risk-adaptive security teams.
+   - **Wizard-step defaults to call out** (matches how most customers configure in the portal): scope is **All users and groups** (no priority-user scoping); **Content to prioritize** = one random sensitivity label + one SIT + one trainable classifier (skip SharePoint sites); **Detection options** = select all indicators and triggering events the template exposes.
+2. **DSPM for AI Risk Assessments** — oversharing discovery and remediation. Shows where sensitive data still lives that Copilot could touch. Runbook has activation steps.
+3. **Endpoint DLP for Copilot** — paste/upload scenarios on managed devices
+4. **Security Copilot for DLP triage** — AI-on-AI investigation story
+5. **Shadow AI Prevention Demo** — complementary lab covering external AI tools (separate lab profile)
 
 ---
 

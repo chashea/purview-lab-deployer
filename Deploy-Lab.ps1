@@ -58,7 +58,7 @@ param(
     [string]$ConfigPath,
 
     [Parameter()]
-    [ValidateSet('basic-lab', 'shadow-ai', 'copilot-protection', 'copilot-dlp', 'purview-sentinel')]
+    [ValidateSet('basic-lab', 'shadow-ai', 'copilot-protection', 'copilot-dlp', 'purview-sentinel', 'ai-security')]
     [string]$LabProfile,
 
     [Parameter()]
@@ -75,7 +75,10 @@ param(
     [string[]]$TestUsers,
 
     [Parameter()]
-    [switch]$SkipTestUsers
+    [switch]$SkipTestUsers,
+
+    [Parameter()]
+    [string]$SubscriptionId = $env:PURVIEW_SUBSCRIPTION_ID
 )
 
 $ErrorActionPreference = 'Stop'
@@ -157,6 +160,28 @@ try {
         }
 
         Write-LabLog -Message "TestUsers overridden by caller: $($upnObjects.Count) UPN(s). Groups cleared; mode forced to 'existing'." -Level Info
+    }
+
+    # Sentinel integration: allow -SubscriptionId / PURVIEW_SUBSCRIPTION_ID env var to
+    # override the config value. The config ships with an empty subscriptionId so
+    # that repo clones don't carry a hardcoded tenant-specific GUID.
+    if ($Config.workloads.sentinelIntegration -and
+        $Config.workloads.sentinelIntegration.PSObject.Properties['enabled'] -and
+        [bool]$Config.workloads.sentinelIntegration.enabled) {
+
+        if (-not [string]::IsNullOrWhiteSpace($SubscriptionId)) {
+            if ($Config.workloads.sentinelIntegration.PSObject.Properties['subscriptionId']) {
+                $Config.workloads.sentinelIntegration.subscriptionId = $SubscriptionId
+            }
+            else {
+                $Config.workloads.sentinelIntegration |
+                    Add-Member -NotePropertyName 'subscriptionId' -NotePropertyValue $SubscriptionId
+            }
+            Write-LabLog -Message "Sentinel subscription ID provided via -SubscriptionId / PURVIEW_SUBSCRIPTION_ID." -Level Info
+        }
+        elseif ([string]::IsNullOrWhiteSpace([string]$Config.workloads.sentinelIntegration.subscriptionId)) {
+            throw 'sentinelIntegration workload is enabled but no subscription ID was provided. Pass -SubscriptionId, set PURVIEW_SUBSCRIPTION_ID, or populate workloads.sentinelIntegration.subscriptionId in the config.'
+        }
     }
 
     Write-LabLog -Message "Lab: $($Config.labName) | Prefix: $($Config.prefix) | Domain: $($Config.domain) | Cloud: $resolvedCloud" -Level Info
@@ -321,6 +346,45 @@ try {
         Write-LabLog -Message 'DLP enforcement preflight passed.' -Level Success
     }
 
+    # Copilot-specific preflight: warn if demo users don't have Microsoft 365 Copilot licenses.
+    # A missing license is the #1 silent demo failure — DLP policies deploy fine but the user
+    # hits "Copilot not available" before DLP has a chance to enforce anything.
+    if (-not $SkipAuth -and $Config.workloads.dlp.enabled) {
+        $copilotPolicyPresent = @($Config.workloads.dlp.policies |
+                Where-Object { @($_.locations) -contains 'CopilotExperiences' }).Count -gt 0
+
+        if ($copilotPolicyPresent -and $Config.workloads.testUsers.users) {
+            Write-LabStep -StepName 'CopilotLicense' -Description 'Verifying demo users have Microsoft 365 Copilot licenses'
+
+            $copilotSkuId = '639dec6b-bb19-468b-871c-c5c441c4b0cb'
+            $unlicensed = [System.Collections.Generic.List[string]]::new()
+            $checkFailed = $false
+
+            foreach ($user in @($Config.workloads.testUsers.users)) {
+                $upn = [string]$user.upn
+                if ([string]::IsNullOrWhiteSpace($upn)) { continue }
+
+                try {
+                    $licenses = Get-MgUserLicenseDetail -UserId $upn -ErrorAction Stop
+                    if (-not ($licenses | Where-Object { $_.SkuId -eq $copilotSkuId })) {
+                        $unlicensed.Add($upn)
+                    }
+                }
+                catch {
+                    $checkFailed = $true
+                    Write-LabLog -Message "Could not check Copilot license for '$upn': $($_.Exception.Message)" -Level Warning
+                }
+            }
+
+            if ($unlicensed.Count -gt 0) {
+                Write-LabLog -Message "Microsoft 365 Copilot SKU not assigned to: $($unlicensed -join ', '). DLP policies will deploy, but Copilot will not respond for these users until a license is assigned." -Level Warning
+            }
+            elseif (-not $checkFailed) {
+                Write-LabLog -Message 'All demo users have Microsoft 365 Copilot licenses.' -Level Success
+            }
+        }
+    }
+
     # Initialize manifest
     $manifest = @{}
     $failedWorkloads = @()
@@ -363,7 +427,17 @@ try {
                 }
             }
             catch {
+                # Known Microsoft-side visibility lag: newly created policies
+                # (especially AI-Applications retention) may take 10-30+ min to
+                # appear in Get-*ComplianceP olicy results even though the PUT
+                # succeeded. Treat ManagementObjectNotFoundException as soft
+                # (warn on final attempt) so the deploy completes and the
+                # manifest is still written. Operator can verify via portal.
                 if ($attempt -eq $maxAttempts) {
+                    if ($_.Exception.Message -match 'ManagementObjectNotFoundException|FfoConfigurationSession') {
+                        Write-LabLog -Message "Validation check for $EntityType '$EntityName' exhausted retries — Microsoft backend query-cache propagation lag. Policy likely exists; verify via portal. Continuing." -Level Warning
+                        return $false
+                    }
                     throw "Validation check failed for $EntityType '$EntityName': $($_.Exception.Message)"
                 }
 
@@ -517,6 +591,10 @@ try {
         if ($Config.workloads.dlp.enabled -and $Config.workloads.dlp.policies) {
             foreach ($policy in @($Config.workloads.dlp.policies)) {
                 $targetPolicyName = "$($Config.prefix)-$($policy.name)"
+                # Copilot (M365Copilot) location rules only honor AdvancedRule + RestrictAccess.
+                # BlockAccess / NotifyUser / GenerateAlert / GenerateIncidentReport are rejected
+                # by the engine. Skip those validation checks for Copilot rules.
+                $isCopilotPolicy = ($policy.PSObject.Properties.Name -contains 'locations') -and (@($policy.locations) -contains 'CopilotExperiences')
                 foreach ($rule in @($policy.rules)) {
                     $targetRuleName = "$($Config.prefix)-$($rule.name)"
 
@@ -543,13 +621,20 @@ try {
                                 }
                             }
                         }
-                        else {
+                        elseif (-not $isCopilotPolicy) {
                             $validationWarnings.Add("DLP rule '$targetRuleName' configured labels could not be validated because no label property was returned by Get-DlpComplianceRule.")
                         }
                     }
 
                     $enforcement = if (($rule.PSObject.Properties.Name -contains 'enforcement') -and $null -ne $rule.enforcement) { $rule.enforcement } else { $null }
                     if (-not $enforcement) {
+                        continue
+                    }
+
+                    # Copilot rules don't accept BlockAccess/NotifyUser/GenerateAlert/IncidentReport
+                    # — skip those validation checks. The RestrictAccess action is the enforcement
+                    # and is set via the AdvancedRule path.
+                    if ($isCopilotPolicy) {
                         continue
                     }
 
@@ -661,7 +746,15 @@ try {
                 }
 
                 if (-not $policyExists) {
-                    $validationFailures.Add("Retention policy '$targetPolicyName'")
+                    # Retention policies — especially AI-Applications scoped
+                    # (MicrosoftCopilotExperiences / EnterpriseAIApps / OtherAIApps)
+                    # have a Microsoft-side query-cache propagation lag of
+                    # 10-30+ min where PUT succeeds but Get-* can't find the
+                    # policy yet. Test-DeployedEntityExists's inner retry
+                    # tolerance already logged the soft-skip; here we record
+                    # as a warning rather than failure so the deploy exits
+                    # cleanly. Operator verifies via portal.
+                    $validationWarnings.Add("Retention policy '$targetPolicyName' not yet visible to Get-RetentionCompliancePolicy — likely Microsoft-side query-cache lag. Verify via Purview portal; rerun deploy in 15-30 min if needed.")
                 }
             }
         }

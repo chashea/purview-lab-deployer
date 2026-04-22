@@ -412,11 +412,12 @@ function Get-ProfileConfigMapping {
     param()
 
     return @{
-        'basic-lab'           = 'basic-lab-demo.json'
-        'shadow-ai'           = 'shadow-ai-demo.json'
+        'basic-lab'          = 'basic-lab-demo.json'
+        'shadow-ai'          = 'shadow-ai-demo.json'
         'copilot-protection' = 'copilot-dlp-demo.json'
-        'copilot-dlp'         = 'copilot-dlp-demo.json'
-        'purview-sentinel'    = 'purview-sentinel-demo.json'
+        'copilot-dlp'        = 'copilot-dlp-demo.json'
+        'purview-sentinel'   = 'purview-sentinel-demo.json'
+        'ai-security'        = 'ai-security-demo.json'
     }
 }
 
@@ -678,6 +679,50 @@ function Test-LabConfigValidity {
     return $isValid
 }
 
+function Resolve-LabSensitivityLabelGuid {
+    [CmdletBinding()]
+    [OutputType([string])]
+    param(
+        [Parameter(Mandatory)]
+        [string]$LabelName
+    )
+
+    $parsedGuid = [Guid]::Empty
+    if ([Guid]::TryParse($LabelName, [ref]$parsedGuid)) {
+        return $LabelName
+    }
+
+    $allLabels = $null
+    try {
+        $allLabels = Invoke-LabRetry -OperationName "Get-Label for '$LabelName'" -MaxAttempts 5 -DelaySeconds 10 -ScriptBlock {
+            Get-Label -ErrorAction Stop
+        }
+    }
+    catch {
+        Write-LabLog -Message "Could not enumerate sensitivity labels to resolve '$LabelName' after 5 retries: $($_.Exception.Message)" -Level Warning
+        return $null
+    }
+
+    $match = $allLabels | Where-Object {
+        $_.Name -eq $LabelName -or
+        $_.DisplayName -eq $LabelName -or
+        [string]$_.Identity -eq $LabelName
+    } | Select-Object -First 1
+
+    if (-not $match) {
+        $match = $allLabels | Where-Object {
+            $_.DisplayName -like "*$LabelName*" -or
+            $_.Name -like "*$LabelName*"
+        } | Select-Object -First 1
+    }
+
+    if ($match) {
+        return [string]$match.Guid
+    }
+
+    return $null
+}
+
 function Test-LabManifestValidity {
     [CmdletBinding()]
     [OutputType([bool])]
@@ -720,6 +765,7 @@ Export-ModuleMember -Function @(
     'Get-LabObjectProperty'
     'Get-LabDlpConfiguredLabels'
     'Invoke-LabRetry'
+    'Resolve-LabSensitivityLabelGuid'
     'Test-LabConfigValidity'
     'Test-LabManifestValidity'
 )

@@ -1,7 +1,7 @@
 {
   "demoName": "Copilot DLP Guardrails (GCC)",
   "version": "1.0",
-  "cloudNotes": "GCC deployment. SIT-based Copilot DLP policies are not supported in GCC — only label-based content blocking is available. Copilot DLP features may have delayed rollout compared to commercial. Validate CopilotLocation parameter availability and Copilot audit events before demo. Web search is off by default in GCC unless enabled with policy.",
+  "cloudNotes": "GCC deployment. SIT-based Copilot DLP policies are not supported in GCC — only label-based content blocking is available. Copilot DLP features may have delayed rollout compared to commercial. Validate `Locations` + `EnforcementPlanes` parameters on New-DlpCompliancePolicy and confirm Copilot audit events before demo. Web search is off by default in GCC unless enabled with policy.",
   "presentationFlow": [
     {
       "step": 0,
@@ -24,24 +24,22 @@
       "duration": "20 min",
       "automated": true,
       "policyName": "PVCopilotDLP-Copilot Labeled Content Block",
-      "gccNote": "This is the primary Copilot DLP guardrail in GCC. SIT-based prompt blocking is not supported for Copilot in GCC — only label-based content blocking is available. Even without DLP Copilot location, encrypted sensitivity labels independently restrict Copilot access to file content."
+      "gccNote": "This is the primary Copilot DLP guardrail in GCC. SIT-based prompt blocking is not supported for Copilot in GCC — only label-based content blocking is available. Even without DLP Copilot location, encrypted sensitivity labels independently restrict Copilot access to file content.",
+      "expectedAuditRecordSample": {
+        "CreationTime": "2026-04-18T14:12:18",
+        "Operation": "DlpRuleMatch",
+        "Workload": "M365Copilot",
+        "PolicyName": "PVCopilotDLP-Copilot Labeled Content Block",
+        "RuleName": "PVCopilotDLP-Block Copilot from Restricted Content",
+        "SensitivityLabelData": [{ "Name": "PVCopilotDLP-Highly-Confidential-Restricted", "Guid": "00000000-0000-0000-0000-000000000000" }],
+        "EnforcementAction": "Block",
+        "TargetResource": "/users/mtorres/drive/root:/Q4-Revenue-Forecast.txt",
+        "UserPrincipalName": "mtorres@MngEnvMCAP659995.onmicrosoft.com",
+        "CopilotInteractionType": "FileGrounding"
+      }
     },
     {
       "step": 2,
-      "title": "Guardrail #2 — Stop Copilot web search with sensitive data",
-      "talkTrack": "Even if Copilot could answer the question by searching the web, Purview decides it shouldn't — because the prompt contains sensitive data that would leave the compliance boundary. This is currently in Private Preview. In GCC, web search must be policy-enabled before this scenario can be demonstrated.",
-      "showInPortal": [
-        "Cloud Policy: Allow web search in Copilot (enabled for demo users)",
-        "DLP policy creation walkthrough (web search location)",
-        "Expected behavior explanation"
-      ],
-      "duration": "15 min",
-      "automated": false,
-      "previewStatus": "Private Preview",
-      "gccNote": "Private Preview availability in GCC is TBD. Walk through the policy logic and explain the control."
-    },
-    {
-      "step": 3,
       "title": "Evidence & investigations",
       "talkTrack": "Every Copilot DLP event creates a full audit trail. Security teams can see which file was excluded, which policy was responsible, and who triggered it. This is defensible AI governance in GCC, with feature availability depending on tenant rollout.",
       "showInPortal": [
@@ -75,21 +73,6 @@
     },
     {
       "id": "S2",
-      "name": "Web Search Prevention",
-      "description": "Explain and demonstrate (if preview-enabled) how DLP prevents Copilot from using sensitive data in web search queries",
-      "steps": [
-        "Explain the control: inline DLP for Copilot web search",
-        "Walk through the policy creation in the portal",
-        "If preview-enabled: demonstrate with a prompt that triggers web search with sensitive context",
-        "Show expected behavior: Copilot blocks the web search",
-        "Key message: 'Even if Copilot could answer, Purview decides it shouldn't'"
-      ],
-      "expectedOutcome": "Audience understands the web search boundary even if not yet enforceable in their GCC tenant",
-      "automatedArtifacts": [],
-      "manualPrep": ["Preview enrollment (if available in GCC)", "Portal walkthrough prepared"]
-    },
-    {
-      "id": "S3",
       "name": "Audit & Investigation",
       "description": "Show the full audit trail and investigation workflow for Copilot DLP events",
       "steps": [

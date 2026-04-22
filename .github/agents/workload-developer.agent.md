@@ -102,3 +102,44 @@ Write-LabLog "Failed to create policy: $_" -Level Error
 2. Dry-run deploy: `./Deploy-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -SkipAuth -WhatIf`
 3. Dry-run remove: `./Remove-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -SkipAuth -WhatIf`
 4. Run Pester tests: `Invoke-Pester tests/ -Output Detailed`
+
+## Known Microsoft-side behaviors worth knowing before modifying modules
+
+These emerged during live ai-security deploys — worth not re-learning the hard way:
+
+### 1. Copilot DLP `RestrictAccess` — SIT-based vs label-based rules need different values
+
+MS Learn Example 4 (`New-DlpCompliancePolicy`) documents `RestrictAccess=@{setting="ExcludeContentProcessing";value="Block"}` for **label-based** Copilot rules (`AdvancedRule` + label GUIDs). That same value **is rejected** by the policy engine for **SIT-based** Copilot prompt rules (`ContentContainsSensitiveInformation`) with `ErrorMissingRestrictActionForCopilotException: RestrictAccess or RestrictWebGrounding are required`. The correct SIT-value is undocumented on MS Learn — `PromptProcessing` was also rejected. `DLP.psm1` branches on rule shape and applies per-type; the SIT branch is best-effort and may need manual portal config.
+
+### 2. Sentinel IRM connector kind is `OfficeIRM`
+
+Not `MicrosoftPurviewInformationProtection` (that's the Information Protection label activity connector — different product). Asset using the wrong kind deploys silently but never flows data.
+
+### 3. Office 365 Sentinel connector requires Content Hub routing
+
+Direct `PUT /dataConnectors/<workspace>-office365` returns **Unauthorized / Access denied**. The Office 365 connector must be installed via the **Microsoft 365** Content Hub solution, same pattern as Defender XDR and IRM. `SentinelIntegration.psm1` maps `office365` to this routing.
+
+### 4. Sentinel analytics rule KQL validation on empty workspace
+
+`union isfuzzy=true SecurityAlert | where ProductName has …` fails PUT with `SEM0529: union must have at least one operand that can be evaluated successfully` when the workspace has no data yet (connectors not consented). Defensive pattern: wrap every column reference with `column_ifexists('ColName','')` and keep `union isfuzzy=true` — lets the rule deploy on a brand-new workspace.
+
+### 5. MITRE `techniques` field accepts base techniques only
+
+`T1567.002` fails with "invalid data model. The technique 'T1567.002' is invalid." Sub-technique format is unsupported. Use `T1567` (base) in analytics-rule ARM assets.
+
+### 6. Conditional Access minimums
+
+- `applications.includeApplications` cannot be empty; use `['none']` as a safe scaffold.
+- `grantControls.builtInControls` must be a non-empty array. `ConditionalAccess.psm1` accepts either Graph-native (`grantControls.builtInControls[]`) or legacy shorthand (`action: "block"`) config shapes.
+
+### 7. AI-Applications retention policies have query-cache propagation lag
+
+`New-RetentionCompliancePolicy -Applications MicrosoftCopilotExperiences|EnterpriseAIApps|OtherAIApps` succeeds at PUT but `Get-RetentionCompliancePolicy -Identity <name>` may return `ManagementObjectNotFoundException` for 10–30+ minutes afterward. `Deploy-Lab.ps1:Test-DeployedEntityExists` treats this error as a soft-warning on the final retry rather than throwing, so the manifest still writes. The validation-summary block further downstream (line ~824) still tallies false-returns as missing — consider distinguishing "soft-skip" from "hard-missing" there when touching the validator.
+
+### 8. Label publication idempotency bug
+
+`SensitivityLabels.psm1`'s publication-policy step throws `LabelAlreadyPublishedException` on re-run — the labels themselves are idempotent-checked but the publication step isn't. Orchestrator error-isolation keeps the deploy moving, but known bug to triage if modifying that module.
+
+### 9. Auto-label policy target-label discovery
+
+New sensitivity labels take 30–90 minutes to become discoverable to `New-AutoSensitivityLabelPolicy`. The module retries 12× over 6 min before giving up with a clear warning. Expected on first deploy; successful on re-run after propagation.

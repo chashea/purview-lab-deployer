@@ -307,6 +307,11 @@ function Deploy-SentinelConnectors {
             solutionDisplayName = 'Microsoft Purview Insider Risk Management'
             portalHint  = 'Solution + connector card installed. Finish activation: (1) Purview portal > Insider risk management > Settings > Export alerts (enable SIEM export), (2) Sentinel portal > Data connectors > Microsoft Purview Insider Risk Management > Connect.'
         }
+        office365 = @{
+            displayName = 'Microsoft 365'
+            solutionDisplayName = 'Microsoft 365'
+            portalHint  = 'Solution + connector card installed. Finish activation: Sentinel portal > Data connectors > Microsoft 365 > Connect. Direct PUT to /dataConnectors is blocked with Unauthorized; Content Hub routing is required.'
+        }
     }
 
     foreach ($connectorName in $connectorAssetMap.Keys) {
@@ -584,35 +589,62 @@ function Deploy-SentinelWorkbook {
         return $null
     }
 
-    $name = if ($WorkbookConfig.PSObject.Properties['name'] -and -not [string]::IsNullOrWhiteSpace([string]$WorkbookConfig.name)) { [string]$WorkbookConfig.name } else { 'Purview Signals' }
-    $displayName = "$LabPrefix-$name"
-    $workbookGuid = [guid]::NewGuid().ToString()
-
-    $assetPath = Join-Path $PSScriptRoot 'assets' 'sentinel' 'arm' 'workbooks' 'purview.json'
-    $template = Read-SentinelAsset -Path $assetPath
-    $body = Expand-SentinelTemplate -Template $template -Tokens @{
-        location            = $Scope.Location
-        displayName         = $displayName
-        workspaceResourceId = $Scope.WorkspaceResourceId
-        labPrefix           = $LabPrefix
+    # Back-compat: single {name,asset} or array of {name,asset} entries via workbooks[]
+    $workbookEntries = @()
+    if ($WorkbookConfig.PSObject.Properties['workbooks'] -and @($WorkbookConfig.workbooks).Count -gt 0) {
+        $workbookEntries = @($WorkbookConfig.workbooks)
+    }
+    else {
+        $workbookEntries = @([pscustomobject]@{
+                name  = if ($WorkbookConfig.PSObject.Properties['name']) { [string]$WorkbookConfig.name } else { 'Purview Signals' }
+                asset = if ($WorkbookConfig.PSObject.Properties['asset']) { [string]$WorkbookConfig.asset } else { 'purview.json' }
+            })
     }
 
-    $url = "$($Scope.ArmBase)/subscriptions/$($Scope.SubscriptionId)/resourceGroups/$($Scope.ResourceGroup)/providers/Microsoft.Insights/workbooks/$workbookGuid`?api-version=2023-06-01"
+    $results = @()
+    foreach ($wb in $workbookEntries) {
+        $name = if ($wb.PSObject.Properties['name'] -and -not [string]::IsNullOrWhiteSpace([string]$wb.name)) { [string]$wb.name } else { 'Purview Signals' }
+        $assetFile = if ($wb.PSObject.Properties['asset'] -and -not [string]::IsNullOrWhiteSpace([string]$wb.asset)) { [string]$wb.asset } else { 'purview.json' }
+        $displayName = "$LabPrefix-$name"
+        $workbookGuid = [guid]::NewGuid().ToString()
 
-    if (Test-SentinelWhatIf) {
-        Write-LabLog -Message "[WhatIf] Would PUT workbook '$displayName'." -Level Info
-        return @{ name = $displayName; id = "<planned-workbook:$displayName>"; workbookId = $workbookGuid }
+        $assetPath = Join-Path $PSScriptRoot 'assets' 'sentinel' 'arm' 'workbooks' $assetFile
+        if (-not (Test-Path $assetPath)) {
+            Write-LabLog -Message "Workbook asset not found: $assetPath. Skipping '$displayName'." -Level Warning
+            $results += @{ name = $displayName; id = $null; workbookId = $workbookGuid; error = "Asset '$assetFile' missing" }
+            continue
+        }
+
+        $template = Read-SentinelAsset -Path $assetPath
+        $body = Expand-SentinelTemplate -Template $template -Tokens @{
+            location            = $Scope.Location
+            displayName         = $displayName
+            workspaceResourceId = $Scope.WorkspaceResourceId
+            labPrefix           = $LabPrefix
+        }
+
+        $url = "$($Scope.ArmBase)/subscriptions/$($Scope.SubscriptionId)/resourceGroups/$($Scope.ResourceGroup)/providers/Microsoft.Insights/workbooks/$workbookGuid`?api-version=2023-06-01"
+
+        if (Test-SentinelWhatIf) {
+            Write-LabLog -Message "[WhatIf] Would PUT workbook '$displayName' from asset '$assetFile'." -Level Info
+            $results += @{ name = $displayName; id = "<planned-workbook:$displayName>"; workbookId = $workbookGuid }
+            continue
+        }
+
+        try {
+            $result = Invoke-SentinelAzRest -Method PUT -Url $url -Body $body
+            Write-LabLog -Message "Deployed workbook '$displayName' from asset '$assetFile'." -Level Success
+            $results += @{ name = $displayName; id = [string]$result.id; workbookId = $workbookGuid }
+        }
+        catch {
+            Write-LabLog -Message "Workbook '$displayName' failed: $($_.Exception.Message)" -Level Warning
+            $results += @{ name = $displayName; id = $null; workbookId = $workbookGuid; error = $_.Exception.Message }
+        }
     }
 
-    try {
-        $result = Invoke-SentinelAzRest -Method PUT -Url $url -Body $body
-        Write-LabLog -Message "Deployed workbook '$displayName'." -Level Success
-        return @{ name = $displayName; id = [string]$result.id; workbookId = $workbookGuid }
-    }
-    catch {
-        Write-LabLog -Message "Workbook '$displayName' failed: $($_.Exception.Message)" -Level Warning
-        return @{ name = $displayName; id = $null; workbookId = $workbookGuid; error = $_.Exception.Message }
-    }
+    # Single-workbook back-compat: return single object if only one entry
+    if ($results.Count -eq 1) { return $results[0] }
+    return $results
 }
 
 function Deploy-SentinelPlaybook {
@@ -877,6 +909,34 @@ function Deploy-SentinelIntegration {
 
     # Sentinel onboarding
     Deploy-SentinelOnboarding -Scope $scope | Out-Null
+
+    # Data lake tier declarations (informational — actual tier management
+    # happens via the Defender portal Tables blade or Tables API, which is in
+    # preview as of 2025-07. Surface the declared intent so operators see it
+    # during deployment and can apply the config manually post-deploy.
+    # See MS Learn: https://learn.microsoft.com/azure/sentinel/manage-table-tiers-retention
+    if ($s.PSObject.Properties['tableTiers'] -and @($s.tableTiers).Count -gt 0) {
+        foreach ($tier in @($s.tableTiers)) {
+            $tname = [string]$tier.table
+            $ttier = [string]$tier.tier
+            if ([string]::IsNullOrWhiteSpace($tname) -or [string]::IsNullOrWhiteSpace($ttier)) { continue }
+            Write-LabLog -Message "Declared table tier: $tname → $ttier (apply manually via Defender portal > Settings > Microsoft Sentinel > Tables or the Tables API; ARM automation pending GA)." -Level Info
+        }
+        $manifest.declaredTableTiers = @($s.tableTiers)
+    }
+
+    # Additional Content Hub solutions (e.g. "Microsoft Purview" for official
+    # Sensitive Data Discovered rules + PurviewDataSensitivityLogs queries per
+    # MS Learn https://learn.microsoft.com/azure/sentinel/purview-solution).
+    if ($s.PSObject.Properties['additionalContentHubSolutions'] -and @($s.additionalContentHubSolutions).Count -gt 0) {
+        $installedSolutions = @()
+        foreach ($solutionName in @($s.additionalContentHubSolutions)) {
+            if ([string]::IsNullOrWhiteSpace([string]$solutionName)) { continue }
+            $ok = Install-SentinelContentHubSolution -Scope $scope -SolutionDisplayName ([string]$solutionName)
+            $installedSolutions += @{ name = [string]$solutionName; installed = [bool]$ok }
+        }
+        $manifest.additionalContentHubSolutions = $installedSolutions
+    }
 
     # Connectors
     if ($s.PSObject.Properties['connectors'] -and $s.connectors) {

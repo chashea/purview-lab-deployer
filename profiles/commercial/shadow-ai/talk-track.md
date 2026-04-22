@@ -2,19 +2,21 @@
 
 ## Overview
 
-**Duration:** 15-20 minutes
-**Audience:** CISO, Security/Compliance leadership, IT decision-makers
-**Goal:** Show how Microsoft Purview provides layered protection against shadow AI data risks — from visibility to enforcement to investigation.
+**Duration:** 20–30 minutes (expandable to 75–90 with hands-on)
+**Audience:** CISO, Security/Compliance leadership, IT decision-makers, AI governance stakeholders
+**Goal:** Show how Microsoft Purview provides layered protection against shadow AI — discovery, graduated enforcement, adaptive risk response, and sanctioned-tool steering.
+
+**Exec tagline:** "We're not blocking AI. We're blocking the *wrong* AI with the *wrong* data — and steering users to the sanctioned path."
 
 ---
 
 ## Opening (2 min)
 
-> "Today I want to show you how Microsoft Purview addresses what we're seeing as the #1 emerging data risk across enterprises — shadow AI.
+> "Shadow AI is the top data-risk vector we're seeing across enterprises. Your people are already using ChatGPT, Claude, Gemini, and increasingly agentic tools built on top of them. Some of that usage is productive. Some of it is pasting SSNs, payroll routing numbers, and customer records into public AI endpoints.
 >
-> Your employees are already using ChatGPT, Claude, Gemini, and other AI tools. Some of that usage is productive, but some of it is putting sensitive data at risk. The challenge isn't blocking AI entirely — it's getting visibility, putting guardrails in place, and steering users toward sanctioned tools like Microsoft Copilot.
+> The wrong response is 'block everything.' That just drives it underground. The right response is visibility, graduated guardrails, and a sanctioned path — Microsoft 365 Copilot — where the same work gets done with enterprise data protection.
 >
-> What I've deployed here is a fully automated Purview lab that demonstrates a tiered governance model for AI data protection. Let me walk you through it."
+> Everything you're about to see was deployed programmatically in about 15 minutes from a config file. Repeatable, customizable, tears down cleanly."
 
 ---
 
@@ -22,151 +24,193 @@
 
 **Portal:** Microsoft Purview > Audit > Search
 
-> "The first question every CISO asks is: 'Are my people using shadow AI, and what are they sharing?'
->
-> We've pre-configured three audit searches that answer this immediately:"
+> "The first CISO question is always: 'Is this even a problem in my tenant, and what are people sharing?'"
 
-**Show:**
-1. **Copilot Activity Audit** — CopilotInteraction events
-2. **DLP Policy Match Audit** — DlpRuleMatch events across AI workloads
-3. **External AI App Access Audit** — FileUploaded events to external destinations
+**Show three pre-configured audit searches:**
+1. **Copilot Activity Audit** — `CopilotInteraction` events across users
+2. **DLP Policy Match Audit** — every DLP rule match, AI-related or not
+3. **External AI App Access Audit** — `FileUploaded` events to external destinations, browser events to AI sites
 
-> "This gives you a baseline. You can see who's interacting with AI tools, what data is being shared, and where the risk concentrations are. No enforcement yet — just visibility."
+> "This is baseline visibility. No enforcement yet, just evidence. You see which users touch which AI tools, what data types are in play, and where the concentration of risk sits — typically Finance, HR, Engineering."
 
-**Transition:** "Now that we know the problem, let me show you how we protect against it."
+**Bonus:** If DSPM for AI is activated, jump to **DSPM for AI > Reports > Sensitive interactions per generative AI app** and show the aggregated picture. That's the Microsoft-recommended posture surface.
 
----
-
-## Act 2: Tiered DLP — "Graduated enforcement" (5 min)
-
-> "We don't believe in a binary 'block everything' approach. Instead, we deployed a tiered model that matches enforcement to risk level."
-
-### Tier 1: Visibility (Low friction)
-**Show:** GenAI Prompt PII Protection policy
-
-> "At the lowest tier, we're detecting sensitive data — SSNs, credit card numbers — in AI interactions. This runs in audit-only mode. Users aren't interrupted, but every match is logged. This is your early warning system."
-
-### Tier 2: Guardrails (Moderate friction)
-**Show:** GenAI Financial and Payroll Guardrail policy
-
-> "For financial data — bank accounts, payroll records — we add a speed bump. Users see a policy tip that says 'You're sharing sensitive data with an AI tool. Provide a business justification to continue.' This catches accidental sharing without blocking legitimate use."
-
-### Tier 3: Hard Block (Maximum protection)
-**Show:** External AI Upload Risk Signals policy + Endpoint AI Site Restrictions
-
-> "For the highest-risk scenarios — medical data, regulated content — we enforce a hard block. If someone tries to paste protected health information into ChatGPT, Defender for Endpoint intercepts it at the browser level. They see a clear message directing them to use Copilot instead."
-
-**Show blocked domains list:**
-- chat.openai.com, chatgpt.com, claude.ai, gemini.google.com, perplexity.ai, poe.com, huggingface.co/chat
-
-> "This isn't about blocking AI. It's about blocking the *wrong* AI with the *wrong* data."
-
-### Tier 4: Label-based restrictions
-**Show:** Labeled Data AI Restriction policy
-
-> "We also enforce based on sensitivity labels. Content labeled 'Highly Confidential — AI Blocked from External Tools' or 'AI Regulated Data' cannot be shared to external AI destinations at all. The label travels with the document."
+**Transition:** "We know what's happening. Now let me show you what we do about it."
 
 ---
 
-## Act 3: Adaptive Protection — "Risk-aware enforcement" (3 min)
+## Act 2: Tiered DLP — "Graduated enforcement" (6 min)
 
-**Show:** Adaptive AI Protection by Risk Level policy (3 rules)
+> "Binary block doesn't work. Users route around it and productivity takes a hit. We deployed a four-location, risk-tiered model."
 
-> "Here's where it gets intelligent. We don't treat all users the same. We've connected DLP to Insider Risk Management to create adaptive enforcement."
+### Location 1: Devices — Endpoint DLP (paste/upload)
 
-| User Risk Level | Enforcement |
-|---|---|
-| Minor (normal) | Audit only — no friction |
-| Moderate (some signals) | Warn with justification required |
-| Elevated (high risk) | Hard block — no override |
+**Show:** `Shadow AI - Endpoint Protection` policy
 
-> "If an employee starts showing risky behavior — repeated policy violations, unusual data access patterns — their enforcement automatically tightens. A departing employee or someone flagged by Insider Risk gets blocked from AI tools entirely, while a normal user gets a light-touch audit."
+> "On managed devices, Endpoint DLP watches paste and upload activity in browsers. If someone tries to paste a customer record into ChatGPT, Microsoft Defender for Endpoint intercepts at the device level. They get a clear policy tip: 'This data can't be shared to external AI — use Copilot instead.'"
 
-**Show:** 3 Insider Risk policies feeding into this:
-- Shadow AI Risky Usage Watch
-- AI Data Exfiltration Watch
-- Departing User AI Risk
+### Location 2: Browser — Browser Data Security (inline)
 
-> "The risk score escalates automatically: minor to moderate to elevated. The DLP policies respond in real-time."
+**Show:** `Shadow AI - Browser Prompt Protection` policy
+
+> "Inside Microsoft Edge for Business, we add an inline control that inspects text before it's submitted to a prompt field. Same SITs as the DLP stack — SSN, credit card, bank account, medical terms."
+
+### Location 3: Network — Network Data Security (non-Edge traffic)
+
+**Show:** `Shadow AI - Network AI Traffic` policy
+
+> "For employees on Chrome or Firefox, or traffic leaving through non-browser apps, we extend DLP to the network layer via SASE/SSE integration. Same policy language, broader coverage."
+
+### Location 4: CopilotExperiences — Microsoft 365 Copilot
+
+**Show:** `Shadow AI - Copilot Prompt Protection` + `Shadow AI - Copilot Label Protection`
+
+> "The sanctioned tool — Copilot — still gets DLP. Prompts are inspected for SITs. Files labeled Highly Confidential are excluded from Copilot's grounding data. Same guardrails, different enforcement surface. Users get a consistent experience."
+
+**Expert callout:**
+
+> "Notice the enforcement is *asymmetric by design*. External AI gets hard blocks and warn-with-justification. Copilot gets the same detection but with the context of enterprise controls already in place — so the friction is lower. That's how we steer behavior without breaking productivity."
+
+**Transition:** "That's the policy surface. Now let me show you the intelligence that makes it adaptive."
 
 ---
 
-## Act 4: Sensitivity Labels — "Protection that travels with data" (2 min)
+## Act 3: Risk-Adaptive Enforcement — "Same data, different user, different response" (3 min)
 
-**Show:** Label hierarchy
+> "The same DLP match doesn't mean the same thing from every user. A one-off paste from a consistent engineer is noise. The same paste from someone who's been flagged for repeated violations or is about to leave is signal."
 
-> "We've deployed AI-specific sensitivity labels that make the governance model concrete."
+**Show the risk-tier pattern in `Shadow AI - Endpoint Protection`:**
 
-| Label | Protection | AI Behavior |
+| User Risk Level | Rule | Enforcement |
 |---|---|---|
-| Confidential > AI Internal Use | Footer marking | Allowed in Copilot, monitored |
-| Confidential > AI Restricted Recipients | Encryption | Named recipients only |
-| Highly Confidential > AI Blocked from External Tools | Encryption + marking | Blocked from all external AI |
-| Highly Confidential > AI Regulated Data | Encryption + marking | Blocked, auto-labeled on SSN detection |
+| Elevated | Endpoint AI Block - Elevated Risk | Hard block, no override |
+| Moderate | Endpoint AI Warn - Moderate Risk | Allow with justification |
+| Minor | Endpoint AI Audit - Minor Risk | Audit only — no friction |
 
-> "The auto-label policy catches SSNs in Exchange and SharePoint and automatically applies the 'AI Regulated Data' label. From that point, DLP enforces the restriction — no manual classification needed."
+> "Same SITs, same policy. But the `insiderRiskLevel` condition pulls the user's current risk score from Insider Risk Management in real time. Block users who are escalating. Warn users on the fence. Don't friction users who are behaving."
+
+**Show the 6 IRM policies feeding this:**
+
+- Shadow AI Risky Usage Watch (template: *Risky AI usage*)
+- AI Data Exfiltration Watch (template: *Data leaks*)
+- Departing User AI Risk (template: *Data theft by departing users*)
+- DSPM for AI - Detect risky AI usage
+- DSPM for AI - Business User AI Risk
+- DLP Correlated AI Exfiltration (correlates DLP match events into insider risk scoring)
+
+> "Risk scores escalate automatically. Minor to Moderate to Elevated. The DLP policies respond in real time, no admin intervention."
+
+**Wizard-step defaults applied to each IRM policy** (matches how most customers configure in the portal):
+- **Users and groups:** All users and groups in your organization — no priority-user scoping
+- **Content to prioritize:** one randomly-selected sensitivity label + one SIT + one trainable classifier (skip SharePoint sites — content-specific and brittle across tenants)
+- **Detection options:** select all indicators and triggering events the template exposes
 
 ---
 
-## Act 5: Communication Compliance — "Monitoring sanctioned AI" (2 min)
+## Act 4: Labels — "Protection that travels with data" (3 min)
 
-**Show:** 3 Communication Compliance policies
+**Show the label hierarchy:**
 
-> "Even when users are in sanctioned tools like Copilot, you need visibility into what they're discussing."
+| Label | AI Behavior |
+|---|---|
+| Confidential > All Employees | Allowed across all AI paths, audit only |
+| Confidential > AI Internal Use | Allowed in Copilot, blocked externally |
+| Confidential > AI Restricted Recipients | Encrypted, named-recipient only |
+| Confidential > AI Regulated Data | Blocked from external AI, auto-applied on SSN/CC/Bank/IP patterns |
+| Highly Confidential > AI Blocked from External Tools | Encrypted, blocked from all external AI |
+| Highly Confidential > AI Regulated Data | Blocked from Copilot + external, auto-applied on SSN |
 
-- **External AI Prompt Sharing Monitoring** — flags business users sharing data externally
-- **Sensitive Business Data in AI Prompts** — catches finance, HR, and IT staff disclosing sensitive business data
-- **Compliance Violations in AI Content** — detects compliance-related violations across teams
+> "The auto-label policies catch SSNs, credit cards, bank accounts, and IBANs and apply the appropriate AI-Regulated-Data label automatically. From that point on, DLP enforces — including on Copilot. The label travels with the document across Exchange, SharePoint, OneDrive, and into AI grounding decisions."
 
-> "These create a review queue for your compliance team. It's not about blocking — it's about knowing what's happening so you can respond."
+---
+
+## Act 5: Retention + Communication Compliance — "Evidence that lasts" (2 min)
+
+**Show retention policies:**
+
+- AI Prompt Review Retention (1 year)
+- AI Incident Evidence Retention (3 years)
+- Copilot Experiences Retention (1 year, targets `MicrosoftCopilotExperiences`)
+- Enterprise AI Apps Retention (3 years, targets `EnterpriseAIApps` — ChatGPT Enterprise, Foundry, Entra-registered AI)
+- Other AI Apps Retention (1 year, targets `OtherAIApps` — ChatGPT consumer, Gemini, DeepSeek)
+
+> "Every AI interaction is retained per a policy that matches its risk. Regulated industries get the 3-year evidence retention automatically for anything flagged as an incident."
+
+**Show Communication Compliance policies:**
+
+- Shadow AI Activity Collection — review queue for AI-adjacent messages
+- AI Conversation PII PHI Detection — targeted PII/PHI supervision in AI conversations
+
+> "This is the compliance review layer. It's not about blocking — it's about having a queue where trained reviewers can catch patterns humans need to see."
 
 ---
 
 ## Act 6: Investigation — "When something goes wrong" (2 min)
 
-**Show:** eDiscovery case — Shadow-AI-Incident-Review
+**Show:** eDiscovery case `Shadow-AI-Incident-Review`
 
-> "When you do have an incident, everything is already in place. We have a pre-configured eDiscovery case for a shadow AI investigation."
+- Custodians: Security architect, Privacy counsel, HR lead
+- Hold query: `"AI" OR "copilot" OR "chatbot" OR "prompt"`
+- Search query: `"public AI" OR "external AI" OR "paste" OR "upload"`
 
-- **Custodians:** Security Architect, Privacy Counsel, HR Director
-- **Hold query:** `"AI" OR "copilot" OR "chatbot" OR "prompt"`
-- **Search query:** `"public AI" OR "external AI" OR "paste" OR "upload"`
-
-> "All AI-related communications are preserved under legal hold with a 3-year retention policy. The 1-year retention on general AI interactions gives you audit history, while the 3-year policy on incident evidence meets regulatory requirements."
+> "When an incident hits — suspected IP theft involving an AI tool — everything is already under legal hold. The case opens with custodians set, search queries pre-built, and 3-year retention guaranteeing the data is still there."
 
 ---
 
-## Closing (1 min)
+## Closing (2 min)
 
-> "So to recap — what you've seen is a complete governance framework for shadow AI:
+> "To recap — what you've seen is a complete governance framework for shadow AI:
 >
-> 1. **Discover** — Audit logs and Activity Explorer show you what's happening
-> 2. **Protect** — Tiered DLP policies match enforcement to risk level
-> 3. **Adapt** — Insider Risk scores drive dynamic enforcement
-> 4. **Label** — Sensitivity labels make protection portable
-> 5. **Monitor** — Communication Compliance covers sanctioned AI usage
-> 6. **Investigate** — eDiscovery and retention are ready for incidents
+> 1. **Discover** — Audit logs, Activity Explorer, DSPM for AI reports show you what's happening today
+> 2. **Enforce at 4 locations** — Devices, Browser, Network, Copilot — with the same policy language
+> 3. **Adapt** — Insider Risk scores drive real-time DLP enforcement tiers
+> 4. **Label** — Auto-labels make protection portable across surfaces
+> 5. **Retain** — AI-specific retention policies preserve evidence for compliance
+> 6. **Review** — Communication Compliance catches patterns humans need to see
+> 7. **Investigate** — eDiscovery, retention, and audit tie the evidence chain together
 >
-> This entire environment was deployed programmatically in under 15 minutes. It's config-driven, repeatable, and tears down cleanly. We can customize the policies, personas, and enforcement levels for your specific environment."
+> We didn't block AI. We built guardrails that meet users where they work and steer them toward Copilot. That's the Microsoft data-centric AI security model."
 
 ---
 
 ## Anticipated Questions
 
-**Q: "Does this block Copilot too?"**
-> "No. The enforcement is intentionally asymmetric. Copilot interactions are monitored via Communication Compliance but allowed. External AI tools get tiered enforcement. The goal is to steer users toward Copilot, not block AI entirely."
+**Q: "Does this also block Copilot?"**
+> "By design, no. Copilot is the sanctioned path — we apply DLP to it so the *same* sensitive data gets the same treatment, but the user friction is lower because Copilot runs inside your compliance boundary. External AI tools get tiered blocks. Copilot gets guardrails. The asymmetry steers behavior."
 
-**Q: "What about BYOD / unmanaged devices?"**
-> "Endpoint DLP requires Defender for Endpoint on managed devices. For unmanaged devices, Conditional Access policies can require MFA or block access to AI apps entirely based on device compliance state."
+**Q: "How does this work on BYOD or unmanaged devices?"**
+> "Endpoint DLP requires Defender for Endpoint on managed devices — on BYOD you fall back to Conditional Access plus Browser Data Security in Edge for Business. The two conditional-access policies in this lab block AI app access for high-sign-in-risk users and require MFA for AI app sign-ins. Combine that with Entra app registration for ChatGPT / Claude / Gemini to get full sign-in-based enforcement."
 
-**Q: "How long to deploy this in production?"**
-> "The automated deployment takes about 15 minutes. Policy tuning and rollout planning typically takes 2-4 weeks in a phased approach — start with audit-only, then enable guardrails, then enforcement."
+**Q: "What about non-Edge browsers?"**
+> "Three complementary controls: (1) Endpoint DLP supports Chrome and Firefox via the Purview browser extension; (2) Network Data Security via your SASE/SSE provider covers any browser or app; (3) the unallowed-browsers setting can force users into Edge for sensitive work. Most customers run all three."
 
-**Q: "What licenses are required?"**
-> "Microsoft 365 E5 or E5 Compliance for the full stack. E3 + E5 Compliance add-on also works. Copilot requires a separate Copilot for Microsoft 365 license."
+**Q: "Does Purview cover Entra-registered AI apps like a custom ChatGPT Enterprise deployment?"**
+> "Yes. Once the app is registered in Entra, it shows up as a supported AI app across DLP, DSPM for AI, retention (`EnterpriseAIApps` location), and Communication Compliance. The DSPM for AI one-click *Secure interactions from enterprise apps* policy is the fastest way to wire this up."
+
+**Q: "What's DSPM for AI and how does it fit?"**
+> "Think of this lab as the *enforcement* surface. DSPM for AI is the *posture* surface — where oversharing still lives, which users carry most AI risk, which SharePoint sites need labeling before Copilot touches them. Enforcement + posture is the complete story. The RUNBOOK walks through activating DSPM for AI one-click policies that complement this lab."
+
+**Q: "How long to deploy in production?"**
+> "Automated deploy is 15 minutes. Rollout planning is typically 2–4 weeks in phases: audit-only first, then warn-with-justification, then enforce. Same config, change `simulationMode: false` and flip policy mode when you're ready."
+
+**Q: "What licenses do we need?"**
+> "Microsoft 365 E5 or E5 Compliance for the full Purview stack. Microsoft 365 Copilot licenses for the sanctioned-tool story. Defender for Endpoint on managed devices. Some Browser Data Security and DSPM for AI collection policies are pay-as-you-go — see MS Learn pricing."
 
 **Q: "Can we scope this to specific departments first?"**
-> "Absolutely. The DLP policies support group-based scoping. In this demo, the External AI Upload policy is already scoped to the Privileged Data Owners group. You can roll out department by department."
+> "Yes. Every DLP and IRM policy supports group-based scoping. The config already scopes Privileged-Data-Owners and Business-Users groups for pilot-style rollout. Roll out department by department with the same policy logic."
+
+**Q: "Is Shadow AI detection real-time or retrospective?"**
+> "Mixed. Endpoint DLP paste/upload is real-time — the action is blocked inline. Network Data Security is real-time on the SASE side. Audit and Activity Explorer are near-real-time — matches surface within minutes. DSPM for AI reports run on a daily aggregation."
+
+---
+
+## Natural Follow-Ups
+
+1. **DSPM for AI activation** — one-click policies ship most of the same controls Microsoft recommends; this lab covers the custom / scoped variants. Pair for full coverage. See RUNBOOK section 7.
+2. **Defender for Cloud Apps** — app governance layer for sanctioned AI. Catalog, sanction/unsanction, risk scoring for SaaS AI tools.
+3. **Security Copilot for Purview** — AI-on-AI triage for DLP alerts and IRM cases.
+4. **Copilot DLP Guardrails lab** — complementary lab (`copilot-protection` profile) that focuses specifically on the Microsoft 365 Copilot surface with a narrower policy set.
+5. **Entra-registered AI app catalog** — connect ChatGPT Enterprise / custom Foundry agents to Entra and inherit this lab's controls for those apps.
 
 ---
 
@@ -174,14 +218,17 @@
 
 | Component | Count | Examples |
 |---|---|---|
-| Test users | 8 | Alex Harper (Marketing), Victor Cho (Finance), Leah Ramirez (Legal), ... |
+| Test users | 5 | rtorres, mchen, nbrooks, dokafor, sreeves |
 | Security groups | 3 | AI-Governance, Privileged-Data-Owners, Business-Users |
-| DLP policies | 6 | PII visibility, Financial guardrail, External AI block, Label restriction, Endpoint block, Adaptive |
-| DLP rules | 12 | SSN/CC detection, bank accounts, medical terms, labeled data, risk-tiered |
-| Sensitivity labels | 4 sublabels | AI Internal Use, AI Restricted Recipients, AI Blocked, AI Regulated Data |
-| Comm compliance | 3 | Prompt sharing, business data, compliance violations |
-| Insider risk | 3 | Shadow AI usage, data exfiltration, departing users |
-| Retention | 2 | 1-year audit, 3-year incident evidence |
+| DLP policies | 5 | Endpoint, Browser, Network, Copilot Prompt, Copilot Label |
+| DLP rules | 13 | Risk-tiered: Elevated=block, Moderate=warn, Minor=audit |
+| Sensitivity labels | 2 parents + 10 sublabels | Confidential + Highly Confidential with 5 AI-specific sublabels each |
+| Auto-label policies | 2 | SSN → Highly Confidential; CC/Bank/IBAN/IP → Confidential |
+| Insider Risk | 6 policies | Risky AI usage, Data leaks, Departing users, DSPM correlation |
+| Communication Compliance | 2 policies | Activity collection, PII/PHI detection |
+| Retention | 5 policies | 1 year / 3 year, across Exchange/SharePoint/AI apps |
 | eDiscovery | 1 case | Shadow AI incident investigation |
-| Test emails | 6 | Seeded with SSNs, credit cards, bank accounts, medical terms, API keys |
-| Test documents | 3 | Financial forecast, customer export, engineering specs |
+| Audit searches | 3 | CopilotInteraction, DlpRuleMatch, External AI access |
+| Conditional Access | 2 policies (report-only) | Block high-risk, Require MFA |
+| Test documents | 5 | Financial, Customer, Engineering, HR, AI policy draft |
+| Config | `configs/commercial/shadow-ai-demo.json` | Prefix: `PVShadowAI` |

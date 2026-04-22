@@ -1,0 +1,40 @@
+{
+  "profileType": "scenario-overlay",
+  "name": "purview-sentinel",
+  "baseCloud": "commercial",
+  "notes": [
+    "Sentinel integration lab: ships Purview signals into a Log Analytics workspace with Sentinel onboarded.",
+    "Requires an Azure subscription (this is the only lab profile that provisions Azure resources).",
+    "Defender portal unified SecOps is the Microsoft-recommended SIEM experience post July 2025 — see RUNBOOK."
+  ],
+  "workloads": {
+    "testUsers": {
+      "status": "required",
+      "note": "Seed accounts for generating DLP/IRM signal traffic."
+    },
+    "sensitivityLabels": {
+      "status": "required",
+      "note": "Single Confidential label for label-downgrade analytics rule."
+    },
+    "dlp": {
+      "status": "required",
+      "note": "SSN-detecting policy to generate Sentinel SecurityAlert rows via Defender XDR."
+    },
+    "insiderRisk": {
+      "status": "required",
+      "note": "Data-leaks IRM policy. Requires SIEM export toggled on in Purview settings to flow alerts to Sentinel."
+    },
+    "auditConfig": {
+      "status": "required",
+      "note": "Saved audit searches for DLP rule match correlation."
+    },
+    "sentinelIntegration": {
+      "status": "required",
+      "note": "Provisions Azure resource group, Log Analytics workspace, Sentinel onboarding, data connectors, analytics rules, workbook, playbook."
+    },
+    "testData": {
+      "status": "required",
+      "note": "Seed emails to trigger DLP → Sentinel signal flow."
+    }
+  }
+}

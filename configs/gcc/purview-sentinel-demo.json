@@ -1,0 +1,134 @@
+{
+  "$schema": "./_schema.json",
+  "labName": "Purview → Sentinel Integration Lab (GCC)",
+  "prefix": "PVSentinel",
+  "domain": "MngEnvMCAP659995.onmicrosoft.com",
+  "cloud": "gcc",
+  "workloads": {
+    "testUsers": {
+      "enabled": true,
+      "mode": "existing",
+      "users": [
+        { "upn": "rtorres@MngEnvMCAP659995.onmicrosoft.com" },
+        { "upn": "mchen@MngEnvMCAP659995.onmicrosoft.com" },
+        { "upn": "jblake@MngEnvMCAP659995.onmicrosoft.com" }
+      ],
+      "groups": []
+    },
+    "sensitivityLabels": {
+      "enabled": true,
+      "labels": [
+        {
+          "name": "Confidential",
+          "displayName": "Confidential",
+          "tooltip": "Sensitive business data",
+          "priority": 1
+        }
+      ]
+    },
+    "dlp": {
+      "enabled": true,
+      "policies": [
+        {
+          "name": "Sentinel-DLP-Demo",
+          "mode": "Enable",
+          "locations": ["Exchange", "SharePoint", "OneDrive"],
+          "rules": [
+            {
+              "name": "SSN-HighSeverity",
+              "contentContainsSensitiveInformation": [
+                { "name": "U.S. Social Security Number (SSN)", "minCount": 1 }
+              ],
+              "enforcement": "Audit",
+              "severity": "High"
+            }
+          ]
+        }
+      ]
+    },
+    "retention": { "enabled": false },
+    "eDiscovery": { "enabled": false },
+    "communicationCompliance": { "enabled": false },
+    "insiderRisk": {
+      "enabled": true,
+      "policies": [
+        {
+          "name": "Sentinel-IRM-Demo",
+          "template": "Data leaks"
+        }
+      ]
+    },
+    "conditionalAccess": { "enabled": false },
+    "auditConfig": {
+      "enabled": true,
+      "searches": [
+        {
+          "name": "DLPRuleMatches",
+          "operations": ["DLPRuleMatch", "DLPRuleUndo"]
+        }
+      ]
+    },
+    "sentinelIntegration": {
+      "enabled": true,
+      "subscriptionId": "",
+      "resourceGroup": {
+        "name": "PVSentinel-rg",
+        "location": "usgovvirginia"
+      },
+      "workspace": {
+        "name": "PVSentinel-ws",
+        "retentionDays": 30,
+        "sku": "PerGB2018"
+      },
+      "additionalContentHubSolutions": [
+        "Microsoft Purview"
+      ],
+      "tableTiers": [],
+      "connectors": {
+        "microsoftDefenderXdr": {
+          "enabled": true,
+          "dataTypes": ["Alerts", "CloudAppEvents"]
+        },
+        "insiderRiskManagement": {
+          "enabled": true
+        },
+        "office365": {
+          "enabled": true,
+          "dataTypes": ["SharePoint", "Exchange", "Teams"]
+        }
+      },
+      "analyticsRules": [
+        { "name": "HighSevDLP",            "template": "dlp-high-severity",            "severity": "High" },
+        { "name": "IRMHighSev",            "template": "insider-risk-high-severity",   "severity": "High" },
+        { "name": "LabelDowngrade",        "template": "sensitivity-label-downgrade",  "severity": "Medium" },
+        { "name": "MassDownloadAfterDLP",  "template": "mass-download-after-dlp",      "severity": "High" },
+        { "name": "CopilotDLPPromptBlock", "template": "copilot-dlp-prompt-block",     "severity": "High" },
+        { "name": "ShadowAIPasteUpload",   "template": "shadow-ai-paste-upload",       "severity": "High" },
+        { "name": "RiskyAIUsageCorrel",    "template": "risky-ai-usage-correlation",   "severity": "High" }
+      ],
+      "workbook": {
+        "enabled": true,
+        "workbooks": [
+          { "name": "Purview Signals", "asset": "purview.json" },
+          { "name": "AI Risk Signals", "asset": "ai-signals.json" }
+        ]
+      },
+      "playbooks": {
+        "irmAutoTriage": {
+          "enabled": true
+        }
+      }
+    },
+    "testData": {
+      "enabled": true,
+      "emails": [
+        {
+          "from": "rtorres",
+          "to": "jblake",
+          "subject": "Quarterly report (test SSN)",
+          "body": "Sharing SSN 123-45-6789 for review. (Lab-generated test email to trigger DLP → Sentinel signal.)"
+        }
+      ]
+    }
+  }
+}

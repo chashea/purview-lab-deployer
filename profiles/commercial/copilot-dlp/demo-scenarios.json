@@ -12,17 +12,30 @@
     },
     {
       "step": 1,
-      "title": "Guardrail #1 — Block sensitive prompts",
-      "talkTrack": "Now we activate DLP for Copilot. When a user types a prompt containing a Social Security Number, credit card, or medical information, Copilot blocks the response with a clear policy message. The user knows exactly why — no black box. This control evaluates typed prompt text; uploaded files are governed by label-based controls.",
+      "title": "Guardrail #1 — Block sensitive prompts (and web-search leak of the prompt text)",
+      "talkTrack": "Now we activate DLP for Copilot. When a user types a prompt containing a Social Security Number, credit card, or medical information, Copilot blocks the response AND blocks that sensitive text from being used in internal or external web searches. One control, three protections. The user knows exactly why — no black box. This control evaluates typed prompt text; uploaded files are governed by label-based controls.",
       "showInPortal": [
         "DLP policy: Copilot Prompt SIT Block",
-        "Copilot prompt with SSN → blocked response",
+        "Copilot prompt with SSN → blocked response (and blocked web search)",
         "Copilot prompt with credit card → blocked response",
         "Copilot prompt with PHI → blocked response"
       ],
       "duration": "20 min",
       "automated": true,
-      "policyName": "PVCopilotDLP-Copilot Prompt SIT Block"
+      "policyName": "PVCopilotDLP-Copilot Prompt SIT Block",
+      "previewStatus": "Public Preview — rolling out tenant-by-tenant",
+      "expectedAuditRecordSample": {
+        "CreationTime": "2026-04-18T14:07:42",
+        "Operation": "DlpRuleMatch",
+        "Workload": "M365Copilot",
+        "PolicyName": "PVCopilotDLP-Copilot Prompt SIT Block",
+        "RuleName": "PVCopilotDLP-Block SSN in Copilot Prompts",
+        "SensitiveInfoTypeData": [{ "Name": "U.S. Social Security Number (SSN)", "Count": 1, "Confidence": 85 }],
+        "EnforcementAction": "Block",
+        "UserPrincipalName": "rtorres@contoso.onmicrosoft.com",
+        "CopilotInteractionType": "PromptSubmission",
+        "WebSearchSuppressed": true
+      }
     },
     {
       "step": 2,
@@ -37,22 +50,22 @@
       "duration": "20 min",
       "automated": true,
       "policyName": "PVCopilotDLP-Copilot Labeled Content Block",
-      "expertCallout": "SIT + label conditions cannot be mixed in the same DLP rule. Use separate rules in one policy, or separate policies. This is a great credibility moment with technical audiences."
+      "expertCallout": "SIT + label conditions cannot be mixed in the same DLP rule. Use separate rules in one policy, or separate policies. This is a great credibility moment with technical audiences.",
+      "expectedAuditRecordSample": {
+        "CreationTime": "2026-04-18T14:12:18",
+        "Operation": "DlpRuleMatch",
+        "Workload": "M365Copilot",
+        "PolicyName": "PVCopilotDLP-Copilot Labeled Content Block",
+        "RuleName": "PVCopilotDLP-Block Copilot from Restricted Content",
+        "SensitivityLabelData": [{ "Name": "PVCopilotDLP-Highly-Confidential-Restricted", "Guid": "00000000-0000-0000-0000-000000000000" }],
+        "EnforcementAction": "Block",
+        "TargetResource": "/users/rtorres/drive/root:/Q4-Revenue-Forecast.txt",
+        "UserPrincipalName": "rtorres@contoso.onmicrosoft.com",
+        "CopilotInteractionType": "FileGrounding"
+      }
     },
     {
       "step": 3,
-      "title": "Guardrail #3 — Stop Copilot web search with sensitive data",
-      "talkTrack": "Even if Copilot could answer the question by searching the web, Purview decides it shouldn't — because the prompt contains sensitive data that would leave the compliance boundary. This is currently in Private Preview and depends on tenant web-search policy configuration.",
-      "showInPortal": [
-        "DLP policy creation walkthrough (web search location)",
-        "Expected behavior explanation"
-      ],
-      "duration": "15 min",
-      "automated": false,
-      "previewStatus": "Private Preview"
-    },
-    {
-      "step": 4,
       "title": "Evidence & investigations",
       "talkTrack": "Every Copilot DLP event creates a full audit trail. Security teams can see which prompt was blocked, which file was excluded, and which policy was responsible. This is defensible AI governance.",
       "showInPortal": [
@@ -102,21 +115,6 @@
     },
     {
       "id": "S3",
-      "name": "Web Search Prevention",
-      "description": "Explain and demonstrate (if preview-enabled) how DLP prevents Copilot from using sensitive data in web search queries",
-      "steps": [
-        "Explain the control: inline DLP for Copilot web search",
-        "Walk through the policy creation in the portal",
-        "If preview-enabled: demonstrate with a prompt that triggers web search with sensitive context",
-        "Show expected behavior: Copilot blocks the web search",
-        "Key message: 'Even if Copilot could answer, Purview decides it shouldn't'"
-      ],
-      "expectedOutcome": "Audience understands the web search boundary even if not yet enforceable in their tenant",
-      "automatedArtifacts": [],
-      "manualPrep": ["Preview enrollment (optional)", "Portal walkthrough prepared"]
-    },
-    {
-      "id": "S4",
       "name": "Audit & Investigation",
       "description": "Show the full audit trail and investigation workflow for Copilot DLP events",
       "steps": [
@@ -151,8 +149,8 @@
       "copilotBehavior": "Copilot ignores file — cannot summarize or reference"
     },
     {
-      "scenario": "Attempted web-backed answer using sensitive data",
-      "copilotBehavior": "Copilot blocked (preview)"
+      "scenario": "Attempted web-backed answer using sensitive prompt data",
+      "copilotBehavior": "Copilot blocked (same prompt-SIT policy prevents sensitive text from reaching web search)"
     },
     {
       "scenario": "Clean prompt, no sensitive data or labeled files",

@@ -274,6 +274,16 @@
         }
       ]
     },
+    "insiderRisk": {
+      "enabled": true,
+      "policies": [
+        {
+          "name": "Copilot Risky AI Usage",
+          "template": "Risky AI usage",
+          "description": "Correlates repeated DLP blocks on Copilot prompts and labeled-content access attempts with insider risk scoring. Users who trigger guardrails repeatedly are surfaced to investigators."
+        }
+      ]
+    },
     "auditConfig": {
       "enabled": true,
       "searches": [
@@ -329,17 +339,22 @@
         {
           "name": "Q4-Revenue-Forecast.txt",
           "content": "Q4 Revenue Forecast — Confidential\n\nProjected Revenue: $2,400,000\nOutstanding Accounts: Contoso (4532-8721-0034-6619), Fabrikam (5105-1051-0510-5100)\nKey Risk: Delayed payment from enterprise accounts.\n\nThis document contains financial projections for internal use only.",
-          "uploadTo": "SharePoint"
+          "uploadTo": "OneDrive",
+          "owner": "rtorres",
+          "labelIdentity": "PVCopilotDLP-Highly-Confidential-Restricted"
         },
         {
           "name": "Employee-Benefits-Summary.txt",
           "content": "Employee Benefits Enrollment Summary\n\nEmployee: Jane Doe, SSN: 078-05-1120\nEmployee: John Smith, SSN: 219-09-9999\nPlan: Premium Health Plus\nDependent Coverage: Family\n\nThis document contains protected personally identifiable information.",
-          "uploadTo": "SharePoint"
+          "uploadTo": "OneDrive",
+          "owner": "rtorres",
+          "labelIdentity": "PVCopilotDLP-Highly-Confidential-Regulated-Data"
         },
         {
           "name": "Patient-Intake-Notes.txt",
           "content": "Patient Intake Notes — CONFIDENTIAL\n\nPatient: Maria Garcia\nDiagnosis: Type 2 Diabetes Mellitus, Hypertension\nMedications: Metformin 500mg, Lisinopril 10mg\nAllergies: Penicillin\nInsurance ID: BCBS-447291\n\nThis document contains protected health information (PHI).",
-          "uploadTo": "SharePoint"
+          "uploadTo": "OneDrive",
+          "owner": "mchen"
         }
       ]
     }

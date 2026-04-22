@@ -5,7 +5,7 @@
     "description": "High-severity Insider Risk Management alerts surfaced to Sentinel via SIEM export.",
     "severity": "{{severity}}",
     "enabled": true,
-    "query": "union isfuzzy=true SecurityAlert\n| where TimeGenerated > ago(1h)\n| where ProductName has 'Microsoft Purview Insider Risk Management' or ProductName has 'Insider Risk'\n| where AlertSeverity == 'High'\n| extend AccountUpn = tostring(parse_json(tostring(column_ifexists('Entities',''))) [0].Name)\n| project TimeGenerated, AlertName, AlertSeverity, CompromisedEntity, AccountUpn, Description, Entities",
+    "query": "union isfuzzy=true SecurityAlert\n| where TimeGenerated > ago(1h)\n| extend ProductName = tostring(column_ifexists('ProductName', ''))\n| extend AlertSeverity = tostring(column_ifexists('AlertSeverity', ''))\n| extend Entities = tostring(column_ifexists('Entities', ''))\n| extend AlertName = tostring(column_ifexists('AlertName', ''))\n| extend Description = tostring(column_ifexists('Description', ''))\n| extend CompromisedEntity = tostring(column_ifexists('CompromisedEntity', ''))\n| where ProductName has 'Microsoft Purview Insider Risk Management' or ProductName has 'Insider Risk'\n| where AlertSeverity == 'High'\n| extend AccountUpn = tostring(parse_json(Entities) [0].Name)\n| project TimeGenerated, AlertName, AlertSeverity, CompromisedEntity, AccountUpn, Description, Entities",
     "queryFrequency": "PT1H",
     "queryPeriod": "PT1H",
     "triggerOperator": "GreaterThan",

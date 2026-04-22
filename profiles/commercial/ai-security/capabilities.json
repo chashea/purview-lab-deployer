@@ -1,0 +1,25 @@
+{
+  "profileType": "scenario-overlay",
+  "name": "ai-security",
+  "baseCloud": "commercial",
+  "notes": [
+    "Integrated AI Security lab. Unifies the Copilot DLP, Shadow AI, and Purview → Sentinel stories into one deployment with correlated signals.",
+    "All resources use the single 'PVAISec' prefix. Labels, DLP policies, IRM policies, retention, eDiscovery, CC, CA, and Sentinel integration deploy as one coherent set.",
+    "Deployment time: ~20-25 minutes. Demo length: 45-75 minutes (much longer than the focused labs).",
+    "Required: Microsoft 365 E5 + Copilot licenses + Azure subscription + Defender for Endpoint on test devices.",
+    "Picks up DSPM for AI activation as a post-deploy step (see RUNBOOK)."
+  ],
+  "workloads": {
+    "testUsers":              { "status": "required", "note": "5 personas spanning marketing/finance/compliance/IT/security." },
+    "sensitivityLabels":      { "status": "required", "note": "Unified AI-specific label taxonomy: 2 parents x 5 AI-focused sublabels each, plus SSN and financial-PII auto-label policies." },
+    "dlp":                    { "status": "required", "note": "5 policies across CopilotExperiences (2), Devices (1), Browser (1), Network (1)." },
+    "retention":              { "status": "required", "note": "5 policies covering Exchange/SharePoint/OneDrive plus AI-specific Applications (Copilot, Enterprise AI, Other AI)." },
+    "eDiscovery":             { "status": "required", "note": "Single unified AI-Security-Incident-Review case with broad hold/search queries." },
+    "communicationCompliance": { "status": "required", "note": "Activity collection + PII/PHI detection on AI-adjacent messages." },
+    "insiderRisk":            { "status": "required", "note": "Risky AI usage, data leaks, departing user. Feeds DLP adaptive protection tiers." },
+    "conditionalAccess":      { "status": "required", "note": "Report-only block on high-risk AI sign-ins + MFA on AI apps." },
+    "auditConfig":            { "status": "required", "note": "Saved audit searches for CopilotInteraction, DlpRuleMatch, DlpRuleUndo." },
+    "sentinelIntegration":    { "status": "required", "note": "Full Sentinel stack: Log Analytics + Sentinel onboarding + 3 connectors + 7 analytics rules + 2 workbooks + IRM auto-triage playbook + Microsoft Purview Content Hub solution. Requires Azure subscription." },
+    "testData":               { "status": "required", "note": "4 seed emails + 5 auto-labeled documents to exercise every signal path." }
+  }
+}

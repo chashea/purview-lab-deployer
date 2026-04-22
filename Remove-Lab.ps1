@@ -49,7 +49,7 @@ param(
     [string]$ConfigPath,
 
     [Parameter()]
-    [ValidateSet('basic-lab', 'shadow-ai', 'copilot-protection', 'copilot-dlp', 'purview-sentinel')]
+    [ValidateSet('basic-lab', 'shadow-ai', 'copilot-protection', 'copilot-dlp', 'purview-sentinel', 'ai-security')]
     [string]$LabProfile,
 
     [Parameter()]
@@ -67,7 +67,10 @@ param(
     [string]$Cloud = $env:PURVIEW_CLOUD,
 
     [Parameter()]
-    [switch]$ForceDeleteResourceGroup
+    [switch]$ForceDeleteResourceGroup,
+
+    [Parameter()]
+    [string]$SubscriptionId = $env:PURVIEW_SUBSCRIPTION_ID
 )
 
 $ErrorActionPreference = 'Stop'
@@ -110,6 +113,22 @@ try {
     $Config = Import-LabConfig -ConfigPath $ConfigPath
     $resolvedCloud = Resolve-LabCloud -Cloud $Cloud -Config $Config
     $capabilityProfile = Import-LabCloudProfile -Cloud $resolvedCloud -RepositoryRoot $PSScriptRoot
+
+    # Apply -SubscriptionId override for Sentinel teardown (matches Deploy-Lab behaviour)
+    if ($Config.workloads.sentinelIntegration -and
+        $Config.workloads.sentinelIntegration.PSObject.Properties['enabled'] -and
+        [bool]$Config.workloads.sentinelIntegration.enabled -and
+        -not [string]::IsNullOrWhiteSpace($SubscriptionId)) {
+
+        if ($Config.workloads.sentinelIntegration.PSObject.Properties['subscriptionId']) {
+            $Config.workloads.sentinelIntegration.subscriptionId = $SubscriptionId
+        }
+        else {
+            $Config.workloads.sentinelIntegration |
+                Add-Member -NotePropertyName 'subscriptionId' -NotePropertyValue $SubscriptionId
+        }
+    }
+
     Write-LabLog -Message "Lab: $($Config.labName) | Prefix: $($Config.prefix) | Domain: $($Config.domain) | Cloud: $resolvedCloud" -Level Info
 
     # Warn on cloud capability differences for teardown context
@@ -173,6 +192,19 @@ try {
 
     # Remove workloads in reverse dependency order
 
+    # Phase 1 — sweep all label-referencing policies across modules BEFORE any label deletion.
+    # Prevents cross-module references (e.g. auto-label policy or retention publish policy) from
+    # pinning a label into Microsoft's PendingDeletion ghost state during Phase 2.
+    Write-LabStep -StepName 'LabelPolicySweep' -Description 'Phase 1: sweep label policies before label deletion'
+    if ($Config.workloads.sensitivityLabels.enabled) {
+        Remove-SensitivityLabels -Config $Config -Manifest (Get-WorkloadManifest -WorkloadName 'sensitivityLabels') -PoliciesOnly -WhatIf:$WhatIfPreference
+        Write-LabLog -Message 'Sensitivity label policies swept.' -Level Success
+    }
+    if ($Config.workloads.retention.enabled) {
+        Remove-Retention -Config $Config -Manifest (Get-WorkloadManifest -WorkloadName 'retention') -PoliciesOnly -WhatIf:$WhatIfPreference
+        Write-LabLog -Message 'Retention label publish policies swept.' -Level Success
+    }
+
     # TestData — skip (sent emails cannot be recalled)
     Write-LabStep -StepName 'TestData' -Description 'Test data removal'
     Write-LabLog -Message 'TestData: skipped. Sent emails and uploaded files cannot be recalled.' -Level Warning
@@ -227,10 +259,10 @@ try {
         Write-LabLog -Message 'eDiscovery workload is disabled, skipping.' -Level Info
     }
 
-    # 4. Retention
+    # 4. Retention (labels + standalone policies — publish policies already swept in Phase 1)
     if ($Config.workloads.retention.enabled) {
-        Write-LabStep -StepName 'Retention' -Description 'Removing retention policies and labels'
-        Remove-Retention -Config $Config -Manifest (Get-WorkloadManifest -WorkloadName 'retention') -WhatIf:$WhatIfPreference
+        Write-LabStep -StepName 'Retention' -Description 'Removing retention labels and standalone policies'
+        Remove-Retention -Config $Config -Manifest (Get-WorkloadManifest -WorkloadName 'retention') -LabelsOnly -WhatIf:$WhatIfPreference
         Write-LabLog -Message 'Retention removal complete.' -Level Success
     }
     else {
@@ -247,10 +279,10 @@ try {
         Write-LabLog -Message 'dlp workload is disabled, skipping.' -Level Info
     }
 
-    # 6. Sensitivity Labels
+    # 6. Sensitivity Labels (terminal label removal — policies already swept in Phase 1)
     if ($Config.workloads.sensitivityLabels.enabled) {
         Write-LabStep -StepName 'SensitivityLabels' -Description 'Removing sensitivity labels'
-        Remove-SensitivityLabels -Config $Config -Manifest (Get-WorkloadManifest -WorkloadName 'sensitivityLabels') -WhatIf:$WhatIfPreference
+        Remove-SensitivityLabels -Config $Config -Manifest (Get-WorkloadManifest -WorkloadName 'sensitivityLabels') -LabelsOnly -WhatIf:$WhatIfPreference
         Write-LabLog -Message 'Sensitivity labels removal complete.' -Level Success
     }
     else {

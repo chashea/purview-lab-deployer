@@ -10,28 +10,31 @@ Complete these steps after running `Deploy-Lab.ps1` to prepare the full demo exp
 
 ## Pre-Flight: Validate GCC Feature Availability
 
-Before running the demo, confirm these features are active in your GCC tenant:
+Run the automated readiness check — it verifies policies, labels, publishing, and Copilot licenses in one pass:
 
 ```powershell
-# 1. Check CopilotLocation parameter
-(Get-Command New-DlpCompliancePolicy).Parameters.Keys | Where-Object { $_ -like '*Copilot*' }
+./scripts/Test-CopilotDlpReady.ps1 -LabProfile copilot-protection -Cloud gcc
+```
 
-# 2. Check CopilotInteraction audit events
+If the script is not an option, manual spot-checks:
+
+```powershell
+# 1. DLP cmdlets accept the GA Copilot location parameters
+(Get-Command New-DlpCompliancePolicy).Parameters.Keys -contains 'Locations'
+(Get-Command New-DlpCompliancePolicy).Parameters.Keys -contains 'EnforcementPlanes'
+
+# 2. CopilotInteraction audit events
 Search-UnifiedAuditLog -Operations CopilotInteraction -StartDate (Get-Date).AddDays(-7) -EndDate (Get-Date) -ResultSize 1
 
-# 3. Verify sensitivity labels are published
+# 3. Sensitivity labels published
 Get-Label | Where-Object { $_.DisplayName -like 'PVCopilotDLP*' }
 ```
 
 | Check | Expected | If Missing |
 |---|---|---|
-| CopilotLocation param | `CopilotLocation` in output | DLP policies skip Copilot location — add manually in portal when available |
-| CopilotInteraction audit | Results or "no results" (not an error) | Copilot audit may not be enabled — Phase 3 audit demos will be limited |
+| `Locations` + `EnforcementPlanes` params | both `True` | Copilot location skipped — add manually in portal when feature rolls out to GCC |
+| CopilotInteraction audit | Results or "no results" (not an error) | Copilot audit not yet enabled — Phase 2 audit demos will rely on DlpRuleMatch only |
 | Published labels | PVCopilotDLP labels listed | Labels need time to publish — wait 15–30 minutes after deploy |
-
-For the web-search demo segment, also verify Cloud Policy state:
-
-- **Allow web search in Copilot** is configured as intended for your demo (GCC defaults to off unless enabled).
 
 ---
 
@@ -58,12 +61,15 @@ The baseline creates the before/after contrast. Show Copilot working without gua
 
 ### Pre-Demo File Labeling
 
-The auto-label policy catches SSN content automatically. For the demo, also manually label test files:
+Documents are uploaded to the owner's OneDrive and labeled automatically during deployment via the Microsoft Graph `assignSensitivityLabel` API. The SSN auto-label policy also catches sensitive content.
 
-1. Navigate to **SharePoint > Lab document library**
-2. Apply label **Highly Confidential > Restricted** to `Q4-Revenue-Forecast.txt`
-3. Apply label **Highly Confidential > Regulated Data** to `Employee-Benefits-Summary.txt` (may auto-label via SSN detection)
-4. Leave `Patient-Intake-Notes.txt` unlabeled initially (for before/after contrast)
+| File | Owner | Label applied at deploy |
+|---|---|---|
+| `Q4-Revenue-Forecast.txt` | mtorres | Highly Confidential > Restricted |
+| `Employee-Benefits-Summary.txt` | mtorres | Highly Confidential > Regulated Data |
+| `Patient-Intake-Notes.txt` | jkim | Unlabeled (for before/after contrast) |
+
+**GCC note:** Microsoft Graph's `assignSensitivityLabel` is documented as unavailable in US Government L4 and L5 (GCC High/DoD) tenants. On commercial GCC (Moderate), the call may still succeed. If the deploy log shows a `403` or "not available" warning, apply the labels manually via OneDrive web UI for the demo.
 
 ### GCC-Specific Check
 
@@ -85,34 +91,14 @@ If Copilot location was not available for DLP policies, label-based blocking thr
 
 ---
 
-## Phase 2 — Web Search Prevention (Private Preview)
-
-> **GCC Status:** This feature is in Private Preview for commercial tenants. GCC availability is TBD. If not available, walk through the policy logic and explain the control.
-
-> Prompt SIT blocking evaluates typed prompt text only. Uploaded file contents in prompts are not DLP-scanned.
-
-### If Available
-
-1. Navigate to **Microsoft Purview > DLP > Policies**
-2. Create a new policy for Copilot web search location
-3. Test with a prompt that triggers web search with sensitive context
-
-### If Not Available
-
-Walk through the policy logic on screen and explain:
-
-> "Even if Copilot could answer the question by searching the web, Purview decides it shouldn't — because the prompt contains sensitive data that would leave the compliance boundary. This capability is rolling out to GCC."
-
----
-
-## Phase 3 — Evidence & Investigations (Automated)
+## Phase 2 — Evidence & Investigations (Automated)
 
 ### GCC-Specific Check
 
 Copilot audit events (`CopilotInteraction`) may not yet be available in GCC. If the pre-flight check returned no results or an error:
 
 - Show DLP audit events (`DlpRuleMatch`) — these are available in GCC
-- Explain that Copilot-specific audit events are "coming to GCC"
+- Explain that Copilot-specific audit events are rolling out to GCC
 - Focus the demo on DLP policy match evidence
 
 ### Audit Trail
@@ -138,15 +124,25 @@ Copilot audit events (`CopilotInteraction`) may not yet be available in GCC. If 
 
 ## Pre-Demo Checklist (GCC)
 
-- [ ] Pre-flight validation passed (CopilotLocation, audit events, labels)
-- [ ] DLP policies propagated (allow up to 4 hours after deploy)
+- [ ] `Test-CopilotDlpReady.ps1 -Cloud gcc` returns a READY verdict
+- [ ] DLP policies propagated (up to 4 hours after deploy; re-check after any mode switch)
 - [ ] Sensitivity labels published to demo users
-- [ ] Copilot licenses assigned to test users (mtorres, jkim) — GCC Copilot availability confirmed
-- [ ] Test documents uploaded to SharePoint
-- [ ] At least one document manually labeled Highly Confidential > Restricted
-- [ ] Auto-label policy has applied to SSN-containing documents
+- [ ] Microsoft 365 Copilot for GCC licenses assigned to demo users
+- [ ] Test documents uploaded to OneDrive and auto-labeled (check deploy log; fall back to portal labeling if Graph API unavailable in this GCC tenant)
+- [ ] Auto-label policy has applied to any SSN-containing documents that missed Graph labeling
 - [ ] Baseline demo completed (Phase 0) before policy enforcement
 - [ ] Noted any GCC-unavailable features for "coming to GCC" callouts
+
+---
+
+## Optional: DSPM for AI (Commercial Reference)
+
+DSPM for AI is Microsoft's posture-management surface for AI data security. Per Microsoft Learn, GCC availability is rolling out. For a GCC demo today:
+
+1. **If DSPM for AI is available in your GCC tenant** — sign into the Microsoft Purview portal, navigate to **Solutions > DSPM for AI**, and follow the same activation flow as commercial (turn on audit, install browser extension, onboard devices, activate recommended one-click policies).
+2. **If not yet available** — demo the DSPM for AI story against a commercial reference tenant and call out explicitly that the same experience is coming to GCC. The enforcement surface (this lab) is the stable part of the story; DSPM for AI is the posture surface that layers on top.
+
+> **Demo framing (same as commercial):** "Enforcement + posture. This lab is enforcement — DLP stopping Copilot in the moment. DSPM for AI is posture — where oversharing still lives, which agencies still have CUI in over-shared SharePoint sites, where risk is accumulating."
 
 ---
 
@@ -160,3 +156,5 @@ DLP policies deploy in simulation mode by default. To enable enforcement for liv
 4. Allow up to 4 hours for full propagation
 
 Or redeploy without simulation mode by setting `"simulationMode": false` in the config.
+
+> **Caution:** Switching a policy from simulation to enforced restarts the 4-hour propagation window. Rerun `./scripts/Test-CopilotDlpReady.ps1 -Cloud gcc` and wait for a READY verdict before presenting.

@@ -6,7 +6,7 @@
 
 > **Licensing:** This lab requires **Microsoft 365 G5** (or G5 Compliance add-on) and **Copilot for Microsoft 365** in GCC.
 >
-> **Feature parity:** DLP for Copilot and Copilot audit events may have delayed rollout in GCC compared to commercial. Validate availability in your tenant before deploying. The deployer gracefully degrades if `CopilotLocation` is not yet available — DLP policies will log a warning and skip the Copilot location.
+> **Feature parity:** DLP for Copilot and Copilot audit events may have delayed rollout in GCC compared to commercial. Validate availability in your tenant before deploying. The deployer gracefully degrades if the `Locations` JSON payload + `EnforcementPlanes CopilotExperiences` GA path is not yet supported — DLP policies will log a warning and skip the Copilot scope.
 >
 > **GCC Limitation — No SIT-Based Copilot DLP:** In GCC, you cannot create a DLP policy targeting Microsoft 365 Copilot with Sensitive Information Type (SIT) conditions in the rules. Only label-based rules are supported for Copilot DLP in GCC. This lab deploys label-based content blocking only.
 >
@@ -24,6 +24,7 @@ This lab demonstrates how Microsoft Purview DLP enforces data boundaries for Mic
 | Auto-label policies | 1 | SSN content → Highly Confidential\Regulated Data |
 | DLP policies | 1 | Copilot Labeled Content Block (2 rules) |
 | Retention policies | 1 | Copilot interaction retention (365 days) |
+| Insider Risk policies | 1 | Risky AI Usage (GCC availability may lag — validate) |
 | eDiscovery cases | 1 | Copilot DLP incident review |
 | Audit searches | 3 | CopilotInteraction, DlpRuleMatch, DlpRuleUndo |
 | Test emails | 4 | Seeded with SSNs, credit cards, Copilot interaction context |
@@ -35,7 +36,7 @@ This lab demonstrates how Microsoft Purview DLP enforces data boundaries for Mic
 - **Microsoft 365 Copilot** licenses assigned to demo users (GCC availability required)
 - One of these roles: Entra AI Admin, Purview Data Security AI Admin, or Purview Compliance Administrator
 - Sensitivity labels published to demo users
-- Validate `CopilotLocation` parameter availability: run `Get-Command New-DlpCompliancePolicy` and check for `CopilotLocation` in parameters
+- Validate Copilot DLP parameter availability: run `Get-Command New-DlpCompliancePolicy` and confirm both `Locations` and `EnforcementPlanes` are in the parameter list (the GA path uses a `-Locations` JSON payload + `-EnforcementPlanes CopilotExperiences`; there is no dedicated `CopilotLocation` parameter)
 - For web-search scenarios, explicitly configure **Allow web search in Copilot** (GCC default is off)
 - Plan for policy propagation delay: updates can take up to 4 hours to fully reflect in Copilot experiences
 
@@ -65,33 +66,31 @@ Before deploying, confirm Copilot DLP support in your GCC tenant:
 # Connect to Security & Compliance PowerShell
 Connect-IPPSSession
 
-# Check if CopilotLocation parameter is available
-(Get-Command New-DlpCompliancePolicy).Parameters.Keys | Where-Object { $_ -like '*Copilot*' }
+# Check that DLP cmdlets accept the Locations JSON parameter
+# (the GA path used for the Microsoft 365 Copilot and Copilot Chat location)
+(Get-Command New-DlpCompliancePolicy).Parameters.Keys -contains 'Locations'
+(Get-Command New-DlpCompliancePolicy).Parameters.Keys -contains 'EnforcementPlanes'
 
-# Expected output: CopilotLocation
-# If empty: Copilot DLP location is not yet available in this GCC tenant
+# Both should return True. If either is False, Copilot DLP is not yet available
+# in this GCC tenant — the deployer will warn and skip the Copilot location.
 ```
 
-If `CopilotLocation` is not available, the deployer will skip the Copilot location with a warning. DLP policies will be created without the Copilot scope — you can add the location manually in the portal when the feature rolls out.
-
-## Lab Phases (90–120 minutes, modular)
+## Lab Phases (60–75 minutes, modular)
 
 | Phase | Title | Duration | Automated? |
 |---|---|---|---|
 | 0 | Baseline — Copilot without guardrails | 5 min | Manual (see RUNBOOK) |
-| 1 | Block labeled files from Copilot | 20 min | Automated (DLP policy) |
-| 2 | Stop Copilot web search with sensitive data | 15 min | Manual/Preview (see RUNBOOK) |
-| 3 | Evidence & investigations | 15 min | Automated (audit + eDiscovery) |
+| 1 | Block labeled files from Copilot | 20 min | Automated (DLP policy, GA) |
+| 2 | Evidence & investigations | 15 min | Automated (audit + eDiscovery) |
+
+> **Feature status (per MS Learn):** Label-based file blocking is GA. Prompt SIT blocking is in public preview on commercial and may not yet be available in GCC — this profile intentionally deploys only the GA label-based policy. The web-search protection that ships with prompt SIT blocking on commercial is not a separate feature.
 
 ## Key Technical Notes
 
-- **GCC supports label-based Copilot DLP only.** SIT-based conditions (sensitive info types in prompts) are not supported for Copilot DLP rules in GCC. This lab deploys a single policy with two label-based rules.
-- DLP policies deploy in **simulation mode** (TestWithNotifications) by default. Switch to enforce for live demos.
-- Prompt SIT controls evaluate typed prompt text only. Uploaded file contents in prompts are not DLP-scanned.
-- DLP updates can take up to 4 hours to fully appear in Copilot and Copilot Chat.
-- Phase 2 (web search prevention) requires **Private Preview** enrollment — may not be available in GCC.
-- GCC web search defaults to disabled unless enabled with Cloud Policy (**Allow web search in Copilot**).
-- **GCC rollout lag:** If Copilot DLP features are not yet available in your GCC tenant, the deployer degrades gracefully. Use the RUNBOOK to identify which features require manual portal configuration.
+- **GCC supports label-based Copilot DLP only.** SIT-based conditions (sensitive info types in prompts) are not currently supported for Copilot DLP rules in GCC. This lab deploys a single policy with two label-based rules using `-AdvancedRule` with label GUIDs per MS Learn Example 4.
+- DLP policies deploy in **simulation mode** (TestWithNotifications) by default. Switch to enforce for live demos — budget another 4h propagation window after switching.
+- DLP updates can take up to 4 hours to fully appear in Copilot and Copilot Chat. Run `./scripts/Test-CopilotDlpReady.ps1 -Cloud gcc` to confirm readiness before presenting.
+- GCC feature rollout lags commercial. If Copilot DLP features are not yet available in your GCC tenant, the deployer degrades gracefully with warnings in the deployment log.
 
 ## References
 
