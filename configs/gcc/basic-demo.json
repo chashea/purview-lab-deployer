@@ -292,6 +292,20 @@
             "SharePoint",
             "OneDrive"
           ]
+        },
+        {
+          "name": "Auto-label Internal-Corp as Confidential All-Employees",
+          "labelName": "Confidential\\All-Employees",
+          "sensitiveInfoTypes": [
+            "U.S. Employer Identification Number (EIN)",
+            "International Banking Account Number (IBAN)",
+            "SWIFT Code"
+          ],
+          "locations": [
+            "Exchange",
+            "SharePoint",
+            "OneDrive"
+          ]
         }
       ]
     },
