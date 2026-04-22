@@ -43,9 +43,9 @@ function Request-LabProfile {
     param()
 
     $profiles = @(
-        @{ Number = 1; Name = 'basic-lab'; Description = 'Basic demo lab' }
-        @{ Number = 2; Name = 'shadow-ai'; Description = 'Shadow AI demo' }
-        @{ Number = 3; Name = 'copilot-protection'; Aliases = @('copilot-dlp'); Description = 'Copilot DLP guardrails demo' }
+        @{ Number = 1; Name = 'basic';            Aliases = @('basic-lab');                                              Description = 'OneDrive/Teams/Outlook/SharePoint compliance baseline' }
+        @{ Number = 2; Name = 'ai';               Aliases = @('shadow-ai', 'copilot-dlp', 'copilot-protection', 'ai-security'); Description = 'Copilot + gen-AI governance (Copilot DLP + Shadow AI + Sentinel)' }
+        @{ Number = 3; Name = 'purview-sentinel'; Aliases = @();                                                         Description = 'Standalone Purview → Sentinel integration lab' }
     )
 
     $profileNumbers = ($profiles | ForEach-Object { $_.Number }) -join '/'
@@ -60,7 +60,7 @@ function Request-LabProfile {
     do {
         $profileInput = Read-Host "Select profile [$profileNumbers] (default: 1)"
         if ([string]::IsNullOrWhiteSpace($profileInput)) {
-            $selectedLabProfile = 'basic-lab'
+            $selectedLabProfile = 'basic'
         }
         else {
             $trimmedProfileInput = $profileInput.Trim()

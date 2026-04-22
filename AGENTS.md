@@ -6,8 +6,8 @@ This file provides guidance to AI coding agents (Codex, Jules, OpenCode, Copilot
 
 Automated Microsoft Purview demo lab deployment via PowerShell 7+.
 Config-driven, modular by workload, deploy + teardown symmetry.
-Five deployment profiles: basic-lab, shadow-ai, copilot-protection (alias: copilot-dlp), purview-sentinel, ai-security — each with commercial and GCC variants.
-`ai-security` is the integrated profile combining Copilot DLP + Shadow AI + Sentinel under a single `PVAISec` prefix; the others remain focused labs.
+Three canonical profiles: `basic` (prefix `PVLab`), `ai` (prefix `PVAI`), `purview-sentinel` — each with commercial and (where applicable) GCC variants.
+Deprecated aliases: `basic-lab` → `basic`; `shadow-ai`, `copilot-dlp`, `copilot-protection`, `ai-security` → `ai` (all emit a runtime warning).
 
 ## Stack
 
@@ -19,16 +19,16 @@ Five deployment profiles: basic-lab, shadow-ai, copilot-protection (alias: copil
 
 ```powershell
 # Deploy (direct)
-./Deploy-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -Cloud commercial
+./Deploy-Lab.ps1 -ConfigPath configs/commercial/basic-demo.json -Cloud commercial
 
 # Dry run (no cloud connection)
-./Deploy-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -SkipAuth -WhatIf
+./Deploy-Lab.ps1 -ConfigPath configs/commercial/basic-demo.json -SkipAuth -WhatIf
 
 # Teardown (manifest-based, precise)
-./Remove-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -ManifestPath manifests/commercial/PVLab_<timestamp>.json
+./Remove-Lab.ps1 -ConfigPath configs/commercial/basic-demo.json -ManifestPath manifests/commercial/PVLab_<timestamp>.json
 
 # Teardown (config-based fallback)
-./Remove-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -Cloud commercial
+./Remove-Lab.ps1 -ConfigPath configs/commercial/basic-demo.json -Cloud commercial
 
 # Lint (CI uses this — zero warnings required)
 Invoke-ScriptAnalyzer -Path . -Recurse -Severity Warning -ExcludeRule PSAvoidUsingWriteHost,PSUseSingularNouns

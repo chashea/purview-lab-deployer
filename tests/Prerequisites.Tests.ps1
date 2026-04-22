@@ -7,26 +7,70 @@ BeforeAll {
 }
 
 Describe 'Get-ProfileConfigMapping' {
-    It 'Returns a hashtable with all profile names and aliases' {
+    It 'Returns a hashtable with all canonical profiles and deprecated aliases' {
         $map = Get-ProfileConfigMapping
         $map | Should -BeOfType [hashtable]
-        $map.Keys.Count | Should -Be 6
+        $map.Keys.Count | Should -Be 8
     }
 
-    It 'Contains basic-lab, shadow-ai, copilot-protection, copilot-dlp alias, purview-sentinel, ai-security' {
+    It 'Canonical profiles resolve correctly' {
         $map = Get-ProfileConfigMapping
-        $map['basic-lab'] | Should -Be 'basic-lab-demo.json'
-        $map['shadow-ai'] | Should -Be 'shadow-ai-demo.json'
-        $map['copilot-protection'] | Should -Be 'copilot-dlp-demo.json'
-        $map['copilot-dlp'] | Should -Be 'copilot-dlp-demo.json'
+        $map['basic']            | Should -Be 'basic-demo.json'
+        $map['ai']               | Should -Be 'ai-demo.json'
         $map['purview-sentinel'] | Should -Be 'purview-sentinel-demo.json'
-        $map['ai-security'] | Should -Be 'ai-security-demo.json'
+    }
+
+    It 'Deprecated aliases resolve to canonical config files' {
+        $map = Get-ProfileConfigMapping
+        $map['basic-lab']        | Should -Be 'basic-demo.json'
+        $map['shadow-ai']        | Should -Be 'ai-demo.json'
+        $map['copilot-dlp']      | Should -Be 'ai-demo.json'
+        $map['copilot-protection'] | Should -Be 'ai-demo.json'
+        $map['ai-security']      | Should -Be 'ai-demo.json'
+    }
+}
+
+Describe 'Resolve-LabProfile' {
+    It 'Returns canonical name unchanged' {
+        Resolve-LabProfile -LabProfile 'basic'            | Should -Be 'basic'
+        Resolve-LabProfile -LabProfile 'ai'               | Should -Be 'ai'
+        Resolve-LabProfile -LabProfile 'purview-sentinel' | Should -Be 'purview-sentinel'
+    }
+
+    It 'Resolves basic-lab to basic with a warning' {
+        $result = Resolve-LabProfile -LabProfile 'basic-lab' -WarningVariable w 3>$null
+        $result | Should -Be 'basic'
+        $w | Should -Not -BeNullOrEmpty
+    }
+
+    It 'Resolves shadow-ai to ai with a warning' {
+        $result = Resolve-LabProfile -LabProfile 'shadow-ai' -WarningVariable w 3>$null
+        $result | Should -Be 'ai'
+        $w | Should -Not -BeNullOrEmpty
+    }
+
+    It 'Resolves copilot-dlp to ai with a warning' {
+        $result = Resolve-LabProfile -LabProfile 'copilot-dlp' -WarningVariable w 3>$null
+        $result | Should -Be 'ai'
+        $w | Should -Not -BeNullOrEmpty
+    }
+
+    It 'Resolves copilot-protection to ai with a warning' {
+        $result = Resolve-LabProfile -LabProfile 'copilot-protection' -WarningVariable w 3>$null
+        $result | Should -Be 'ai'
+        $w | Should -Not -BeNullOrEmpty
+    }
+
+    It 'Resolves ai-security to ai with a warning' {
+        $result = Resolve-LabProfile -LabProfile 'ai-security' -WarningVariable w 3>$null
+        $result | Should -Be 'ai'
+        $w | Should -Not -BeNullOrEmpty
     }
 }
 
 Describe 'Import-LabConfig' {
     It 'Loads a valid config file' {
-        $configPath = Join-Path $PSScriptRoot '..' 'configs' 'commercial' 'basic-lab-demo.json'
+        $configPath = Join-Path $PSScriptRoot '..' 'configs' 'commercial' 'basic-demo.json'
         $config = Import-LabConfig -ConfigPath $configPath
         $config | Should -Not -BeNullOrEmpty
         $config.labName | Should -Not -BeNullOrEmpty

@@ -9,51 +9,56 @@ This folder contains deployment capability profiles used by `Deploy-Lab.ps1` and
 
 These are selected by the `-Cloud` parameter (`commercial` or `gcc`).
 
-## Basic lab profiles
+## Canonical lab profiles
 
-- `commercial/basic-lab/README.md` - Basic lab deployment guide (commercial)
-- `gcc/basic-lab/README.md` - Basic lab deployment guide (GCC)
+### basic
 
-```powershell
-# Commercial
-./Deploy-Lab.ps1 -Cloud commercial -LabProfile basic-lab -TenantId <tenant-guid>
+Core compliance lab: OneDrive/Teams/Outlook/SharePoint DLP, sensitivity labels, retention, eDiscovery, insider risk, audit config. Prefix `PVLab`.
 
-# GCC
-./Deploy-Lab.ps1 -Cloud gcc -LabProfile basic-lab -TenantId <tenant-guid>
-```
-
-## Shadow AI profiles
-
-- `commercial/shadow-ai/capabilities.json` - Shadow AI scenario profile for commercial
-- `commercial/shadow-ai/README.md` - Shadow AI deployment guide (commercial)
-- `gcc/shadow-ai/capabilities.json` - Shadow AI scenario profile for GCC
-- `gcc/shadow-ai/README.md` - Shadow AI deployment guide (GCC)
-
-Shadow AI profiles are documentation/scenario metadata and do not replace cloud routing.
+- `commercial/basic/README.md` - deployment guide (commercial)
+- `gcc/basic/README.md` - deployment guide (GCC)
 
 ```powershell
 # Commercial
-./Deploy-Lab.ps1 -Cloud commercial -LabProfile shadow-ai -TenantId <tenant-guid>
+./Deploy-Lab.ps1 -Cloud commercial -LabProfile basic -TenantId <tenant-guid>
 
 # GCC
-./Deploy-Lab.ps1 -Cloud gcc -LabProfile shadow-ai -TenantId <tenant-guid>
+./Deploy-Lab.ps1 -Cloud gcc -LabProfile basic -TenantId <tenant-guid>
 ```
 
-## Copilot DLP profiles
+### ai
 
-- `commercial/copilot-dlp/README.md` - Copilot DLP guardrails deployment guide (commercial)
-- `commercial/copilot-dlp/RUNBOOK.md` - Post-deploy manual steps and demo preparation
-- `commercial/copilot-dlp/demo-scenarios.json` - 4-phase demo flow
-- `commercial/copilot-dlp/talk-track.md` - Full presenter talk track
+Copilot + gen-AI governance: Copilot DLP, Shadow AI detection (Endpoint/Browser/Network), AI-specific labels, IRM, Sentinel integration, cross-signal correlation analytics rules. Prefix `PVAI`. Requires an Azure subscription.
 
-Demonstrates how Purview DLP enforces data boundaries for M365 Copilot and Copilot Chat prompts, files, web-search behavior, and AI-driven actions with investigation evidence.
+- `commercial/ai/README.md` - deployment guide (commercial)
+- `gcc/ai/README.md` - deployment guide (GCC)
 
 ```powershell
 # Commercial
-./Deploy-Lab.ps1 -Cloud commercial -LabProfile copilot-protection -TenantId <tenant-guid>
+./Deploy-Lab.ps1 -Cloud commercial -LabProfile ai -TenantId <tenant-guid>
 
 # GCC
-./Deploy-Lab.ps1 -Cloud gcc -LabProfile copilot-protection -TenantId <tenant-guid>
+./Deploy-Lab.ps1 -Cloud gcc -LabProfile ai -TenantId <tenant-guid>
 ```
 
-Legacy alias: `copilot-dlp` remains supported for backward compatibility.
+### purview-sentinel
+
+Standalone Purview → Sentinel integration: Log Analytics workspace, Defender XDR + IRM + Office 365 data connectors, analytics rules, workbook, IRM auto-triage playbook. Requires an Azure subscription.
+
+- `commercial/purview-sentinel/README.md` - deployment guide (commercial)
+
+```powershell
+./Deploy-Lab.ps1 -Cloud commercial -LabProfile purview-sentinel -TenantId <tenant-guid>
+```
+
+## Deprecated aliases
+
+The following names are still accepted and emit a `Write-Warning` at runtime:
+
+| Deprecated | Resolves to |
+|------------|-------------|
+| `basic-lab` | `basic` |
+| `shadow-ai` | `ai` |
+| `copilot-dlp` | `ai` |
+| `copilot-protection` | `ai` |
+| `ai-security` | `ai` |

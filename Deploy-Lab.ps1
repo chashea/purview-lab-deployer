@@ -14,8 +14,8 @@
 
 .PARAMETER LabProfile
     Deployment profile name. Resolves to a config file under configs/<cloud>/.
-    Available profiles: basic-lab, shadow-ai, copilot-protection.
-    Backward-compatible alias: copilot-dlp.
+    Available profiles: basic, ai, purview-sentinel.
+    Deprecated aliases: basic-lab, shadow-ai, copilot-dlp, copilot-protection, ai-security.
 
 .PARAMETER SkipAuth
     Skip connecting to Exchange Online and Microsoft Graph (for testing).
@@ -39,16 +39,19 @@
     When omitted, the users already listed in the config are used as-is.
 
 .EXAMPLE
-    ./Deploy-Lab.ps1 -Cloud commercial -LabProfile basic-lab
+    ./Deploy-Lab.ps1 -Cloud commercial -LabProfile basic
 
 .EXAMPLE
-    ./Deploy-Lab.ps1 -Cloud commercial -LabProfile shadow-ai
+    ./Deploy-Lab.ps1 -Cloud commercial -LabProfile ai
 
 .EXAMPLE
-    ./Deploy-Lab.ps1 -Cloud commercial -LabProfile basic-lab -TestUsers alice@contoso.com,bob@contoso.com
+    ./Deploy-Lab.ps1 -Cloud commercial -LabProfile purview-sentinel
 
 .EXAMPLE
-    ./Deploy-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -WhatIf
+    ./Deploy-Lab.ps1 -Cloud commercial -LabProfile basic -TestUsers alice@contoso.com,bob@contoso.com
+
+.EXAMPLE
+    ./Deploy-Lab.ps1 -ConfigPath configs/commercial/basic-demo.json -WhatIf
 #>
 
 [CmdletBinding(SupportsShouldProcess)]
@@ -58,7 +61,7 @@ param(
     [string]$ConfigPath,
 
     [Parameter()]
-    [ValidateSet('basic-lab', 'shadow-ai', 'copilot-protection', 'copilot-dlp', 'purview-sentinel', 'ai-security')]
+    [ValidateSet('basic', 'ai', 'purview-sentinel', 'basic-lab', 'shadow-ai', 'copilot-dlp', 'copilot-protection', 'ai-security')]
     [string]$LabProfile,
 
     [Parameter()]
@@ -94,6 +97,7 @@ if (-not [string]::IsNullOrWhiteSpace($LabProfile) -and -not [string]::IsNullOrW
 }
 
 if (-not [string]::IsNullOrWhiteSpace($LabProfile)) {
+    $LabProfile = Resolve-LabProfile -LabProfile $LabProfile
     $resolvedCloud = if ([string]::IsNullOrWhiteSpace($Cloud)) { 'commercial' } else { $Cloud }
     $configFileName = $profileConfigMap[$LabProfile]
     $ConfigPath = Join-Path $PSScriptRoot "configs/$resolvedCloud/$configFileName"

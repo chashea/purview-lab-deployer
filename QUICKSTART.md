@@ -37,7 +37,7 @@ cd purview-lab-deployer
 Copy the template and edit it for your tenant:
 
 ```powershell
-cp configs/commercial/basic-lab-demo.json configs/commercial/my-lab.json
+cp configs/commercial/basic-demo.json configs/commercial/my-lab.json
 ```
 
 Open `configs/commercial/my-lab.json` and change these fields:
@@ -184,9 +184,10 @@ All resources are prefixed with `PVLab-` for reliable cleanup.
 
 | Profile | Command | What it deploys |
 |---|---|---|
-| **basic-lab** | `-LabProfile basic-lab` | Core compliance (DLP, labels, retention, eDiscovery, insider risk) |
-| **shadow-ai** | `-LabProfile shadow-ai` | AI-focused (endpoint/browser/network DLP, AI labels, CA policies) |
-| **copilot-protection** | `-LabProfile copilot-protection` | Copilot guardrails (prompt blocking, labeled content protection) |
-| **purview-sentinel** | `-LabProfile purview-sentinel` | Sentinel workspace + Defender XDR / IRM / Office 365 connectors + Purview-focused analytics rules and workbook (requires an Azure subscription and `az login`; fill in `subscriptionId` in the demo config first) |
+| **basic** | `-LabProfile basic` | Core compliance: OneDrive/Teams/Outlook/SharePoint DLP, labels, retention, eDiscovery, insider risk, audit config. Prefix `PVLab`. |
+| **ai** | `-LabProfile ai` | Copilot + gen-AI governance: Copilot DLP, Shadow AI (Endpoint/Browser/Network), AI labels, IRM, Sentinel. Prefix `PVAI`. Requires an Azure subscription. |
+| **purview-sentinel** | `-LabProfile purview-sentinel` | Sentinel workspace + Defender XDR / IRM / Office 365 connectors + Purview-focused analytics rules and workbook. Requires an Azure subscription and `az login`; fill in `subscriptionId` in the demo config first. |
+
+Deprecated aliases (`basic-lab`, `shadow-ai`, `copilot-dlp`, `copilot-protection`, `ai-security`) are still accepted and emit a deprecation warning.
 
 Each profile uses its own config under `configs/commercial/`. Copy and customize for your tenant.

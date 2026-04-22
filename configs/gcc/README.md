@@ -2,30 +2,17 @@
 
 This folder contains Microsoft Purview lab configs for GCC tenants.
 
-## Primary config
+## Primary configs
 
-- Baseline lab deployment: `basic-lab-demo.json`
+- `basic-demo.json` — baseline compliance lab (DLP, labels, retention, eDiscovery, insider risk, audit config). Prefix `PVLab`.
+- `ai-demo.json` — AI governance lab (Copilot DLP label-only, Shadow AI, IRM). Prefix `PVAI`.
 
-```powershell
-./Deploy-Lab.ps1 -ConfigPath configs/gcc/basic-lab-demo.json -TenantId <tenant-guid> -Cloud gcc
-```
-
-## Shadow AI demo
-
-- Shadow AI config: `shadow-ai-demo.json`
-- Guide: `../../profiles/gcc/shadow-ai/README.md`
+> **GCC note:** SIT-based Copilot prompt blocking is commercial-only. The GCC `ai` profile uses label-based Copilot DLP only. Shadow AI (Endpoint DLP) and IRM are available.
 
 ```powershell
-./Deploy-Lab.ps1 -Cloud gcc -LabProfile shadow-ai -TenantId <tenant-guid>
-```
-
-## Copilot DLP demo
-
-- Copilot DLP config: `copilot-dlp-demo.json`
-- Guide: `../../profiles/gcc/copilot-dlp/README.md`
-
-```powershell
-./Deploy-Lab.ps1 -Cloud gcc -LabProfile copilot-protection -TenantId <tenant-guid>
+./Deploy-Lab.ps1 -ConfigPath configs/gcc/basic-demo.json -TenantId <tenant-guid> -Cloud gcc
+./Deploy-Lab.ps1 -LabProfile basic -Cloud gcc -TenantId <tenant-guid>
+./Deploy-Lab.ps1 -LabProfile ai    -Cloud gcc -TenantId <tenant-guid>
 ```
 
 ## Other configs
@@ -41,8 +28,8 @@ This folder contains Microsoft Purview lab configs for GCC tenants.
 
 ```powershell
 # Config-based removal (basic lab)
-./Remove-Lab.ps1 -ConfigPath configs/gcc/basic-lab-demo.json -TenantId <tenant-guid> -Cloud gcc
+./Remove-Lab.ps1 -ConfigPath configs/gcc/basic-demo.json -TenantId <tenant-guid> -Cloud gcc
 
 # Manifest-based removal
-./Remove-Lab.ps1 -ConfigPath configs/gcc/basic-lab-demo.json -ManifestPath manifests/gcc/<manifest>.json -TenantId <tenant-guid> -Cloud gcc
+./Remove-Lab.ps1 -ConfigPath configs/gcc/basic-demo.json -ManifestPath manifests/gcc/<manifest>.json -TenantId <tenant-guid> -Cloud gcc
 ```

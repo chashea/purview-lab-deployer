@@ -1,7 +1,7 @@
 {
   "$schema": "./_schema.json",
-  "labName": "Integrated AI Security Lab",
-  "prefix": "PVAISec",
+  "labName": "AI Governance Lab",
+  "prefix": "PVAI",
   "domain": "MngEnvMCAP648165.onmicrosoft.com",
   "cloud": "commercial",
   "workloads": {
@@ -15,9 +15,9 @@
         { "upn": "sreeves@MngEnvMCAP648165.onmicrosoft.com" }
       ],
       "groups": [
-        { "displayName": "PVAISec-AI-Governance",         "members": ["nbrooks", "dokafor", "sreeves"] },
-        { "displayName": "PVAISec-Privileged-Data-Owners", "members": ["mchen", "sreeves"] },
-        { "displayName": "PVAISec-Business-Users",         "members": ["rtorres", "mchen", "dokafor"] }
+        { "displayName": "PVAI-AI-Governance",         "members": ["nbrooks", "dokafor", "sreeves"] },
+        { "displayName": "PVAI-Privileged-Data-Owners", "members": ["mchen", "sreeves"] },
+        { "displayName": "PVAI-Business-Users",         "members": ["rtorres", "mchen", "dokafor"] }
       ],
       "mode": "existing"
     },
@@ -113,13 +113,13 @@
           "policyMode": "copilotLabelBlock",
           "locations": ["CopilotExperiences"],
           "labels": [
-            "PVAISec-Highly-Confidential-AI-Blocked-from-External-Tools",
-            "PVAISec-Highly-Confidential-AI-Regulated-Data"
+            "PVAI-Highly-Confidential-AI-Blocked-from-External-Tools",
+            "PVAI-Highly-Confidential-AI-Regulated-Data"
           ],
           "rules": [
             {
               "name": "Block Copilot from Restricted Content",
-              "labels": ["PVAISec-Highly-Confidential-AI-Blocked-from-External-Tools"],
+              "labels": ["PVAI-Highly-Confidential-AI-Blocked-from-External-Tools"],
               "enforcement": {
                 "action": "block",
                 "userNotification": { "enabled": true, "message": "Copilot cannot access this content. The file is labeled Highly Confidential and blocked from AI processing." },
@@ -129,7 +129,7 @@
             },
             {
               "name": "Block Copilot from Regulated Data",
-              "labels": ["PVAISec-Highly-Confidential-AI-Regulated-Data"],
+              "labels": ["PVAI-Highly-Confidential-AI-Regulated-Data"],
               "enforcement": {
                 "action": "block",
                 "userNotification": { "enabled": true, "message": "Copilot cannot access this content. It contains regulated data blocked from AI processing by policy." },
@@ -299,8 +299,8 @@
     "sentinelIntegration": {
       "enabled": true,
       "subscriptionId": "",
-      "resourceGroup": { "name": "PVAISec-rg", "location": "eastus" },
-      "workspace": { "name": "PVAISec-ws", "retentionDays": 30, "sku": "PerGB2018" },
+      "resourceGroup": { "name": "PVAI-rg", "location": "eastus" },
+      "workspace": { "name": "PVAI-ws", "retentionDays": 30, "sku": "PerGB2018" },
       "additionalContentHubSolutions": ["Microsoft Purview"],
       "tableTiers": [
         { "table": "SecurityAlert",              "tier": "Analytics", "reason": "Low volume, real-time rules need it." },
@@ -360,19 +360,19 @@
         {
           "fileName": "Q4-Financial-Forecast.docx",
           "owner": "mchen",
-          "labelIdentity": "PVAISec-Highly-Confidential-AI-Blocked-from-External-Tools",
+          "labelIdentity": "PVAI-Highly-Confidential-AI-Blocked-from-External-Tools",
           "content": "Q4 Financial Forecast - HIGHLY CONFIDENTIAL\n\nProjected Revenue: $14.2M\nCustomer ID: CUST-482917\nPayroll routing: 021000021\nAccount: 0012345678\n\nThis file is restricted from external AI tools and Copilot."
         },
         {
           "fileName": "Customer-Data-Export.docx",
           "owner": "rtorres",
-          "labelIdentity": "PVAISec-Highly-Confidential-AI-Regulated-Data",
+          "labelIdentity": "PVAI-Highly-Confidential-AI-Regulated-Data",
           "content": "Customer Data Export - HIGHLY CONFIDENTIAL\n\nCustomer: Jane Smith\nSSN: 287-44-9921\nCredit Card: 4532-1111-2222-3333\nAPI Key: sk-proj-abc123def456"
         },
         {
           "fileName": "Engineering-Specs.docx",
           "owner": "dokafor",
-          "labelIdentity": "PVAISec-Confidential-AI-Internal-Use",
+          "labelIdentity": "PVAI-Confidential-AI-Internal-Use",
           "content": "Internal Engineering Specs\n\nProject: PRJ-NOVA2026\nAPI Endpoint Key: api_live_xK9mN2pQ4rS6tU8v\nApproved for enterprise Copilot use only."
         },
         {
@@ -383,7 +383,7 @@
         {
           "fileName": "AI-Usage-Policy-Draft.docx",
           "owner": "sreeves",
-          "labelIdentity": "PVAISec-Confidential-All-Employees",
+          "labelIdentity": "PVAI-Confidential-All-Employees",
           "content": "DRAFT - Organizational AI Usage Policy v3.0\n\nSection 1: Sanctioned AI Tools\n- Microsoft 365 Copilot\n- Azure OpenAI Service\n\nSection 2: Prohibited\n- Pasting organizational data into public AI services\n- Using external AI on data labeled Highly Confidential\n\nSection 3: Incident Response\n- DLP alerts feed Insider Risk scoring\n- Risky AI usage auto-escalates enforcement tier\n- Sentinel incidents auto-triaged via Logic App\n\nDRAFT - For AI Governance review."
         }
       ]

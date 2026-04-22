@@ -6,7 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Automated Microsoft Purview demo lab deployment via PowerShell 7+.
 Config-driven, modular by workload, deploy + teardown symmetry.
-Five deployment profiles: basic-lab, shadow-ai, copilot-protection (alias: copilot-dlp), purview-sentinel, ai-security — each with commercial and (where applicable) GCC variants.
+Three canonical profiles: `basic` (prefix `PVLab`), `ai` (prefix `PVAI`), `purview-sentinel` — each with commercial and (where applicable) GCC variants.
+Deprecated aliases: `basic-lab` → `basic`; `shadow-ai`, `copilot-dlp`, `copilot-protection`, `ai-security` → `ai` (all emit a runtime warning).
 
 ## Stack
 
@@ -25,22 +26,22 @@ Five deployment profiles: basic-lab, shadow-ai, copilot-protection (alias: copil
 
 ```powershell
 # Deploy (direct)
-./Deploy-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -Cloud commercial
+./Deploy-Lab.ps1 -ConfigPath configs/commercial/basic-demo.json -Cloud commercial
 
 # Deploy (profile shorthand — resolves to configs/<cloud>/<profile>-demo.json)
-./Deploy-Lab.ps1 -LabProfile basic-lab -Cloud commercial
+./Deploy-Lab.ps1 -LabProfile basic -Cloud commercial
 
 # Deploy (interactive — prompts for cloud, profile, tenant)
 ./Deploy-Lab-Interactive.ps1
 
 # Dry run (no cloud connection)
-./Deploy-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -SkipAuth -WhatIf
+./Deploy-Lab.ps1 -ConfigPath configs/commercial/basic-demo.json -SkipAuth -WhatIf
 
 # Teardown (config-based, prefix fallback)
-./Remove-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -Cloud commercial
+./Remove-Lab.ps1 -ConfigPath configs/commercial/basic-demo.json -Cloud commercial
 
 # Teardown (manifest-based, precise resource IDs)
-./Remove-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -ManifestPath manifests/commercial/PVLab_20260316-152133.json
+./Remove-Lab.ps1 -ConfigPath configs/commercial/basic-demo.json -ManifestPath manifests/commercial/PVLab_20260316-152133.json
 
 # Teardown (interactive)
 ./Remove-Lab-Interactive.ps1
@@ -87,7 +88,7 @@ Exceptions: `Prerequisites.psm1` and `Logging.psm1` are utility modules (no Depl
 
 Configs live under `configs/<cloud>/<scenario>.json`. Schema at `configs/_schema.json`. Required fields: `labName`, `prefix`, `domain`. Workloads are toggled via `"enabled": true/false` in the `workloads` object. Each workload section contains its resource definitions (policies, labels, users, etc.).
 
-Shadow AI uses prefix `PVShadowAI`; baseline uses `PVLab`.
+Baseline (`basic`) uses prefix `PVLab`; AI governance (`ai`) uses `PVAI`.
 
 ### Cloud Environments
 

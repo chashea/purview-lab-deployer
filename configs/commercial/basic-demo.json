@@ -382,6 +382,13 @@
           "body": "Priya, occupational health completed review for employee accommodation request 24-771. Documentation includes physician statement, treatment plan, and return-to-work restrictions through 05/31. Please retain per HR medical records policy."
         }
       ]
+    },
+    "auditConfig": {
+      "enabled": true,
+      "searches": [
+        { "name": "DLP-Match-Audit",    "operations": ["DlpRuleMatch"] },
+        { "name": "DLP-Override-Audit", "operations": ["DlpRuleUndo"] }
+      ]
     }
   },
   "cloud": "commercial"

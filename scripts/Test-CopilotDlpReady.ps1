@@ -39,10 +39,10 @@
     licenses. Useful when running without Graph consent.
 
 .EXAMPLE
-    ./scripts/Test-CopilotDlpReady.ps1 -LabProfile copilot-protection -Cloud commercial
+    ./scripts/Test-CopilotDlpReady.ps1 -LabProfile ai -Cloud commercial
 
 .EXAMPLE
-    ./scripts/Test-CopilotDlpReady.ps1 -ConfigPath ./configs/commercial/copilot-dlp-demo.json -TenantId 00000000-0000-0000-0000-000000000000
+    ./scripts/Test-CopilotDlpReady.ps1 -ConfigPath ./configs/commercial/ai-demo.json -TenantId 00000000-0000-0000-0000-000000000000
 #>
 
 [CmdletBinding()]
@@ -90,13 +90,16 @@ function Resolve-LabConfigPath {
 
     $profileSlug = if ($ProfileName) {
         switch ($ProfileName) {
-            'copilot-protection' { 'copilot-dlp-demo.json' }
-            'copilot-dlp' { 'copilot-dlp-demo.json' }
-            default { "$ProfileName-demo.json" }
+            'copilot-protection' { 'ai-demo.json' }
+            'copilot-dlp'        { 'ai-demo.json' }
+            'ai-security'        { 'ai-demo.json' }
+            'shadow-ai'          { 'ai-demo.json' }
+            'ai'                 { 'ai-demo.json' }
+            default              { "$ProfileName-demo.json" }
         }
     }
     else {
-        'copilot-dlp-demo.json'
+        'ai-demo.json'
     }
 
     $candidate = Join-Path $repoRoot 'configs' $CloudEnv $profileSlug

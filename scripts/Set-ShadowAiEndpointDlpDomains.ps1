@@ -27,7 +27,7 @@
     Path to the shadow-ai lab config JSON. Defaults to commercial profile.
 
 .PARAMETER LabProfile
-    Lab profile shorthand — currently only 'shadow-ai' is meaningful.
+    Lab profile shorthand. Default: 'ai'. Also accepts legacy 'shadow-ai'.
 
 .PARAMETER Cloud
     Cloud environment (commercial or gcc). Default: commercial.
@@ -41,11 +41,11 @@
 
 .EXAMPLE
     # Discovery mode — read current tenant settings, print merge preview
-    ./scripts/Set-ShadowAiEndpointDlpDomains.ps1 -LabProfile shadow-ai
+    ./scripts/Set-ShadowAiEndpointDlpDomains.ps1 -LabProfile ai
 
 .EXAMPLE
     # Apply the merge (interactive confirmation, still honours -WhatIf)
-    ./scripts/Set-ShadowAiEndpointDlpDomains.ps1 -LabProfile shadow-ai -Apply
+    ./scripts/Set-ShadowAiEndpointDlpDomains.ps1 -LabProfile ai -Apply
 #>
 
 [CmdletBinding(SupportsShouldProcess)]
@@ -54,7 +54,7 @@ param(
     [string]$ConfigPath,
 
     [Parameter()]
-    [string]$LabProfile = 'shadow-ai',
+    [string]$LabProfile = 'ai',
 
     [Parameter()]
     [ValidateSet('commercial', 'gcc')]
@@ -85,8 +85,15 @@ function Resolve-ShadowAiConfig {
         return (Resolve-Path $ExplicitConfigPath).Path
     }
 
-    $fileName = "$ProfileName-demo.json"
-    $candidate = Join-Path $repoRoot 'configs' $CloudEnv $fileName
+    $slug = switch ($ProfileName) {
+        'shadow-ai'          { 'ai-demo.json' }
+        'ai-security'        { 'ai-demo.json' }
+        'copilot-protection' { 'ai-demo.json' }
+        'copilot-dlp'        { 'ai-demo.json' }
+        'ai'                 { 'ai-demo.json' }
+        default              { "$ProfileName-demo.json" }
+    }
+    $candidate = Join-Path $repoRoot 'configs' $CloudEnv $slug
     if (-not (Test-Path $candidate)) {
         throw "Could not locate config at $candidate. Pass -ConfigPath explicitly."
     }

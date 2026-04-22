@@ -68,7 +68,7 @@ jobs:
               Import-Module $mod.FullName -Force
               Write-Host "Imported: $($mod.Name)"
           }
-          $config = Import-LabConfig -ConfigPath configs/commercial/basic-lab-demo.json
+          $config = Import-LabConfig -ConfigPath configs/commercial/basic-demo.json
           Write-Host "Config loaded: $($config.labName) (prefix: $($config.prefix))"
           $valid = Test-LabConfigValidity -Config $config
           Write-Host "Config valid: $valid"

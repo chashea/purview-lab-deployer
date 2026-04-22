@@ -4,26 +4,27 @@ This folder contains Microsoft Purview lab configs for commercial tenants.
 
 ## Primary configs
 
-Each profile has a single canonical config:
+Each canonical profile has a single config:
 
-- `basic-lab-demo.json` — baseline lab (DLP, labels, retention, eDiscovery, insider risk)
-- `shadow-ai-demo.json` — shadow AI detection and governance
-- `copilot-dlp-demo.json` — Copilot DLP guardrails
+- `basic-demo.json` — baseline compliance lab (DLP, labels, retention, eDiscovery, insider risk, audit config). Prefix `PVLab`.
+- `ai-demo.json` — AI governance lab (Copilot DLP, Shadow AI, Sentinel, IRM). Prefix `PVAI`.
+- `purview-sentinel-demo.json` — standalone Sentinel integration lab.
 
 ```powershell
-./Deploy-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -TenantId <tenant-guid> -Cloud commercial
+./Deploy-Lab.ps1 -LabProfile basic -Cloud commercial -TenantId <tenant-guid>
+./Deploy-Lab.ps1 -LabProfile ai    -Cloud commercial -TenantId <tenant-guid>
 ```
 
 ## Using your own test users
 
-Each config ships with a set of pre-licensed demo users baked in. To run the same profile against a different set of existing tenant users, pass `-TestUsers`:
+Each config ships with pre-licensed demo users. To run the same profile against a different set of existing tenant users, pass `-TestUsers`:
 
 ```powershell
-./Deploy-Lab.ps1 -LabProfile basic-lab -Cloud commercial -TestUsers alice@contoso.com,bob@contoso.com
-./Deploy-Lab.ps1 -LabProfile shadow-ai -Cloud commercial -TestUsers alice@contoso.com,bob@contoso.com
+./Deploy-Lab.ps1 -LabProfile basic -Cloud commercial -TestUsers alice@contoso.com,bob@contoso.com
+./Deploy-Lab.ps1 -LabProfile ai    -Cloud commercial -TestUsers alice@contoso.com,bob@contoso.com
 ```
 
-When `-TestUsers` is supplied, the config's `testUsers.users` list is replaced with the provided UPNs, groups are cleared, and the mode is forced to `existing` (no user creation). When omitted, the users already listed in the config are used as-is.
+When `-TestUsers` is supplied, the config's `testUsers.users` list is replaced with the provided UPNs, groups are cleared, and the mode is forced to `existing` (no user creation).
 
 ## Other configs
 
@@ -34,23 +35,12 @@ When `-TestUsers` is supplied, the config's `testUsers.users` list is replaced w
 - `dlp-only.json`
 - `ediscovery-retention.json`
 
-## Shadow AI (separate deployment)
-
-Shadow AI is intentionally separate from `basic-lab-demo.json`.
-
-```powershell
-./Deploy-Lab.ps1 -ConfigPath configs/commercial/shadow-ai-demo.json -TenantId <tenant-guid> -Cloud commercial
-./Remove-Lab.ps1 -ConfigPath configs/commercial/shadow-ai-demo.json -TenantId <tenant-guid> -Cloud commercial -Confirm:$false
-```
-
-More details: `../../profiles/commercial/shadow-ai/README.md`
-
 ## Teardown examples
 
 ```powershell
 # Config-based removal
-./Remove-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -TenantId <tenant-guid> -Cloud commercial
+./Remove-Lab.ps1 -ConfigPath configs/commercial/basic-demo.json -TenantId <tenant-guid> -Cloud commercial
 
 # Manifest-based removal
-./Remove-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -ManifestPath manifests/commercial/<manifest>.json -TenantId <tenant-guid> -Cloud commercial
+./Remove-Lab.ps1 -ConfigPath configs/commercial/basic-demo.json -ManifestPath manifests/commercial/<manifest>.json -TenantId <tenant-guid> -Cloud commercial
 ```
