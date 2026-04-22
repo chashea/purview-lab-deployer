@@ -538,6 +538,41 @@
           ]
         }
       ]
+    },
+    "conditionalAccess": {
+      "enabled": true,
+      "policies": [
+        {
+          "name": "Require-MFA-AllUsers",
+          "description": "Report-only: require MFA for all users across all cloud apps. Evaluates only; does not enforce.",
+          "targetAppIds": [
+            "All"
+          ],
+          "action": "mfa",
+          "state": "enabledForReportingButNotEnforced"
+        },
+        {
+          "name": "Block-HighRisk-SignIns",
+          "description": "Report-only: block sign-ins flagged as high risk by Identity Protection.",
+          "targetAppIds": [
+            "All"
+          ],
+          "signInRiskLevels": [
+            "high"
+          ],
+          "action": "block",
+          "state": "enabledForReportingButNotEnforced"
+        },
+        {
+          "name": "Require-Compliant-Device",
+          "description": "Report-only: require a Intune-compliant or hybrid-joined device for all cloud apps.",
+          "targetAppIds": [
+            "All"
+          ],
+          "action": "compliantDevice",
+          "state": "enabledForReportingButNotEnforced"
+        }
+      ]
     }
   },
   "cloud": "commercial"
