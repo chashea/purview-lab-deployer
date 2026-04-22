@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Automated Microsoft Purview demo lab deployment via PowerShell 7+.
 Config-driven, modular by workload, deploy + teardown symmetry.
-Three deployment profiles: basic-lab, shadow-ai, copilot-protection (alias: copilot-dlp) — each with commercial and GCC variants.
+Five deployment profiles: basic-lab, shadow-ai, copilot-protection (alias: copilot-dlp), purview-sentinel, ai-security — each with commercial and (where applicable) GCC variants.
 
 ## Stack
 
@@ -134,3 +134,20 @@ Manifests (`manifests/<cloud>/<prefix>_<timestamp>.json`) capture resource GUIDs
 - Cloud resolution order: `-Cloud` param → config file `cloud` field → default `commercial`
 - Conditional Access policies deploy in report-only mode (non-blocking)
 - Logs written to `logs/` with transcripts (git-ignored)
+
+## Claude Code scaffolding
+
+`.claude/agents/` — delegate specialized work:
+- `graph-auth-debugger` — Graph/EXO/Az auth failures, scopes, CAE stale tokens
+- `manifest-auditor` — manifest schema + zombie detection pre/post teardown
+- `dlp-preflight-validator` — validate DLP config against labels + SITs + cmdlet support before deploy
+- `module-author` — scaffold a new workload `.psm1` that follows the Deploy-/Remove- contract + wires it into schema, capabilities, and tests
+
+`.claude/commands/` — user-invoked slash commands:
+- `/deploy` — guided Deploy-Lab with preflight
+- `/remove` — manifest-audited teardown
+- `/validate-config` — schema + DLP preflight without deploying
+- `/check-graph` — auth context sanity check
+- `/lint` — PSScriptAnalyzer (CI parity)
+- `/test` — Pester suite
+- `/smoke` — post-deploy smoke tests
