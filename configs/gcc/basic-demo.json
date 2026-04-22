@@ -8,60 +8,28 @@
       "enabled": true,
       "users": [
         {
-          "displayName": "Rachel Torres",
-          "mailNickname": "rtorres",
-          "department": "HR",
-          "jobTitle": "HR Manager",
-          "usageLocation": "US"
+          "upn": "rtorres@MngEnvMCAP659995.onmicrosoft.com"
         },
         {
-          "displayName": "Marcus Chen",
-          "mailNickname": "mchen",
-          "department": "Finance",
-          "jobTitle": "Financial Analyst",
-          "usageLocation": "US"
+          "upn": "mchen@MngEnvMCAP659995.onmicrosoft.com"
         },
         {
-          "displayName": "Natalie Brooks",
-          "mailNickname": "nbrooks",
-          "department": "Legal",
-          "jobTitle": "Legal Counsel",
-          "usageLocation": "US"
+          "upn": "nbrooks@MngEnvMCAP659995.onmicrosoft.com"
         },
         {
-          "displayName": "David Okafor",
-          "mailNickname": "dokafor",
-          "department": "IT",
-          "jobTitle": "IT Security Engineer",
-          "usageLocation": "US"
+          "upn": "dokafor@MngEnvMCAP659995.onmicrosoft.com"
         },
         {
-          "displayName": "Samantha Reeves",
-          "mailNickname": "sreeves",
-          "department": "Sales",
-          "jobTitle": "Sales Director",
-          "usageLocation": "US"
+          "upn": "sreeves@MngEnvMCAP659995.onmicrosoft.com"
         },
         {
-          "displayName": "Jonathan Blake",
-          "mailNickname": "jblake",
-          "department": "Executive",
-          "jobTitle": "Chief Financial Officer",
-          "usageLocation": "US"
+          "upn": "jblake@MngEnvMCAP659995.onmicrosoft.com"
         },
         {
-          "displayName": "Maya Sullivan",
-          "mailNickname": "msullivan",
-          "department": "Medical",
-          "jobTitle": "Occupational Health Specialist",
-          "usageLocation": "US"
+          "upn": "msullivan@MngEnvMCAP659995.onmicrosoft.com"
         },
         {
-          "displayName": "Priya Nair",
-          "mailNickname": "pnair",
-          "department": "HR",
-          "jobTitle": "Senior HR Business Partner",
-          "usageLocation": "US"
+          "upn": "pnair@MngEnvMCAP659995.onmicrosoft.com"
         }
       ],
       "groups": [
@@ -87,7 +55,8 @@
             "pnair"
           ]
         }
-      ]
+      ],
+      "mode": "existing"
     },
     "dlp": {
       "enabled": true,
@@ -357,7 +326,7 @@
       "policies": [
         {
           "name": "Offensive Language Collection",
-          "description": "DSPM for AI collection policy — captures AI activity for offensive language compliance review."
+          "description": "DSPM for AI collection policy \u2014 captures AI activity for offensive language compliance review."
         }
       ]
     },
@@ -417,8 +386,18 @@
     "auditConfig": {
       "enabled": true,
       "searches": [
-        { "name": "DLP-Match-Audit",    "operations": ["DlpRuleMatch"] },
-        { "name": "DLP-Override-Audit", "operations": ["DlpRuleUndo"] }
+        {
+          "name": "DLP-Match-Audit",
+          "operations": [
+            "DlpRuleMatch"
+          ]
+        },
+        {
+          "name": "DLP-Override-Audit",
+          "operations": [
+            "DlpRuleUndo"
+          ]
+        }
       ]
     }
   },
