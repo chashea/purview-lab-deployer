@@ -417,6 +417,24 @@
           "priorityUserGroups": [
             "PVLab-Executives"
           ]
+        },
+        {
+          "name": "General-Data-Leaks",
+          "template": "General data leaks",
+          "description": "Detects broad data-leak signals across Exchange, SharePoint, OneDrive, and endpoint. Scoped to all users."
+        },
+        {
+          "name": "Priority-Executive-Data-Exfil",
+          "template": "Data leaks by priority users",
+          "description": "Elevated risk scoring for the Executives group. Applies priority indicators.",
+          "priorityUserGroups": [
+            "PVLab-Executives"
+          ]
+        },
+        {
+          "name": "Security-Policy-Violations",
+          "template": "Security policy violations",
+          "description": "Detects users triggering malware, unusual external logins, or endpoint security violations."
         }
       ]
     },
@@ -474,6 +492,49 @@
           "name": "DLP-Override-Audit",
           "operations": [
             "DlpRuleUndo"
+          ]
+        },
+        {
+          "name": "File-Access-Audit",
+          "operations": [
+            "FileAccessed",
+            "FileDownloaded",
+            "FileModified",
+            "FileUploaded"
+          ]
+        },
+        {
+          "name": "Sharing-Audit",
+          "operations": [
+            "SharingInvitationCreated",
+            "SharingInvitationAccepted",
+            "AnonymousLinkCreated",
+            "SecureLinkCreated",
+            "SharingSet"
+          ]
+        },
+        {
+          "name": "Mailbox-Permission-Audit",
+          "operations": [
+            "Add-MailboxPermission",
+            "Remove-MailboxPermission",
+            "New-InboxRule",
+            "Set-InboxRule"
+          ]
+        },
+        {
+          "name": "Admin-Role-Audit",
+          "operations": [
+            "Add member to role.",
+            "Remove member from role.",
+            "Add user.",
+            "Delete user."
+          ]
+        },
+        {
+          "name": "Sign-In-Failure-Audit",
+          "operations": [
+            "UserLoginFailed"
           ]
         }
       ]
