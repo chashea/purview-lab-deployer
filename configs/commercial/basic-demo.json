@@ -416,12 +416,79 @@
           "template": "Data theft by departing users",
           "priorityUserGroups": [
             "PVLab-Executives"
+          ],
+          "triggeringEvents": [
+            "HrEvent",
+            "AzureAccountDeleted",
+            "UserPerformsExfiltrationActivity"
+          ],
+          "thresholds": "Default",
+          "indicators": [
+            "SendingAttachmentsToExternalRecipients",
+            "SendingEmailsWithAttachmentsToExternalRecipients",
+            "SharePointFileAccessed",
+            "SharePointFileDownloaded",
+            "SharePointFileDeleted",
+            "SharePointFileShared",
+            "SharePointDownloadsFromUnallowedDomains",
+            "FileCopiedToRemovableMedia",
+            "FileCopiedToNetworkShare",
+            "FileCopiedToPersonalCloud",
+            "FilePrinted",
+            "FileRenamedOnDevice",
+            "FileArchivedOnDevice",
+            "FileDeletedOnDevice",
+            "FileCreatedOnDeviceFromCloud",
+            "FileDownloadedFromCloudStorage",
+            "FileUploadedToCloudStorageViaBrowser",
+            "FileUploadedToUnallowedDomainViaBrowser",
+            "CumulativeExfiltrationActivity",
+            "UnusualVolumeOfFileDeletions",
+            "UnusualVolumeOfFileDownloads",
+            "UnusualVolumeOfFileUploads",
+            "DefenderForEndpointHighSeverityAlert",
+            "DefenderForEndpointMediumSeverityAlert",
+            "DefenderForEndpointLowSeverityAlert",
+            "PhysicalBadgingSignal"
           ]
         },
         {
           "name": "General-Data-Leaks",
           "template": "General data leaks",
-          "description": "Detects broad data-leak signals across Exchange, SharePoint, OneDrive, and endpoint. Scoped to all users."
+          "description": "Detects broad data-leak signals across Exchange, SharePoint, OneDrive, and endpoint. Scoped to all users.",
+          "triggeringEvents": [
+            "DlpPolicyMatchHighSeverity",
+            "UserPerformsExfiltrationActivity"
+          ],
+          "thresholds": "Default",
+          "indicators": [
+            "SendingAttachmentsToExternalRecipients",
+            "SendingEmailsWithAttachmentsToExternalRecipients",
+            "SharePointFileAccessed",
+            "SharePointFileDownloaded",
+            "SharePointFileDeleted",
+            "SharePointFileShared",
+            "SharePointDownloadsFromUnallowedDomains",
+            "FileCopiedToRemovableMedia",
+            "FileCopiedToNetworkShare",
+            "FileCopiedToPersonalCloud",
+            "FilePrinted",
+            "FileRenamedOnDevice",
+            "FileArchivedOnDevice",
+            "FileDeletedOnDevice",
+            "FileCreatedOnDeviceFromCloud",
+            "FileDownloadedFromCloudStorage",
+            "FileUploadedToCloudStorageViaBrowser",
+            "FileUploadedToUnallowedDomainViaBrowser",
+            "CumulativeExfiltrationActivity",
+            "UnusualVolumeOfFileDeletions",
+            "UnusualVolumeOfFileDownloads",
+            "UnusualVolumeOfFileUploads",
+            "DefenderForEndpointHighSeverityAlert",
+            "DefenderForEndpointMediumSeverityAlert",
+            "DefenderForEndpointLowSeverityAlert",
+            "PhysicalBadgingSignal"
+          ]
         },
         {
           "name": "Priority-Executive-Data-Exfil",
@@ -429,12 +496,77 @@
           "description": "Elevated risk scoring for the Executives group. Applies priority indicators.",
           "priorityUserGroups": [
             "PVLab-Executives"
+          ],
+          "triggeringEvents": [
+            "DlpPolicyMatchHighSeverity",
+            "UserPerformsExfiltrationActivity"
+          ],
+          "thresholds": "Default",
+          "indicators": [
+            "SendingAttachmentsToExternalRecipients",
+            "SendingEmailsWithAttachmentsToExternalRecipients",
+            "SharePointFileAccessed",
+            "SharePointFileDownloaded",
+            "SharePointFileDeleted",
+            "SharePointFileShared",
+            "SharePointDownloadsFromUnallowedDomains",
+            "FileCopiedToRemovableMedia",
+            "FileCopiedToNetworkShare",
+            "FileCopiedToPersonalCloud",
+            "FilePrinted",
+            "FileRenamedOnDevice",
+            "FileArchivedOnDevice",
+            "FileDeletedOnDevice",
+            "FileCreatedOnDeviceFromCloud",
+            "FileDownloadedFromCloudStorage",
+            "FileUploadedToCloudStorageViaBrowser",
+            "FileUploadedToUnallowedDomainViaBrowser",
+            "CumulativeExfiltrationActivity",
+            "UnusualVolumeOfFileDeletions",
+            "UnusualVolumeOfFileDownloads",
+            "UnusualVolumeOfFileUploads",
+            "DefenderForEndpointHighSeverityAlert",
+            "DefenderForEndpointMediumSeverityAlert",
+            "DefenderForEndpointLowSeverityAlert",
+            "PhysicalBadgingSignal"
           ]
         },
         {
           "name": "Security-Policy-Violations",
           "template": "Security policy violations",
-          "description": "Detects users triggering malware, unusual external logins, or endpoint security violations."
+          "description": "Detects users triggering malware, unusual external logins, or endpoint security violations.",
+          "triggeringEvents": [
+            "DefenderForEndpointAlert"
+          ],
+          "thresholds": "Default",
+          "indicators": [
+            "SendingAttachmentsToExternalRecipients",
+            "SendingEmailsWithAttachmentsToExternalRecipients",
+            "SharePointFileAccessed",
+            "SharePointFileDownloaded",
+            "SharePointFileDeleted",
+            "SharePointFileShared",
+            "SharePointDownloadsFromUnallowedDomains",
+            "FileCopiedToRemovableMedia",
+            "FileCopiedToNetworkShare",
+            "FileCopiedToPersonalCloud",
+            "FilePrinted",
+            "FileRenamedOnDevice",
+            "FileArchivedOnDevice",
+            "FileDeletedOnDevice",
+            "FileCreatedOnDeviceFromCloud",
+            "FileDownloadedFromCloudStorage",
+            "FileUploadedToCloudStorageViaBrowser",
+            "FileUploadedToUnallowedDomainViaBrowser",
+            "CumulativeExfiltrationActivity",
+            "UnusualVolumeOfFileDeletions",
+            "UnusualVolumeOfFileDownloads",
+            "UnusualVolumeOfFileUploads",
+            "DefenderForEndpointHighSeverityAlert",
+            "DefenderForEndpointMediumSeverityAlert",
+            "DefenderForEndpointLowSeverityAlert",
+            "PhysicalBadgingSignal"
+          ]
         }
       ]
     },
