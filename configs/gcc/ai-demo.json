@@ -8,16 +8,46 @@
     "testUsers": {
       "enabled": true,
       "users": [
-        { "upn": "rtorres@MngEnvMCAP659995.onmicrosoft.com" },
-        { "upn": "mchen@MngEnvMCAP659995.onmicrosoft.com" },
-        { "upn": "nbrooks@MngEnvMCAP659995.onmicrosoft.com" },
-        { "upn": "dokafor@MngEnvMCAP659995.onmicrosoft.com" },
-        { "upn": "sreeves@MngEnvMCAP659995.onmicrosoft.com" }
+        {
+          "upn": "rtorres@MngEnvMCAP659995.onmicrosoft.com"
+        },
+        {
+          "upn": "mchen@MngEnvMCAP659995.onmicrosoft.com"
+        },
+        {
+          "upn": "nbrooks@MngEnvMCAP659995.onmicrosoft.com"
+        },
+        {
+          "upn": "dokafor@MngEnvMCAP659995.onmicrosoft.com"
+        },
+        {
+          "upn": "sreeves@MngEnvMCAP659995.onmicrosoft.com"
+        }
       ],
       "groups": [
-        { "displayName": "PVAI-AI-Governance",         "members": ["nbrooks", "dokafor", "sreeves"] },
-        { "displayName": "PVAI-Privileged-Data-Owners", "members": ["mchen", "sreeves"] },
-        { "displayName": "PVAI-Business-Users",         "members": ["rtorres", "mchen", "dokafor"] }
+        {
+          "displayName": "PVAI-AI-Governance",
+          "members": [
+            "nbrooks",
+            "dokafor",
+            "sreeves"
+          ]
+        },
+        {
+          "displayName": "PVAI-Privileged-Data-Owners",
+          "members": [
+            "mchen",
+            "sreeves"
+          ]
+        },
+        {
+          "displayName": "PVAI-Business-Users",
+          "members": [
+            "rtorres",
+            "mchen",
+            "dokafor"
+          ]
+        }
       ],
       "mode": "existing"
     },
@@ -29,11 +59,50 @@
           "tooltip": "Data for approved enterprise AI tools only.",
           "color": "#0078D4",
           "sublabels": [
-            { "name": "All Employees",                 "tooltip": "General internal content safe for enterprise AI.",           "encryption": false, "contentMarking": { "footerText": "CONFIDENTIAL - All Employees" } },
-            { "name": "AI Internal Use",               "tooltip": "Content approved for enterprise AI copilots.",                "encryption": true,  "contentMarking": { "headerText": "CONFIDENTIAL - AI Internal Use", "footerText": "Approved for enterprise AI only" } },
-            { "name": "AI Restricted Recipients",      "tooltip": "Named-recipient only.",                                       "encryption": true,  "contentMarking": { "headerText": "CONFIDENTIAL - AI Restricted Recipients", "footerText": "Do not paste into external AI" } },
-            { "name": "AI Blocked from External Tools", "tooltip": "External AI restricted.",                                    "encryption": true,  "contentMarking": { "headerText": "CONFIDENTIAL - AI Blocked", "footerText": "External AI sharing restricted" } },
-            { "name": "AI Regulated Data",             "tooltip": "Auto-labeled regulated content; blocked from external AI.",   "encryption": true,  "contentMarking": { "headerText": "CONFIDENTIAL - AI Regulated Data", "footerText": "Regulated data — restrict external AI use" } }
+            {
+              "name": "All Employees",
+              "tooltip": "General internal content safe for enterprise AI.",
+              "encryption": false,
+              "contentMarking": {
+                "footerText": "CONFIDENTIAL - All Employees"
+              }
+            },
+            {
+              "name": "AI Internal Use",
+              "tooltip": "Content approved for enterprise AI copilots.",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "CONFIDENTIAL - AI Internal Use",
+                "footerText": "Approved for enterprise AI only"
+              }
+            },
+            {
+              "name": "AI Restricted Recipients",
+              "tooltip": "Named-recipient only.",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "CONFIDENTIAL - AI Restricted Recipients",
+                "footerText": "Do not paste into external AI"
+              }
+            },
+            {
+              "name": "AI Blocked from External Tools",
+              "tooltip": "External AI restricted.",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "CONFIDENTIAL - AI Blocked",
+                "footerText": "External AI sharing restricted"
+              }
+            },
+            {
+              "name": "AI Regulated Data",
+              "tooltip": "Auto-labeled regulated content; blocked from external AI.",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "CONFIDENTIAL - AI Regulated Data",
+                "footerText": "Regulated data \u2014 restrict external AI use"
+              }
+            }
           ]
         },
         {
@@ -41,11 +110,51 @@
           "tooltip": "Regulated or high-risk data. Never shared with external AI.",
           "color": "#D13438",
           "sublabels": [
-            { "name": "All Employees",                 "tooltip": "High-sensitivity content; never external.",              "encryption": true, "contentMarking": { "headerText": "HIGHLY CONFIDENTIAL - All Employees", "footerText": "Do not share outside the organization" } },
-            { "name": "AI Internal Use",               "tooltip": "Encrypted content approved for enterprise AI only.",      "encryption": true, "contentMarking": { "headerText": "HIGHLY CONFIDENTIAL - AI Internal Use", "footerText": "Enterprise AI copilots only" } },
-            { "name": "AI Restricted Recipients",      "tooltip": "Encrypted; named recipients only.",                       "encryption": true, "contentMarking": { "headerText": "HIGHLY CONFIDENTIAL - AI Restricted Recipients", "footerText": "Do not paste into external AI" } },
-            { "name": "AI Blocked from External Tools", "tooltip": "Encrypted; blocked from external AI.",                   "encryption": true, "contentMarking": { "headerText": "HIGHLY CONFIDENTIAL - AI Blocked", "footerText": "External AI sharing forbidden" } },
-            { "name": "AI Regulated Data",             "tooltip": "Encrypted regulated content; auto-applied on SSN/PCI/PHI.", "encryption": true, "contentMarking": { "headerText": "HIGHLY CONFIDENTIAL - AI Regulated Data", "footerText": "Regulated data — Copilot + external AI blocked" } }
+            {
+              "name": "All Employees",
+              "tooltip": "High-sensitivity content; never external.",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "HIGHLY CONFIDENTIAL - All Employees",
+                "footerText": "Do not share outside the organization"
+              }
+            },
+            {
+              "name": "AI Internal Use",
+              "tooltip": "Encrypted content approved for enterprise AI only.",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "HIGHLY CONFIDENTIAL - AI Internal Use",
+                "footerText": "Enterprise AI copilots only"
+              }
+            },
+            {
+              "name": "AI Restricted Recipients",
+              "tooltip": "Encrypted; named recipients only.",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "HIGHLY CONFIDENTIAL - AI Restricted Recipients",
+                "footerText": "Do not paste into external AI"
+              }
+            },
+            {
+              "name": "AI Blocked from External Tools",
+              "tooltip": "Encrypted; blocked from external AI.",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "HIGHLY CONFIDENTIAL - AI Blocked",
+                "footerText": "External AI sharing forbidden"
+              }
+            },
+            {
+              "name": "AI Regulated Data",
+              "tooltip": "Encrypted regulated content; auto-applied on SSN/PCI/PHI.",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "HIGHLY CONFIDENTIAL - AI Regulated Data",
+                "footerText": "Regulated data \u2014 Copilot + external AI blocked"
+              }
+            }
           ]
         }
       ],
@@ -53,14 +162,29 @@
         {
           "name": "Auto-label SSN as Regulated Data",
           "labelName": "Highly Confidential\\AI Regulated Data",
-          "sensitiveInfoTypes": ["U.S. Social Security Number (SSN)"],
-          "locations": ["Exchange", "SharePoint", "OneDrive"]
+          "sensitiveInfoTypes": [
+            "U.S. Social Security Number (SSN)"
+          ],
+          "locations": [
+            "Exchange",
+            "SharePoint",
+            "OneDrive"
+          ]
         },
         {
           "name": "Auto-label Financial PII as Confidential Regulated",
           "labelName": "Confidential\\AI Regulated Data",
-          "sensitiveInfoTypes": ["Credit Card Number", "U.S. Bank Account Number", "International Banking Account Number (IBAN)", "IP Address"],
-          "locations": ["Exchange", "SharePoint", "OneDrive"]
+          "sensitiveInfoTypes": [
+            "Credit Card Number",
+            "U.S. Bank Account Number",
+            "International Banking Account Number (IBAN)",
+            "IP Address"
+          ],
+          "locations": [
+            "Exchange",
+            "SharePoint",
+            "OneDrive"
+          ]
         }
       ]
     },
@@ -71,39 +195,74 @@
         {
           "name": "Copilot Prompt SIT Block",
           "policyMode": "copilotPromptBlock",
-          "locations": ["CopilotExperiences"],
+          "locations": [
+            "CopilotExperiences"
+          ],
           "rules": [
             {
               "name": "Block SSN in Copilot Prompts",
-              "sensitiveInfoTypes": ["U.S. Social Security Number (SSN)"],
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)"
+              ],
               "minCount": 1,
               "enforcement": {
                 "action": "block",
-                "userNotification": { "enabled": true, "message": "Copilot cannot process this request. A Social Security Number was detected in your prompt." },
-                "alert": { "enabled": true, "severity": "high" },
-                "incidentReport": { "enabled": true, "severity": "high" }
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Copilot cannot process this request. A Social Security Number was detected in your prompt."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "high"
+                },
+                "incidentReport": {
+                  "enabled": true,
+                  "severity": "high"
+                }
               }
             },
             {
               "name": "Block Credit Card in Copilot Prompts",
-              "sensitiveInfoTypes": ["Credit Card Number"],
+              "sensitiveInfoTypes": [
+                "Credit Card Number"
+              ],
               "minCount": 1,
               "enforcement": {
                 "action": "block",
-                "userNotification": { "enabled": true, "message": "Copilot cannot process this request. Credit card data was detected in your prompt." },
-                "alert": { "enabled": true, "severity": "high" },
-                "incidentReport": { "enabled": true, "severity": "high" }
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Copilot cannot process this request. Credit card data was detected in your prompt."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "high"
+                },
+                "incidentReport": {
+                  "enabled": true,
+                  "severity": "high"
+                }
               }
             },
             {
               "name": "Block PHI in Copilot Prompts",
-              "sensitiveInfoTypes": ["All Medical Terms And Conditions"],
+              "sensitiveInfoTypes": [
+                "All Medical Terms And Conditions"
+              ],
               "minCount": 1,
               "enforcement": {
                 "action": "block",
-                "userNotification": { "enabled": true, "message": "Copilot cannot process this request. Protected health information was detected in your prompt." },
-                "alert": { "enabled": true, "severity": "high" },
-                "incidentReport": { "enabled": true, "severity": "high" }
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Copilot cannot process this request. Protected health information was detected in your prompt."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "high"
+                },
+                "incidentReport": {
+                  "enabled": true,
+                  "severity": "high"
+                }
               }
             }
           ]
@@ -111,7 +270,9 @@
         {
           "name": "Copilot Labeled Content Block",
           "policyMode": "copilotLabelBlock",
-          "locations": ["CopilotExperiences"],
+          "locations": [
+            "CopilotExperiences"
+          ],
           "labels": [
             "PVAI-Highly-Confidential-AI-Blocked-from-External-Tools",
             "PVAI-Highly-Confidential-AI-Regulated-Data"
@@ -119,22 +280,44 @@
           "rules": [
             {
               "name": "Block Copilot from Restricted Content",
-              "labels": ["PVAI-Highly-Confidential-AI-Blocked-from-External-Tools"],
+              "labels": [
+                "PVAI-Highly-Confidential-AI-Blocked-from-External-Tools"
+              ],
               "enforcement": {
                 "action": "block",
-                "userNotification": { "enabled": true, "message": "Copilot cannot access this content. The file is labeled Highly Confidential and blocked from AI processing." },
-                "alert": { "enabled": true, "severity": "high" },
-                "incidentReport": { "enabled": true, "severity": "high" }
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Copilot cannot access this content. The file is labeled Highly Confidential and blocked from AI processing."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "high"
+                },
+                "incidentReport": {
+                  "enabled": true,
+                  "severity": "high"
+                }
               }
             },
             {
               "name": "Block Copilot from Regulated Data",
-              "labels": ["PVAI-Highly-Confidential-AI-Regulated-Data"],
+              "labels": [
+                "PVAI-Highly-Confidential-AI-Regulated-Data"
+              ],
               "enforcement": {
                 "action": "block",
-                "userNotification": { "enabled": true, "message": "Copilot cannot access this content. It contains regulated data blocked from AI processing by policy." },
-                "alert": { "enabled": true, "severity": "high" },
-                "incidentReport": { "enabled": true, "severity": "high" }
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Copilot cannot access this content. It contains regulated data blocked from AI processing by policy."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "high"
+                },
+                "incidentReport": {
+                  "enabled": true,
+                  "severity": "high"
+                }
               }
             }
           ]
@@ -142,42 +325,88 @@
         {
           "name": "Shadow AI - Endpoint Protection",
           "policyMode": "endpointProtection",
-          "locations": ["Devices"],
+          "locations": [
+            "Devices"
+          ],
           "endpointDlpBrowserRestrictions": {
-            "blockedUrls": ["chat.openai.com", "chatgpt.com", "claude.ai", "gemini.google.com", "bard.google.com", "copilot.microsoft.com", "poe.com", "perplexity.ai", "huggingface.co/chat", "deepseek.com"]
+            "blockedUrls": [
+              "chat.openai.com",
+              "chatgpt.com",
+              "claude.ai",
+              "gemini.google.com",
+              "bard.google.com",
+              "copilot.microsoft.com",
+              "poe.com",
+              "perplexity.ai",
+              "huggingface.co/chat",
+              "deepseek.com"
+            ]
           },
           "rules": [
             {
               "name": "Endpoint AI Block - Elevated Risk",
-              "sensitiveInfoTypes": ["U.S. Social Security Number (SSN)", "Credit Card Number", "U.S. Bank Account Number", "All Medical Terms And Conditions"],
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)",
+                "Credit Card Number",
+                "U.S. Bank Account Number",
+                "All Medical Terms And Conditions"
+              ],
               "minCount": 1,
               "insiderRiskLevel": "Elevated",
               "enforcement": {
                 "action": "block",
-                "userNotification": { "enabled": true, "message": "Sensitive data detected. External AI upload blocked. Use Microsoft Copilot instead." },
-                "alert": { "enabled": true, "severity": "high" },
-                "incidentReport": { "enabled": true, "severity": "high" }
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Sensitive data detected. External AI upload blocked. Use Microsoft Copilot instead."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "high"
+                },
+                "incidentReport": {
+                  "enabled": true,
+                  "severity": "high"
+                }
               }
             },
             {
               "name": "Endpoint AI Warn - Moderate Risk",
-              "sensitiveInfoTypes": ["U.S. Social Security Number (SSN)", "Credit Card Number", "U.S. Bank Account Number", "All Medical Terms And Conditions"],
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)",
+                "Credit Card Number",
+                "U.S. Bank Account Number",
+                "All Medical Terms And Conditions"
+              ],
               "minCount": 1,
               "insiderRiskLevel": "Moderate",
               "enforcement": {
                 "action": "allowWithJustification",
-                "userNotification": { "enabled": true, "message": "Sensitive data detected. Provide a business justification, or use Copilot." },
-                "alert": { "enabled": true, "severity": "medium" }
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Sensitive data detected. Provide a business justification, or use Copilot."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "medium"
+                }
               }
             },
             {
               "name": "Endpoint AI Audit - Minor Risk",
-              "sensitiveInfoTypes": ["U.S. Social Security Number (SSN)", "Credit Card Number", "U.S. Bank Account Number", "All Medical Terms And Conditions"],
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)",
+                "Credit Card Number",
+                "U.S. Bank Account Number",
+                "All Medical Terms And Conditions"
+              ],
               "minCount": 1,
               "insiderRiskLevel": "Minor",
               "enforcement": {
                 "action": "auditOnly",
-                "alert": { "enabled": true, "severity": "low" }
+                "alert": {
+                  "enabled": true,
+                  "severity": "low"
+                }
               }
             }
           ]
@@ -185,18 +414,34 @@
         {
           "name": "Shadow AI - Browser Prompt Protection",
           "policyMode": "browserProtection",
-          "locations": ["Browser"],
+          "locations": [
+            "Browser"
+          ],
           "rules": [
             {
               "name": "Browser Prompt Block - Elevated Risk",
-              "sensitiveInfoTypes": ["U.S. Social Security Number (SSN)", "Credit Card Number", "U.S. Bank Account Number", "All Medical Terms And Conditions"],
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)",
+                "Credit Card Number",
+                "U.S. Bank Account Number",
+                "All Medical Terms And Conditions"
+              ],
               "minCount": 1,
               "insiderRiskLevel": "Elevated",
               "enforcement": {
                 "action": "block",
-                "userNotification": { "enabled": true, "message": "Sensitive data detected in your AI prompt. Submission blocked. Use Copilot instead." },
-                "alert": { "enabled": true, "severity": "high" },
-                "incidentReport": { "enabled": true, "severity": "high" }
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Sensitive data detected in your AI prompt. Submission blocked. Use Copilot instead."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "high"
+                },
+                "incidentReport": {
+                  "enabled": true,
+                  "severity": "high"
+                }
               }
             }
           ]
@@ -204,18 +449,34 @@
         {
           "name": "Shadow AI - Network AI Traffic",
           "policyMode": "networkProtection",
-          "locations": ["Network"],
+          "locations": [
+            "Network"
+          ],
           "rules": [
             {
               "name": "Network AI Block - Elevated Risk",
-              "sensitiveInfoTypes": ["U.S. Social Security Number (SSN)", "Credit Card Number", "U.S. Bank Account Number", "All Medical Terms And Conditions"],
+              "sensitiveInfoTypes": [
+                "U.S. Social Security Number (SSN)",
+                "Credit Card Number",
+                "U.S. Bank Account Number",
+                "All Medical Terms And Conditions"
+              ],
               "minCount": 1,
               "insiderRiskLevel": "Elevated",
               "enforcement": {
                 "action": "block",
-                "userNotification": { "enabled": true, "message": "Sensitive data detected in outbound AI traffic. Transmission blocked." },
-                "alert": { "enabled": true, "severity": "high" },
-                "incidentReport": { "enabled": true, "severity": "high" }
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Sensitive data detected in outbound AI traffic. Transmission blocked."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "high"
+                },
+                "incidentReport": {
+                  "enabled": true,
+                  "severity": "high"
+                }
               }
             }
           ]
@@ -225,11 +486,51 @@
     "retention": {
       "enabled": true,
       "policies": [
-        { "name": "AI Prompt Review Retention", "retentionDays": 365, "retentionAction": "retainOnly", "locations": ["Exchange", "SharePoint"] },
-        { "name": "AI Incident Evidence Retention", "retentionDays": 1095, "retentionAction": "retainAndDelete", "locations": ["Exchange", "OneDrive"] },
-        { "name": "Copilot Experiences Retention", "retentionDays": 365, "retentionAction": "retainOnly", "locations": [], "applications": ["MicrosoftCopilotExperiences"] },
-        { "name": "Enterprise AI Apps Retention", "retentionDays": 1095, "retentionAction": "retainAndDelete", "locations": [], "applications": ["EnterpriseAIApps"] },
-        { "name": "Other AI Apps Retention", "retentionDays": 365, "retentionAction": "retainOnly", "locations": [], "applications": ["OtherAIApps"] }
+        {
+          "name": "AI Prompt Review Retention",
+          "retentionDays": 365,
+          "retentionAction": "retainOnly",
+          "locations": [
+            "Exchange",
+            "SharePoint"
+          ]
+        },
+        {
+          "name": "AI Incident Evidence Retention",
+          "retentionDays": 1095,
+          "retentionAction": "retainAndDelete",
+          "locations": [
+            "Exchange",
+            "OneDrive"
+          ]
+        },
+        {
+          "name": "Copilot Experiences Retention",
+          "retentionDays": 365,
+          "retentionAction": "retainOnly",
+          "locations": [],
+          "applications": [
+            "MicrosoftCopilotExperiences"
+          ]
+        },
+        {
+          "name": "Enterprise AI Apps Retention",
+          "retentionDays": 1095,
+          "retentionAction": "retainAndDelete",
+          "locations": [],
+          "applications": [
+            "EnterpriseAIApps"
+          ]
+        },
+        {
+          "name": "Other AI Apps Retention",
+          "retentionDays": 365,
+          "retentionAction": "retainOnly",
+          "locations": [],
+          "applications": [
+            "OtherAIApps"
+          ]
+        }
       ]
     },
     "eDiscovery": {
@@ -238,35 +539,34 @@
         {
           "name": "AI-Security-Incident-Review",
           "description": "Unified investigation case for AI-related incidents: Copilot DLP violations, Shadow AI paste/upload attempts, labeled-content access violations, IRM risky AI usage.",
-          "custodians": ["nbrooks", "sreeves", "dokafor"],
+          "custodians": [
+            "nbrooks",
+            "sreeves",
+            "dokafor"
+          ],
           "holdQuery": "\"copilot\" OR \"chatgpt\" OR \"claude\" OR \"gemini\" OR \"AI\" OR \"prompt\" OR \"DLP\" OR \"highly confidential\"",
           "searchQuery": "\"sensitive data\" OR \"SSN\" OR \"credit card\" OR \"paste\" OR \"upload\" OR \"external AI\""
-        }
-      ]
-    },
-    "communicationCompliance": {
-      "enabled": true,
-      "policies": [
-        {
-          "name": "AI Activity Collection",
-          "description": "Review queue for AI-adjacent messages across Teams, Exchange, Copilot.",
-          "supervisedUsers": ["rtorres", "mchen", "dokafor"],
-          "reviewers": ["nbrooks", "sreeves"]
-        },
-        {
-          "name": "AI Conversation PII PHI Detection",
-          "description": "Targeted PII/PHI supervision in AI-adjacent conversations.",
-          "supervisedUsers": ["rtorres", "mchen", "dokafor"],
-          "reviewers": ["sreeves"]
         }
       ]
     },
     "insiderRisk": {
       "enabled": true,
       "policies": [
-        { "name": "Risky AI Usage Watch",       "template": "Risky AI usage",                "description": "Detects risky interactions with Copilot, prompt injection patterns, protected material access. Scoped to All users and groups." },
-        { "name": "AI Data Exfiltration Watch", "template": "Data leaks",                    "description": "Correlates repeated DLP blocks on AI surfaces with exfiltration signals. Scoped to All users and groups." },
-        { "name": "Departing User AI Risk",     "template": "Data theft by departing users", "description": "Elevates risk scoring for departing users who touch AI surfaces. Scoped to All users and groups." }
+        {
+          "name": "Risky AI Usage Watch",
+          "template": "Risky AI usage",
+          "description": "Detects risky interactions with Copilot, prompt injection patterns, protected material access. Scoped to All users and groups."
+        },
+        {
+          "name": "AI Data Exfiltration Watch",
+          "template": "Data leaks",
+          "description": "Correlates repeated DLP blocks on AI surfaces with exfiltration signals. Scoped to All users and groups."
+        },
+        {
+          "name": "Departing User AI Risk",
+          "template": "Data theft by departing users",
+          "description": "Elevates risk scoring for departing users who touch AI surfaces. Scoped to All users and groups."
+        }
       ]
     },
     "conditionalAccess": {
@@ -275,15 +575,27 @@
         {
           "name": "Block AI Apps High Sign-In Risk",
           "state": "enabledForReportingButNotEnforced",
-          "conditions": { "signInRiskLevels": ["high"] },
-          "grantControls": { "builtInControls": ["block"] },
+          "conditions": {
+            "signInRiskLevels": [
+              "high"
+            ]
+          },
+          "grantControls": {
+            "builtInControls": [
+              "block"
+            ]
+          },
           "targetAppIds": []
         },
         {
           "name": "Require MFA for AI App Access",
           "state": "enabledForReportingButNotEnforced",
           "conditions": {},
-          "grantControls": { "builtInControls": ["mfa"] },
+          "grantControls": {
+            "builtInControls": [
+              "mfa"
+            ]
+          },
           "targetAppIds": []
         }
       ]
@@ -291,69 +603,160 @@
     "auditConfig": {
       "enabled": true,
       "searches": [
-        { "name": "Copilot-Interaction-Audit",    "operations": ["CopilotInteraction"] },
-        { "name": "AI-DLP-Match-Audit",           "operations": ["DlpRuleMatch"] },
-        { "name": "AI-Policy-Override-Audit",     "operations": ["DlpRuleUndo"] }
+        {
+          "name": "Copilot-Interaction-Audit",
+          "operations": [
+            "CopilotInteraction"
+          ]
+        },
+        {
+          "name": "AI-DLP-Match-Audit",
+          "operations": [
+            "DlpRuleMatch"
+          ]
+        },
+        {
+          "name": "AI-Policy-Override-Audit",
+          "operations": [
+            "DlpRuleUndo"
+          ]
+        }
       ]
     },
     "sentinelIntegration": {
       "enabled": true,
       "subscriptionId": "",
-      "resourceGroup": { "name": "PVAI-rg", "location": "usgovvirginia" },
-      "workspace": { "name": "PVAI-ws", "retentionDays": 30, "sku": "PerGB2018" },
-      "additionalContentHubSolutions": ["Microsoft Purview"],
+      "resourceGroup": {
+        "name": "PVAI-rg",
+        "location": "usgovvirginia"
+      },
+      "workspace": {
+        "name": "PVAI-ws",
+        "retentionDays": 30,
+        "sku": "PerGB2018"
+      },
+      "additionalContentHubSolutions": [
+        "Microsoft Purview"
+      ],
       "tableTiers": [
-        { "table": "SecurityAlert",              "tier": "Analytics", "reason": "Low volume, real-time rules need it." },
-        { "table": "OfficeActivity",             "tier": "Split",     "reason": "High volume — recent in analytics, older in lake." },
-        { "table": "PurviewDataSensitivityLogs", "tier": "Analytics", "reason": "Used by Microsoft Purview solution rules." }
+        {
+          "table": "SecurityAlert",
+          "tier": "Analytics",
+          "reason": "Low volume, real-time rules need it."
+        },
+        {
+          "table": "OfficeActivity",
+          "tier": "Split",
+          "reason": "High volume \u2014 recent in analytics, older in lake."
+        },
+        {
+          "table": "PurviewDataSensitivityLogs",
+          "tier": "Analytics",
+          "reason": "Used by Microsoft Purview solution rules."
+        }
       ],
       "connectors": {
-        "microsoftDefenderXdr":  { "enabled": true, "dataTypes": ["Alerts", "CloudAppEvents"] },
-        "insiderRiskManagement": { "enabled": true },
-        "office365":             { "enabled": true, "dataTypes": ["SharePoint", "Exchange", "Teams"] }
+        "microsoftDefenderXdr": {
+          "enabled": true,
+          "dataTypes": [
+            "Alerts",
+            "CloudAppEvents"
+          ]
+        },
+        "insiderRiskManagement": {
+          "enabled": true
+        },
+        "office365": {
+          "enabled": true,
+          "dataTypes": [
+            "SharePoint",
+            "Exchange",
+            "Teams"
+          ]
+        }
       },
       "analyticsRules": [
-        { "name": "HighSevDLP",            "template": "dlp-high-severity",            "severity": "High" },
-        { "name": "IRMHighSev",            "template": "insider-risk-high-severity",   "severity": "High" },
-        { "name": "LabelDowngrade",        "template": "sensitivity-label-downgrade",  "severity": "Medium" },
-        { "name": "MassDownloadAfterDLP",  "template": "mass-download-after-dlp",      "severity": "High" },
-        { "name": "CopilotDLPPromptBlock", "template": "copilot-dlp-prompt-block",     "severity": "High" },
-        { "name": "ShadowAIPasteUpload",   "template": "shadow-ai-paste-upload",       "severity": "High" },
-        { "name": "RiskyAIUsageCorrel",    "template": "risky-ai-usage-correlation",   "severity": "High" }
+        {
+          "name": "HighSevDLP",
+          "template": "dlp-high-severity",
+          "severity": "High"
+        },
+        {
+          "name": "IRMHighSev",
+          "template": "insider-risk-high-severity",
+          "severity": "High"
+        },
+        {
+          "name": "LabelDowngrade",
+          "template": "sensitivity-label-downgrade",
+          "severity": "Medium"
+        },
+        {
+          "name": "MassDownloadAfterDLP",
+          "template": "mass-download-after-dlp",
+          "severity": "High"
+        },
+        {
+          "name": "CopilotDLPPromptBlock",
+          "template": "copilot-dlp-prompt-block",
+          "severity": "High"
+        },
+        {
+          "name": "ShadowAIPasteUpload",
+          "template": "shadow-ai-paste-upload",
+          "severity": "High"
+        },
+        {
+          "name": "RiskyAIUsageCorrel",
+          "template": "risky-ai-usage-correlation",
+          "severity": "High"
+        }
       ],
       "workbook": {
         "enabled": true,
         "workbooks": [
-          { "name": "Purview Signals",  "asset": "purview.json" },
-          { "name": "AI Risk Signals",  "asset": "ai-signals.json" }
+          {
+            "name": "Purview Signals",
+            "asset": "purview.json"
+          },
+          {
+            "name": "AI Risk Signals",
+            "asset": "ai-signals.json"
+          }
         ]
       },
       "playbooks": {
-        "irmAutoTriage": { "enabled": true }
+        "irmAutoTriage": {
+          "enabled": true
+        }
       }
     },
     "testData": {
       "enabled": true,
       "emails": [
         {
-          "from": "rtorres", "to": "mchen",
-          "subject": "Q4 Revenue Projections — Internal Only",
+          "from": "rtorres",
+          "to": "mchen",
+          "subject": "Q4 Revenue Projections \u2014 Internal Only",
           "body": "Hey Marcus, here are the Q4 numbers. Customer account 4532-8721-0034-6619 has outstanding receivables. Projected revenue is $2.4M. Keep confidential."
         },
         {
-          "from": "mchen", "to": "rtorres",
+          "from": "mchen",
+          "to": "rtorres",
           "subject": "RE: Q4 Revenue Projections",
           "body": "Thanks Rachel. I tried asking Copilot to summarize the forecast file but it said it couldn't access due to a sensitivity policy. Is that expected? The file had a red Highly Confidential label."
         },
         {
-          "from": "rtorres", "to": "nbrooks",
-          "subject": "Copilot blocked my analysis — and so did ChatGPT",
+          "from": "rtorres",
+          "to": "nbrooks",
+          "subject": "Copilot blocked my analysis \u2014 and so did ChatGPT",
           "body": "Hi Natalie, I was using Copilot with employee SSNs (078-05-1120 and 219-09-9999) in my prompt. Copilot refused with a policy message. I also tried pasting into ChatGPT and got blocked by Endpoint DLP. Just want to understand what I can and can't do."
         },
         {
-          "from": "nbrooks", "to": "rtorres",
-          "subject": "RE: Copilot blocked my analysis — and so did ChatGPT",
-          "body": "Hi Rachel — both behaviors are by design. Copilot has DLP that detects SITs in prompts. External AI is blocked at the device level by Endpoint DLP. Both events are audited and feed our Sentinel SIEM. Reference account IDs in prompts instead of SSNs."
+          "from": "nbrooks",
+          "to": "rtorres",
+          "subject": "RE: Copilot blocked my analysis \u2014 and so did ChatGPT",
+          "body": "Hi Rachel \u2014 both behaviors are by design. Copilot has DLP that detects SITs in prompts. External AI is blocked at the device level by Endpoint DLP. Both events are audited and feed our Sentinel SIEM. Reference account IDs in prompts instead of SSNs."
         }
       ],
       "documents": [

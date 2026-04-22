@@ -321,15 +321,6 @@
         }
       ]
     },
-    "communicationCompliance": {
-      "enabled": true,
-      "policies": [
-        {
-          "name": "Offensive Language Collection",
-          "description": "DSPM for AI collection policy — captures AI activity for offensive language compliance review."
-        }
-      ]
-    },
     "insiderRisk": {
       "enabled": true,
       "policies": [
@@ -386,8 +377,18 @@
     "auditConfig": {
       "enabled": true,
       "searches": [
-        { "name": "DLP-Match-Audit",    "operations": ["DlpRuleMatch"] },
-        { "name": "DLP-Override-Audit", "operations": ["DlpRuleUndo"] }
+        {
+          "name": "DLP-Match-Audit",
+          "operations": [
+            "DlpRuleMatch"
+          ]
+        },
+        {
+          "name": "DLP-Override-Audit",
+          "operations": [
+            "DlpRuleUndo"
+          ]
+        }
       ]
     }
   },

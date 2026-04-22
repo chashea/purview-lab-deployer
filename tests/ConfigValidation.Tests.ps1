@@ -116,7 +116,6 @@ Describe 'AI lab (ai-demo.json) config shape' {
             $workloadNames | Should -Contain 'dlp'
             $workloadNames | Should -Contain 'insiderRisk'
             $workloadNames | Should -Contain 'sentinelIntegration'
-            $workloadNames | Should -Contain 'communicationCompliance'
         }
 
         It 'has Copilot DLP policies (prompt + label block)' {
