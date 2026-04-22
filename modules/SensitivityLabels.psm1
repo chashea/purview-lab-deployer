@@ -629,12 +629,19 @@ function Deploy-SensitivityLabels {
                     ApplySensitivityLabel = $targetLabel
                 }
 
+                $workloadValues = [System.Collections.Generic.List[string]]::new()
                 foreach ($location in $policy.locations) {
                     switch ($location) {
-                        'Exchange'   { $policyParams['ExchangeLocation'] = 'All' }
-                        'SharePoint' { $policyParams['SharePointLocation'] = 'All' }
-                        'OneDrive'   { $policyParams['OneDriveLocation'] = 'All' }
+                        'Exchange'   { $policyParams['ExchangeLocation']   = 'All'; [void]$workloadValues.Add('Exchange') }
+                        'SharePoint' { $policyParams['SharePointLocation'] = 'All'; [void]$workloadValues.Add('SharePoint') }
+                        'OneDrive'   { $policyParams['OneDriveLocation']   = 'All'; [void]$workloadValues.Add('OneDriveForBusiness') }
                     }
+                }
+
+                # GCC and modern commercial SCC require -Workload on auto-label policy/rule.
+                $policyCmd = Get-Command New-AutoSensitivityLabelPolicy -ErrorAction SilentlyContinue
+                if ($policyCmd -and $policyCmd.Parameters.ContainsKey('Workload') -and $workloadValues.Count -gt 0) {
+                    $policyParams['Workload'] = ($workloadValues -join ',')
                 }
 
                 New-AutoSensitivityLabelPolicy @policyParams | Out-Null
@@ -652,10 +659,18 @@ function Deploy-SensitivityLabels {
                     }
                 }
 
-                New-AutoSensitivityLabelRule `
-                    -Policy $policyName `
-                    -Name $ruleName `
-                    -ContentContainsSensitiveInformation $sitArray | Out-Null
+                $ruleParams = @{
+                    Policy                              = $policyName
+                    Name                                = $ruleName
+                    ContentContainsSensitiveInformation = $sitArray
+                }
+
+                $ruleCmd = Get-Command New-AutoSensitivityLabelRule -ErrorAction SilentlyContinue
+                if ($ruleCmd -and $ruleCmd.Parameters.ContainsKey('Workload') -and $workloadValues.Count -gt 0) {
+                    $ruleParams['Workload'] = ($workloadValues -join ',')
+                }
+
+                New-AutoSensitivityLabelRule @ruleParams | Out-Null
 
                 Write-LabLog "Created auto-label rule: $ruleName" -Level Success
             }

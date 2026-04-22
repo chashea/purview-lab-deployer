@@ -8,51 +8,51 @@
       "enabled": true,
       "users": [
         {
-          "upn": "rtorres@MngEnvMCAP659995.onmicrosoft.com"
+          "upn": "mtorres@MngEnvMCAP659995.onmicrosoft.com"
         },
         {
-          "upn": "mchen@MngEnvMCAP659995.onmicrosoft.com"
+          "upn": "mahmed@MngEnvMCAP659995.onmicrosoft.com"
         },
         {
-          "upn": "nbrooks@MngEnvMCAP659995.onmicrosoft.com"
+          "upn": "nshah@MngEnvMCAP659995.onmicrosoft.com"
         },
         {
-          "upn": "dokafor@MngEnvMCAP659995.onmicrosoft.com"
+          "upn": "opark@MngEnvMCAP659995.onmicrosoft.com"
         },
         {
-          "upn": "sreeves@MngEnvMCAP659995.onmicrosoft.com"
+          "upn": "DebraB@MngEnvMCAP659995.onmicrosoft.com"
         },
         {
-          "upn": "jblake@MngEnvMCAP659995.onmicrosoft.com"
+          "upn": "NestorW@MngEnvMCAP659995.onmicrosoft.com"
         },
         {
-          "upn": "msullivan@MngEnvMCAP659995.onmicrosoft.com"
+          "upn": "JoniS@MngEnvMCAP659995.onmicrosoft.com"
         },
         {
-          "upn": "pnair@MngEnvMCAP659995.onmicrosoft.com"
+          "upn": "jkim@MngEnvMCAP659995.onmicrosoft.com"
         }
       ],
       "groups": [
         {
           "displayName": "PVLab-Executives",
           "members": [
-            "jblake",
-            "sreeves"
+            "NestorW",
+            "DebraB"
           ]
         },
         {
           "displayName": "PVLab-Finance-Team",
           "members": [
-            "mchen",
-            "jblake"
+            "mahmed",
+            "NestorW"
           ]
         },
         {
           "displayName": "PVLab-Legal-Team",
           "members": [
-            "nbrooks",
-            "rtorres",
-            "pnair"
+            "nshah",
+            "mtorres",
+            "jkim"
           ]
         }
       ],
@@ -325,10 +325,10 @@
           "name": "Data-Breach-Investigation",
           "description": "Investigation into potential data breach involving unauthorized access to confidential financial records and PII",
           "custodians": [
-            "mchen@MngEnvMCAP659995.onmicrosoft.com",
-            "jblake@MngEnvMCAP659995.onmicrosoft.com",
-            "pnair@MngEnvMCAP659995.onmicrosoft.com",
-            "msullivan@MngEnvMCAP659995.onmicrosoft.com"
+            "mahmed@MngEnvMCAP659995.onmicrosoft.com",
+            "NestorW@MngEnvMCAP659995.onmicrosoft.com",
+            "jkim@MngEnvMCAP659995.onmicrosoft.com",
+            "JoniS@MngEnvMCAP659995.onmicrosoft.com"
           ],
           "holdQuery": "(subject:\"confidential\" OR subject:\"classified\" OR body:\"breach\" OR body:\"unauthorized\") AND received>=2025-01-01",
           "searchQuery": "breach OR incident",
@@ -368,10 +368,10 @@
           "name": "HR-Investigation",
           "description": "HR investigation into workplace conduct allegations including harassment, inappropriate communications, and policy violations.",
           "custodians": [
-            "rtorres@MngEnvMCAP659995.onmicrosoft.com",
-            "pnair@MngEnvMCAP659995.onmicrosoft.com",
-            "nbrooks@MngEnvMCAP659995.onmicrosoft.com",
-            "msullivan@MngEnvMCAP659995.onmicrosoft.com"
+            "mtorres@MngEnvMCAP659995.onmicrosoft.com",
+            "jkim@MngEnvMCAP659995.onmicrosoft.com",
+            "nshah@MngEnvMCAP659995.onmicrosoft.com",
+            "JoniS@MngEnvMCAP659995.onmicrosoft.com"
           ],
           "holdQuery": "(subject:\"complaint\" OR subject:\"investigation\" OR body:\"harassment\" OR body:\"misconduct\" OR body:\"hostile\") AND received>=2025-01-01",
           "searches": [
@@ -574,38 +574,38 @@
       "enabled": true,
       "emails": [
         {
-          "from": "mchen",
-          "to": "jblake",
+          "from": "mahmed",
+          "to": "NestorW",
           "subject": "Q4 Financial Summary - Confidential",
           "body": "Hi Jonathan, attached is the Q4 financial summary. For reference, the wire transfer was initiated from account 0012345678 (routing 021000021). Please review before the board meeting. This information is strictly confidential."
         },
         {
-          "from": "sreeves",
-          "to": "mchen",
+          "from": "DebraB",
+          "to": "mahmed",
           "subject": "Client Payment Issue",
           "body": "Marcus, the client provided their credit card for the overdue invoice: 4111-1111-1111-1111, exp 12/27. Can you process this through the payment portal? Let me know if you need additional details."
         },
         {
-          "from": "rtorres",
-          "to": "nbrooks",
+          "from": "mtorres",
+          "to": "nshah",
           "subject": "Employee Background Check Results",
           "body": "Natalie, here are the background check results for the new hire. SSN on file: 123-45-6789. Everything came back clean. Please file this with the other onboarding documents and mark as confidential."
         },
         {
-          "from": "dokafor",
-          "to": "jblake",
+          "from": "opark",
+          "to": "NestorW",
           "subject": "Suspicious Activity - Insider Trading Concern",
           "body": "Jonathan, I flagged unusual data access patterns from a departing employee. They downloaded several files related to the upcoming merger, including documents marked classified. This could indicate insider trading risk. We should initiate a breach investigation immediately."
         },
         {
-          "from": "pnair",
-          "to": "rtorres",
+          "from": "jkim",
+          "to": "mtorres",
           "subject": "Employee Investigation Packet - Confidential",
           "body": "Rachel, legal requested the employee investigation packet for case HR-2026-118. The file includes SSN 512-84-7731, compensation adjustments, and disciplinary notes. Please store this in the restricted HR workspace and share only with Legal."
         },
         {
-          "from": "msullivan",
-          "to": "pnair",
+          "from": "JoniS",
+          "to": "jkim",
           "subject": "Workplace Accommodation Documentation",
           "body": "Priya, occupational health completed review for employee accommodation request 24-771. Documentation includes physician statement, treatment plan, and return-to-work restrictions through 05/31. Please retain per HR medical records policy."
         }

@@ -7,11 +7,29 @@
     New/Get/Remove-InsiderRiskEntityList).
 #>
 
-# Template-friendly name -> InsiderRiskScenario enum mapping
+# Template-friendly name -> InsiderRiskScenario enum mapping.
+# Valid enum values (per New-InsiderRiskPolicy cmdlet): TenantSetting, IntellectualPropertyTheft,
+# LeakOfInformation, DisgruntledEmployeeDataLeak, HighValueEmployeeDataLeak, SecurityAlertSPV,
+# DepartingEmployeeSPV, DisgruntledEmployeeSPV, HighValueEmployeeSPV, SecurityPolicyViolation,
+# WorkplaceThreat, HealthcareDataThreat, SessionRecordingSetting, SessionRecording,
+# UnacceptableUsage, RiskyAIUsage, RiskyAgents.
 $script:TemplateToScenario = @{
-    'Data theft by departing users' = 'IntellectualPropertyTheft'
-    'Data leaks'                    = 'LeakOfInformation'
-    'Risky AI usage'                = 'RiskyAIUsage'
+    'Data theft by departing users'                 = 'IntellectualPropertyTheft'
+    'Data leaks'                                    = 'LeakOfInformation'
+    'General data leaks'                            = 'LeakOfInformation'
+    'Data leaks by disgruntled users'               = 'DisgruntledEmployeeDataLeak'
+    'Data leaks by priority users'                  = 'HighValueEmployeeDataLeak'
+    'Security policy violations'                    = 'SecurityPolicyViolation'
+    'Security policy violations by departing users' = 'DepartingEmployeeSPV'
+    'Security policy violations by disgruntled users' = 'DisgruntledEmployeeSPV'
+    'Security policy violations by priority users'  = 'HighValueEmployeeSPV'
+    'Security alerts'                               = 'SecurityAlertSPV'
+    'Workplace threats'                             = 'WorkplaceThreat'
+    'Healthcare data threats'                       = 'HealthcareDataThreat'
+    'Risky AI usage'                                = 'RiskyAIUsage'
+    'Risky AI agents'                               = 'RiskyAgents'
+    'Unacceptable usage'                            = 'UnacceptableUsage'
+    'Session recording'                             = 'SessionRecording'
 }
 
 function Deploy-InsiderRisk {
@@ -150,9 +168,13 @@ function Deploy-InsiderRisk {
                     New-InsiderRiskPolicy @policyParams
                 }
                 catch {
-                    if ($savedIndicators.Count -gt 0 -and $_.Exception.Message -match 'IndicatorGroup|deserialize') {
-                        Write-LabLog -Message "Indicator format not supported by cmdlet for ${name}. Creating policy without indicators — configure them manually in the Purview portal." -Level Warning
+                    $msg = $_.Exception.Message
+                    $retriable = $savedIndicators.Count -gt 0 -and
+                                 ($msg -match 'IndicatorGroup|deserialize|Value cannot be null')
+                    if ($retriable) {
+                        Write-LabLog -Message "Indicator/threshold format not accepted by cmdlet for ${name}. Retrying without indicators — configure them manually in the Purview portal." -Level Warning
                         foreach ($k in $savedIndicators.Keys) { $policyParams.Remove($k) }
+                        if ($policyParams.ContainsKey('ThresholdType')) { $policyParams.Remove('ThresholdType') }
                         New-InsiderRiskPolicy @policyParams
                     }
                     else {
