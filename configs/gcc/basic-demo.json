@@ -280,20 +280,6 @@
           ]
         },
         {
-          "name": "Auto-label PII as Confidential",
-          "labelName": "Confidential",
-          "sensitiveInfoTypes": [
-            "U.S. Social Security Number (SSN)",
-            "Credit Card Number",
-            "U.S. Bank Account Number"
-          ],
-          "locations": [
-            "Exchange",
-            "SharePoint",
-            "OneDrive"
-          ]
-        },
-        {
           "name": "Auto-label Internal-Corp as Confidential All-Employees",
           "labelName": "Confidential\\All-Employees",
           "sensitiveInfoTypes": [
