@@ -244,10 +244,22 @@ Scripts in `scripts/` generate DLP alerts and Copilot activity for validating de
 | `Test-SentinelLab.ps1` | Deep end-to-end smoke test for a deployed Sentinel lab (CI-grade) |
 | `Set-ShadowAiEndpointDlpDomains.ps1` | Push AI-site block list to tenant-wide Endpoint DLP global settings (discover → `-Apply`) |
 
+> **Before sharing with teammates:** auto-discover picks the first 2
+> alphabetically-sorted licensed mailbox users in the tenant — in a production
+> tenant that is often an executive or real employee's inbox. Always
+> **preview with `-WhatIf` first**, run against a lab tenant when possible,
+> or pass `-Users alice@...,bob@...` to target known lab accounts. The
+> script also requires the `ExchangeOnlineManagement` module for
+> `-ValidateOnly` audit-log checks, plus Graph scopes `Mail.Send`,
+> `User.Read.All`, `Files.ReadWrite.All`, `Sites.ReadWrite.All`, and
+> `Organization.Read.All` (consented on first interactive run).
+
 ```powershell
 # Auto-discover mode (zero args) — works in ANY Purview tenant. Discovers
 # tenant ID, primary domain, and 2 licensed users from Microsoft Graph.
 # Share this one command with your team — they just clone and run.
+# Teammates: always run with -WhatIf first to preview the target users.
+./scripts/Invoke-SmokeTest.ps1 -WhatIf
 ./scripts/Invoke-SmokeTest.ps1
 
 # Auto-discover + Insider Risk burst activity

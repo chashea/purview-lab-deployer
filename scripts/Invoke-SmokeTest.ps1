@@ -845,10 +845,12 @@ if ($autoDiscoverMode) {
     Write-Host "  Tenant: $($discovered.OrgDisplay) [$TenantId]" -ForegroundColor Green
     Write-Host "  Domain: $Domain" -ForegroundColor Green
 
+    $autoPickedUsers = $false
     if (-not $Users -or $Users.Count -lt 2) {
         Write-Host "  Discovering licensed mailbox users..." -ForegroundColor DarkGray
         $Users = Get-DiscoveredLicensedUsers -MinCount 2 -MaxCount 3
         Write-Host "  Users: $($Users -join ', ')`n" -ForegroundColor Green
+        $autoPickedUsers = $true
     }
     else {
         Write-Host "  Users (user-supplied): $($Users -join ', ')`n" -ForegroundColor Green
@@ -858,6 +860,22 @@ if ($autoDiscoverMode) {
     Write-Host " Profile: $labName" -ForegroundColor Yellow
     Write-Host " Prefix: $prefix | Domain: $domain" -ForegroundColor Yellow
     Write-Host "========================================`n" -ForegroundColor Yellow
+
+    # Safety gate: warn before sending real emails + OneDrive uploads to
+    # auto-picked users. Skipped under -WhatIf, -ValidateOnly, or -SkipAuth.
+    if ($autoPickedUsers -and -not $WhatIfPreference -and -not $ValidateOnly -and -not $SkipAuth) {
+        Write-Host "WARNING: auto-discover picked the first 2 licensed mailbox users (alphabetical)." -ForegroundColor Yellow
+        Write-Host "         This script will send emails with fake SSN / credit-card / medical payloads" -ForegroundColor Yellow
+        Write-Host "         AND upload files to OneDrive for the users above. Make sure these are" -ForegroundColor Yellow
+        Write-Host "         lab accounts, not executives or real employees.`n" -ForegroundColor Yellow
+        Write-Host "         Preview with -WhatIf first, or pass -Users explicitly to target lab accounts." -ForegroundColor DarkYellow
+        $response = Read-Host "`nProceed with these users? (y/N)"
+        if ($response -notmatch '^(y|yes)$') {
+            Write-Host "  Aborted by user." -ForegroundColor DarkYellow
+            exit 0
+        }
+        Write-Host ''
+    }
 }
 
 # Build test cases
