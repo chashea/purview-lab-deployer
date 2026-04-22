@@ -330,8 +330,39 @@
             "pnair@MngEnvMCAP648165.onmicrosoft.com",
             "msullivan@MngEnvMCAP648165.onmicrosoft.com"
           ],
-          "holdQuery": "confidential OR classified",
-          "searchQuery": "breach OR incident"
+          "holdQuery": "(subject:\"confidential\" OR subject:\"classified\" OR body:\"breach\" OR body:\"unauthorized\") AND received>=2025-01-01",
+          "searchQuery": "breach OR incident",
+          "searches": [
+            {
+              "name": "Financial-Records",
+              "contentQuery": "subject:\"financial\" OR body:\"wire transfer\" OR body:\"account number\"",
+              "dataSourceScopes": "allCaseCustodians"
+            },
+            {
+              "name": "PII-Exfil",
+              "contentQuery": "body:\"social security\" OR body:\"SSN\" OR body:\"credit card\"",
+              "dataSourceScopes": "allCaseCustodians"
+            },
+            {
+              "name": "Suspicious-Activity",
+              "contentQuery": "subject:\"suspicious\" OR body:\"unauthorized access\" OR body:\"breach\"",
+              "dataSourceScopes": "allCaseCustodians"
+            }
+          ],
+          "reviewSets": [
+            {
+              "name": "Financial-Review",
+              "sourceSearch": "Financial-Records"
+            },
+            {
+              "name": "PII-Review",
+              "sourceSearch": "PII-Exfil"
+            },
+            {
+              "name": "Incident-Review",
+              "sourceSearch": "Suspicious-Activity"
+            }
+          ]
         }
       ]
     },
