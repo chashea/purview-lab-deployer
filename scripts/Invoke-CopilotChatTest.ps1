@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+﻿#Requires -Version 7.0
 
 <#
 .SYNOPSIS
@@ -226,15 +226,15 @@ $transcript |
     Format-Table -AutoSize | Out-String | Write-Host
 
 # Verdict per prompt: match if Status maps to Expect (Expect=BLOCK <-> Status=BLOCKED, Expect=PASS <-> Status=RESPONDED)
-$matches = 0
+$matchCount = 0
 $mismatches = @()
 foreach ($row in $transcript) {
     $ok = ($row.Expect -eq 'BLOCK' -and $row.Status -eq 'BLOCKED') -or
           ($row.Expect -eq 'PASS'  -and $row.Status -eq 'RESPONDED')
-    if ($ok) { $matches++ } else { $mismatches += $row }
+    if ($ok) { $matchCount++ } else { $mismatches += $row }
 }
 
-Write-Host ("Matches: {0}/{1}" -f $matches, $transcript.Count)
+Write-Host ("Matches: {0}/{1}" -f $matchCount, $transcript.Count)
 if ($mismatches.Count -gt 0) {
     Write-Host 'Mismatches:' -ForegroundColor Yellow
     foreach ($m in $mismatches) {
