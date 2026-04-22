@@ -25,7 +25,7 @@
     Path to the lab config JSON. Reads workloads.testUsers.users[].upn.
 
 .PARAMETER LabProfile
-    Profile shorthand (basic, ai, purview-sentinel). Resolves to configs/<cloud>/<profile>-demo.json.
+    Profile shorthand (e.g. ai-security). Resolves to configs/<cloud>/<profile>-demo.json.
 
 .PARAMETER Cloud
     commercial | gcc. Default: commercial.
@@ -37,7 +37,7 @@
     Poll Graph for drive readiness after enqueue (max 20 min).
 
 .EXAMPLE
-    ./scripts/Request-OneDriveProvisioning.ps1 -LabProfile ai -Wait
+    ./scripts/Request-OneDriveProvisioning.ps1 -LabProfile ai-security -Wait
 #>
 
 [CmdletBinding()]
@@ -71,14 +71,9 @@ function Resolve-LabConfigPath {
     }
     if (-not $ProfileName) { throw 'Provide -ConfigPath or -LabProfile.' }
     $slug = switch ($ProfileName) {
-        'shadow-ai'          { 'ai-demo.json' }
-        'ai-security'        { 'ai-demo.json' }
-        'copilot-protection' { 'ai-demo.json' }
-        'copilot-dlp'        { 'ai-demo.json' }
-        'ai'                 { 'ai-demo.json' }
-        'basic-lab'          { 'basic-demo.json' }
-        'basic'              { 'basic-demo.json' }
-        default              { "$ProfileName-demo.json" }
+        'copilot-protection' { 'copilot-dlp-demo.json' }
+        'copilot-dlp' { 'copilot-dlp-demo.json' }
+        default { "$ProfileName-demo.json" }
     }
     $candidate = Join-Path $repoRoot 'configs' $CloudEnv $slug
     if (-not (Test-Path $candidate)) { throw "Config not found: $candidate" }

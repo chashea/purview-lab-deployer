@@ -12,9 +12,9 @@ on:
         type: choice
         options:
           - ''
-          - basic
-          - ai
-          - purview-sentinel
+          - basic-lab
+          - copilot-protection
+          - shadow-ai
 
 permissions:
   id-token: write

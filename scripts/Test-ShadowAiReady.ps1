@@ -42,7 +42,7 @@
     Skip Get-PolicyConfig inspection (which is slow and requires S&C session).
 
 .EXAMPLE
-    ./scripts/Test-ShadowAiReady.ps1 -LabProfile ai -Cloud commercial
+    ./scripts/Test-ShadowAiReady.ps1 -LabProfile shadow-ai -Cloud commercial
 #>
 
 [CmdletBinding()]
@@ -51,7 +51,7 @@ param(
     [string]$ConfigPath,
 
     [Parameter()]
-    [string]$LabProfile = 'ai',
+    [string]$LabProfile = 'shadow-ai',
 
     [Parameter()]
     [ValidateSet('commercial', 'gcc')]
@@ -81,15 +81,7 @@ function Resolve-LabConfigPath {
         if (-not (Test-Path $ExplicitConfigPath)) { throw "Config file not found: $ExplicitConfigPath" }
         return (Resolve-Path $ExplicitConfigPath).Path
     }
-    $slug = switch ($ProfileName) {
-        'shadow-ai'          { 'ai-demo.json' }
-        'ai-security'        { 'ai-demo.json' }
-        'copilot-protection' { 'ai-demo.json' }
-        'copilot-dlp'        { 'ai-demo.json' }
-        'ai'                 { 'ai-demo.json' }
-        default              { "$ProfileName-demo.json" }
-    }
-    $candidate = Join-Path $repoRoot 'configs' $CloudEnv $slug
+    $candidate = Join-Path $repoRoot 'configs' $CloudEnv "$ProfileName-demo.json"
     if (-not (Test-Path $candidate)) { throw "Could not locate config at $candidate." }
     return (Resolve-Path $candidate).Path
 }
