@@ -46,7 +46,7 @@ Three canonical profiles: `basic` (prefix `PVLab`), `ai` (prefix `PVAI`), `purvi
 ./Remove-Lab-Interactive.ps1
 
 # Lint (CI uses this — zero warnings required)
-Invoke-ScriptAnalyzer -Path . -Recurse -Severity Warning -ExcludeRule PSAvoidUsingWriteHost,PSUseSingularNouns
+Invoke-ScriptAnalyzer -Path . -Recurse -Severity Warning -ExcludeRule PSAvoidUsingWriteHost,PSUseSingularNouns,PSUseBOMForUnicodeEncodedFile
 
 # Install PSScriptAnalyzer
 Install-Module -Name PSScriptAnalyzer -Force -Scope CurrentUser

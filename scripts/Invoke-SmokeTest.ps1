@@ -784,17 +784,19 @@ function Test-DlpAuditMatches {
 
 # Auth
 if (-not $SkipAuth) {
-    $authTenantId = if ($standaloneMode) {
-        $TenantId
+    # Resolve the tenant the caller wants us to target.
+    #   1. Explicit -TenantId always wins (any mode, including auto-discover).
+    #   2. Otherwise, -Cloud maps to the canonical commercial/GCC tenant GUID.
+    #   3. Otherwise, null → Connect-MgGraph will use whatever session the CLI/browser picks.
+    $authTenantId = $null
+    if (-not [string]::IsNullOrWhiteSpace($TenantId)) {
+        $authTenantId = $TenantId
     }
-    elseif ($autoDiscoverMode) {
-        # No tenant hint — Connect-MgGraph will use the interactive/device/CLI session
-        $null
-    }
-    else {
-        switch ($Cloud) {
+    elseif (-not $autoDiscoverMode -or -not [string]::IsNullOrWhiteSpace($Cloud)) {
+        $authTenantId = switch ($Cloud) {
             'commercial' { 'f1b92d41-6d54-4102-9dd9-4208451314df' }
             'gcc' { '119e9fe0-c9d3-4a9d-be8b-c82d03fd0cd4' }
+            default { $null }
         }
     }
 
@@ -807,12 +809,24 @@ if (-not $SkipAuth) {
         Write-Host "--- Connecting to cloud services ---" -ForegroundColor Cyan
         $graphScopes = @('Mail.Send', 'User.Read.All', 'Files.ReadWrite.All', 'Sites.ReadWrite.All', 'Organization.Read.All')
 
-        # Prefer an existing az CLI session (works for OIDC in CI and `az login` locally).
-        # Fall back to interactive Connect-MgGraph when az is unavailable.
+        # Prefer an existing az CLI session (works for OIDC in CI and `az login` locally),
+        # but only when it's signed into the tenant we actually want. If the caller
+        # pinned a tenant via -TenantId or -Cloud, require az to match it — otherwise
+        # we'd silently send smoke payloads into the wrong tenant.
         $azToken = $null
         if (Get-Command az -ErrorAction SilentlyContinue) {
             try {
-                $azToken = az account get-access-token --resource https://graph.microsoft.com --query accessToken -o tsv 2>$null
+                $azAccount = az account show --query '{tenantId:tenantId}' -o json 2>$null | ConvertFrom-Json
+                $azTenantMatches = $true
+                if ($authTenantId -and $azAccount -and $azAccount.tenantId) {
+                    $azTenantMatches = [string]::Equals([string]$azAccount.tenantId, [string]$authTenantId, [System.StringComparison]::OrdinalIgnoreCase)
+                    if (-not $azTenantMatches) {
+                        Write-Host "  az CLI signed into tenant $($azAccount.tenantId); caller requested $authTenantId. Skipping az token — will prompt interactively." -ForegroundColor DarkYellow
+                    }
+                }
+                if ($azTenantMatches) {
+                    $azToken = az account get-access-token --resource https://graph.microsoft.com --query accessToken -o tsv 2>$null
+                }
             }
             catch {
                 $azToken = $null
@@ -987,6 +1001,28 @@ Write-Host "  Emails sent: $($emailResult.Sent) | Failed: $($emailResult.Failed)
 Write-Host "  Files uploaded: $($fileResult.Uploaded) | Failed: $($fileResult.Failed)"
 Write-Host "  Run ID: $runId"
 Write-Host "  Sent at: $($sendTime.ToString('yyyy-MM-dd HH:mm:ss'))"
+
+# If every send AND every upload failed, surface the most likely root cause so
+# the user isn't left staring at a wall of 403 / 404 dumps.
+if ($emailCases.Count -gt 0 -and $emailResult.Sent -eq 0 -and
+    $fileCases.Count -gt 0 -and $fileResult.Uploaded -eq 0) {
+
+    $ctx = Get-MgContext
+    $signedInAccount = if ($ctx) { [string]$ctx.Account } else { '<unknown>' }
+
+    Write-Host "`n--- Auth model hint ---" -ForegroundColor Yellow
+    Write-Host "  All 403 ErrorAccessDenied on /me/sendMail AND 404 on /me/drive usually means:" -ForegroundColor Yellow
+    Write-Host "    • the signed-in account ($signedInAccount) has no mailbox license, and" -ForegroundColor Yellow
+    Write-Host "    • that account has never signed in to OneDrive so /me/drive 404s." -ForegroundColor Yellow
+    Write-Host "`n  Fix options (pick one):" -ForegroundColor Yellow
+    Write-Host "    1. Sign in interactively AS one of the test users (license: M365 E5 / G5 or E3 + mailbox)." -ForegroundColor Yellow
+    Write-Host "       That user needs Mail.Send delegated + OneDrive provisioned (visit onedrive.com once)." -ForegroundColor Yellow
+    Write-Host "       Disconnect first:  Disconnect-MgGraph" -ForegroundColor Yellow
+    Write-Host "    2. Pre-provision OneDrive for the auto-picked users:" -ForegroundColor Yellow
+    Write-Host "         ./scripts/Request-OneDriveProvisioning.ps1 -LabProfile <profile> -Wait" -ForegroundColor Yellow
+    Write-Host "    3. Pass -Users <upn1>,<upn2> to target specific licensed lab accounts (still need scope + mailbox + OneDrive)." -ForegroundColor Yellow
+    Write-Host "`n  See SMOKETEST.md troubleshooting section for the full matrix." -ForegroundColor Yellow
+}
 
 # Burst activity for Insider Risk
 if ($BurstActivity) {
