@@ -152,4 +152,4 @@ A GitHub Actions workflow runs `Invoke-SmokeTest.ps1` daily at 10 AM ET on weekd
 | OneDrive uploads fail with 404 | Users haven't had OneDrive provisioned. Visit onedrive.com as each user once, or run `./scripts/Request-OneDriveProvisioning.ps1 -LabProfile <profile> -Wait` |
 | Insider Risk shows no alerts | IRM needs 24–48 hours for signal aggregation; confirm policies are *Enabled* (not *In Test*) in Purview → Insider Risk → Policies |
 | Auto-discover picked the wrong users | Re-run with `-Users alice@...,bob@...` to target specific lab accounts |
-| `Search-UnifiedAuditLog` fails in `-ValidateOnly` | Run `Connect-IPPSSession` first; ensure the account has the *View-Only Audit Logs* role |
+| `Search-UnifiedAuditLog` fails in `-ValidateOnly` | The cmdlet lives in Exchange Online PowerShell, not IPPS; script connects via `Connect-ExchangeOnline`. Ensure the account has the *View-Only Audit Logs* role. |

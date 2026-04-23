@@ -807,8 +807,13 @@ if (-not $SkipAuth) {
 
     if ($ValidateOnly) {
         Write-Host "--- Connecting for audit log query ---" -ForegroundColor Cyan
-        Connect-IPPSSession -ShowBanner:$false -ErrorAction Stop
-        Write-Host "  IPPS connected.`n" -ForegroundColor Green
+        # Search-UnifiedAuditLog lives in Exchange Online PowerShell (not the
+        # Security & Compliance IPPSSession). Older script versions connected to
+        # IPPS here and the cmdlet resolved as 'not recognized'.
+        $exoConnectParams = @{ ShowBanner = $false; ErrorAction = 'Stop' }
+        if ($authTenantId) { $exoConnectParams.Organization = $authTenantId }
+        Connect-ExchangeOnline @exoConnectParams
+        Write-Host "  Exchange Online connected.`n" -ForegroundColor Green
     }
     else {
         Write-Host "--- Connecting to cloud services ---" -ForegroundColor Cyan
