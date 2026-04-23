@@ -815,10 +815,15 @@ if (-not $SkipAuth) {
         $graphScopes = @('Mail.Send', 'User.Read.All', 'Files.ReadWrite.All', 'Sites.ReadWrite.All', 'Organization.Read.All')
 
         # Prefer an existing az CLI session (works for OIDC in CI and `az login` locally),
-        # but only when it's signed into the tenant we actually want. If the caller
-        # pinned a tenant via -TenantId or -Cloud, require az to match it — otherwise
-        # we'd silently send smoke payloads into the wrong tenant.
+        # but only when:
+        #   (a) it's signed into the tenant we actually want (avoid wrong-tenant sends), AND
+        #   (b) the resulting Graph token actually carries the scopes the smoke test needs.
+        # Azure CLI's default consented scope set does NOT include Mail.Send /
+        # Files.ReadWrite.All — reusing that token would land every send/upload in a
+        # 403 wall. Decode the token's scp claim and fall through to interactive
+        # Connect-MgGraph if the required scopes are missing.
         $azToken = $null
+        $requiredScopes = @('Mail.Send', 'Files.ReadWrite.All')
         if (Get-Command az -ErrorAction SilentlyContinue) {
             try {
                 $azAccount = az account show --query '{tenantId:tenantId}' -o json 2>$null | ConvertFrom-Json
@@ -830,7 +835,35 @@ if (-not $SkipAuth) {
                     }
                 }
                 if ($azTenantMatches) {
-                    $azToken = az account get-access-token --resource https://graph.microsoft.com --query accessToken -o tsv 2>$null
+                    $candidateToken = az account get-access-token --resource https://graph.microsoft.com --query accessToken -o tsv 2>$null
+                    if ($candidateToken) {
+                        $parts = $candidateToken.Split('.')
+                        $scopesPresent = @()
+                        if ($parts.Length -ge 2) {
+                            $payload = $parts[1].Replace('-', '+').Replace('_', '/')
+                            switch ($payload.Length % 4) {
+                                2 { $payload += '==' }
+                                3 { $payload += '=' }
+                            }
+                            try {
+                                $claimsJson = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($payload))
+                                $claims = $claimsJson | ConvertFrom-Json
+                                if ($claims.scp) {
+                                    $scopesPresent = $claims.scp -split '\s+'
+                                }
+                            }
+                            catch {
+                                $scopesPresent = @()
+                            }
+                        }
+                        $missing = $requiredScopes | Where-Object { $_ -notin $scopesPresent }
+                        if (@($missing).Count -eq 0) {
+                            $azToken = $candidateToken
+                        }
+                        else {
+                            Write-Host "  az CLI Graph token is missing scopes: $($missing -join ', '). Skipping az token — will prompt interactively for Graph sign-in." -ForegroundColor DarkYellow
+                        }
+                    }
                 }
             }
             catch {
