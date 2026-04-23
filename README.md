@@ -15,6 +15,19 @@ Config-driven Microsoft Purview demo lab deployment. PowerShell 7+, modular by w
 
 Each profile is a self-contained deployment with its own prefix, config, and lifecycle. See the profile README for setup instructions.
 
+**Narrower demo configs.** Beyond the three canonical profiles above, the repo ships additional scenario configs under `configs/<cloud>/` for targeted demos — each is a regular lab config with its own prefix and can be deployed via `-ConfigPath`:
+
+| Config | Focus |
+|--------|-------|
+| `dlp-only.json` | DLP policies only (no labels / retention / IRM overhead) |
+| `ediscovery-retention.json` | eDiscovery cases + retention policies |
+| `education-demo.json` | Education-tenant scenario |
+| `eu-gdpr-demo.json` | EU / GDPR scenario (retention + labels + DLP) |
+| `government-demo.json` | Government-vertical scenario |
+| `medical-demo.json` | Healthcare / PHI scenario |
+
+Run with `./Deploy-Lab.ps1 -ConfigPath configs/commercial/<config>.json -Cloud commercial`.
+
 **Deprecated aliases** — the following names are still accepted and emit a deprecation warning at runtime:
 
 | Deprecated name | Resolves to |
@@ -48,6 +61,7 @@ By default each profile uses the test users listed in its config. Pass `-TestUse
 | ConditionalAccess | Full | CA policies (report-only mode) |
 | AuditConfig | Full | Audit log searches |
 | TestData | Full | Test emails and documents with sensitive content |
+| SentinelIntegration | Full | Log Analytics workspace, Sentinel onboarding, data connectors (Content Hub), analytics rules, workbooks, IRM auto-triage playbook + automation rule (`ai` and `purview-sentinel` profiles only) |
 
 ## Prerequisites
 
@@ -243,6 +257,9 @@ Scripts in `scripts/` generate DLP alerts and Copilot activity for validating de
 | `Test-SentinelReady.ps1` | Pre-demo readiness gate for the Sentinel stack — workspace, connectors, rules, 24h data-flow check |
 | `Test-SentinelLab.ps1` | Deep end-to-end smoke test for a deployed Sentinel lab (CI-grade) |
 | `Set-ShadowAiEndpointDlpDomains.ps1` | Push AI-site block list to tenant-wide Endpoint DLP global settings (discover → `-Apply`) |
+| `Invoke-CopilotChatTest.ps1` | Fires Copilot DLP label-block test prompts at the M365 Copilot Chat API (`/beta/copilot/conversations`); logs raw responses for block/pass analysis |
+| `Request-OneDriveProvisioning.ps1` | Pre-provisions OneDrive personal sites for lab test users (so TestData uploads + sensitivity-label assignment don't 404 on first run) |
+| `copilot-label-test-prompts-gcc.md` | GCC-specific copy-paste prompts for the label-only Copilot DLP policy (SIT-based prompt blocking is commercial-only) |
 
 > **Before sharing with teammates:** auto-discover picks the first 2
 > alphabetically-sorted licensed mailbox users in the tenant — in a production
