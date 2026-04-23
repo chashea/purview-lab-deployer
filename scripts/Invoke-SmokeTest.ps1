@@ -786,13 +786,18 @@ function Test-DlpAuditMatches {
 if (-not $SkipAuth) {
     # Resolve the tenant the caller wants us to target.
     #   1. Explicit -TenantId always wins (any mode, including auto-discover).
-    #   2. Otherwise, -Cloud maps to the canonical commercial/GCC tenant GUID.
-    #   3. Otherwise, null → Connect-MgGraph will use whatever session the CLI/browser picks.
+    #   2. Otherwise, -Cloud maps to the canonical commercial/GCC tenant GUID —
+    #      but ONLY when the caller explicitly passed -Cloud (or we're in
+    #      config mode). $PSBoundParameters lets us distinguish "user passed
+    #      -Cloud commercial" from "user passed nothing and we got the default".
+    #   3. Otherwise, null → Connect-MgGraph picks whatever session the CLI or
+    #      browser offers (pure zero-arg auto-discover behaviour).
     $authTenantId = $null
+    $cloudWasExplicit = $PSBoundParameters.ContainsKey('Cloud')
     if (-not [string]::IsNullOrWhiteSpace($TenantId)) {
         $authTenantId = $TenantId
     }
-    elseif (-not $autoDiscoverMode -or -not [string]::IsNullOrWhiteSpace($Cloud)) {
+    elseif ((-not $autoDiscoverMode) -or $cloudWasExplicit) {
         $authTenantId = switch ($Cloud) {
             'commercial' { 'f1b92d41-6d54-4102-9dd9-4208451314df' }
             'gcc' { '119e9fe0-c9d3-4a9d-be8b-c82d03fd0cd4' }
