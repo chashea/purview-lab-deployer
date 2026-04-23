@@ -594,70 +594,8 @@
             }
           }
         }
-      },
-        "foundry": {
-          "type": "object",
-          "description": "Microsoft Foundry workload — provisions a CognitiveServices AIServices account, model deployment, Foundry project, and AI agents",
-          "properties": {
-            "enabled": {
-              "type": "boolean"
-            },
-            "subscriptionId": {
-              "type": "string",
-              "description": "Azure subscription ID for Foundry resource provisioning"
-            },
-            "resourceGroup": {
-              "type": "string",
-              "description": "Azure resource group name (will be created if it does not exist)"
-            },
-            "location": {
-              "type": "string",
-              "description": "Azure region for all Foundry resources (e.g. eastus)"
-            },
-            "accountName": {
-              "type": "string",
-              "description": "CognitiveServices account name (globally unique)"
-            },
-            "projectName": {
-              "type": "string",
-              "description": "Foundry project name (unique within the account)"
-            },
-            "modelDeploymentName": {
-              "type": "string",
-              "description": "Name of the gpt-4o model deployment"
-            },
-            "agents": {
-              "type": "array",
-              "description": "AI agents to create within the Foundry project",
-              "items": {
-                "type": "object",
-                "required": [
-                  "name",
-                  "instructions",
-                  "model"
-                ],
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "description": "Agent name (config.prefix will be prepended)"
-                  },
-                  "description": {
-                    "type": "string"
-                  },
-                  "instructions": {
-                    "type": "string",
-                    "description": "System prompt / instructions for the agent"
-                  },
-                  "model": {
-                    "type": "string",
-                    "description": "Model deployment name to use (e.g. gpt-4o)"
-                  }
-                }
-              }
-            }
-          }
-        }
       }
     }
   }
+}
 

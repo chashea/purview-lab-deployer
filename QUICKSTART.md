@@ -100,58 +100,16 @@ This creates:
 
 ## Step 4 — Run smoke tests
 
-### Option A: Standalone mode (no config file needed)
+Post-deploy verification: fire DLP alerts, burst IRM signals, exercise Copilot / Shadow AI / Sentinel surfaces.
+
+See **[SMOKETEST.md](SMOKETEST.md)** for the full smoke-test guide — auto-discover mode, config mode, burst activity, Copilot API tests, Sentinel end-to-end, portal latency reference, and troubleshooting.
+
+Quickest path (auto-discover, zero args, works in any tenant):
 
 ```powershell
-./scripts/Invoke-SmokeTest.ps1 `
-    -TenantId "YOUR-TENANT-ID" `
-    -Domain "YOUR-TENANT.onmicrosoft.com" `
-    -Users "user1@YOUR-TENANT.onmicrosoft.com","user2@YOUR-TENANT.onmicrosoft.com"
+./scripts/Invoke-SmokeTest.ps1 -WhatIf   # preview target users first
+./scripts/Invoke-SmokeTest.ps1
 ```
-
-### Option B: Config mode (uses your lab config)
-
-```powershell
-./scripts/Invoke-SmokeTest.ps1 -ConfigPath configs/commercial/my-lab.json -Cloud commercial
-```
-
-### DLP + Insider Risk burst activity
-
-Add `-BurstActivity` to either mode for high-volume IRM signals:
-
-```powershell
-# Standalone with burst
-./scripts/Invoke-SmokeTest.ps1 `
-    -TenantId "YOUR-TENANT-ID" `
-    -Domain "YOUR-TENANT.onmicrosoft.com" `
-    -Users "user1@YOUR-TENANT.onmicrosoft.com","user2@YOUR-TENANT.onmicrosoft.com" `
-    -BurstActivity
-
-# Config with burst
-./scripts/Invoke-SmokeTest.ps1 -ConfigPath configs/commercial/my-lab.json -BurstActivity
-```
-
-### Copilot DLP testing
-
-Open [M365 Copilot Chat](https://m365.cloud.microsoft/chat) and paste prompts from `scripts/copilot-test-prompts.md`. Each prompt contains sensitive data that triggers Copilot DLP classifiers.
-
----
-
-## Step 5 — Validate
-
-```powershell
-# Check audit log for DLP matches
-./scripts/Invoke-SmokeTest.ps1 -ConfigPath configs/commercial/my-lab.json -ValidateOnly -Since (Get-Date).AddHours(-1)
-```
-
-Or check the portals directly:
-
-| What | Portal URL |
-|---|---|
-| DLP Alerts | https://purview.microsoft.com/datalossprevention/alerts |
-| Activity Explorer | https://purview.microsoft.com/datalossprevention/activityexplorer |
-| Insider Risk | https://purview.microsoft.com/insiderriskmanagement/alerts |
-| Audit Log | https://purview.microsoft.com/audit |
 
 ---
 
@@ -173,10 +131,9 @@ All resources are prefixed with `PVLab-` for reliable cleanup.
 |---|---|
 | `Connect-ExchangeOnline` fails | Run `Install-Module ExchangeOnlineManagement -Force` |
 | DLP rules not creating | Ensure you have Compliance Administrator role |
-| No DLP alerts after smoke test | Wait 15-60 minutes; check rules have alerting enabled |
-| OneDrive uploads fail | Ensure users have OneDrive provisioned (visit onedrive.com as each user once) |
-| Insider Risk no alerts | IRM needs 24-48 hours; ensure IRM policies are enabled in Purview |
 | TestUsers "department" error | Transient Graph issue — safe to ignore, other workloads still deploy |
+
+See [SMOKETEST.md](SMOKETEST.md#troubleshooting) for smoke-test-specific troubleshooting.
 
 ---
 

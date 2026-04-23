@@ -235,7 +235,7 @@ Use the `ai` profile when a single demo needs to cover the full integrated narra
 
 ## Smoke tests
 
-Scripts in `scripts/` generate DLP alerts and Copilot activity for validating deployed policies.
+Scripts in `scripts/` generate DLP alerts and Copilot activity for validating deployed policies. See **[SMOKETEST.md](SMOKETEST.md)** for the full smoke-test guide (auto-discover usage, Copilot / Shadow AI / Sentinel gates, portal latency reference, troubleshooting).
 
 | Script | What it does |
 |--------|-------------|
@@ -251,35 +251,11 @@ Scripts in `scripts/` generate DLP alerts and Copilot activity for validating de
 | `Request-OneDriveProvisioning.ps1` | Pre-provisions OneDrive personal sites for lab test users (so TestData uploads + sensitivity-label assignment don't 404 on first run) |
 | `copilot-label-test-prompts-gcc.md` | GCC-specific copy-paste prompts for the label-only Copilot DLP policy (SIT-based prompt blocking is commercial-only) |
 
-> **Before sharing with teammates:** auto-discover picks the first 2
-> alphabetically-sorted licensed mailbox users in the tenant — in a production
-> tenant that is often an executive or real employee's inbox. Always
-> **preview with `-WhatIf` first**, run against a lab tenant when possible,
-> or pass `-Users alice@...,bob@...` to target known lab accounts. The
-> script also requires the `ExchangeOnlineManagement` module for
-> `-ValidateOnly` audit-log checks, plus Graph scopes `Mail.Send`,
-> `User.Read.All`, `Files.ReadWrite.All`, `Sites.ReadWrite.All`, and
-> `Organization.Read.All` (consented on first interactive run).
+Quickest path (auto-discover, works in any tenant):
 
 ```powershell
-# Auto-discover mode (zero args) — works in ANY Purview tenant. Discovers
-# tenant ID, primary domain, and 2 licensed users from Microsoft Graph.
-# Share this one command with your team — they just clone and run.
-# Teammates: always run with -WhatIf first to preview the target users.
-./scripts/Invoke-SmokeTest.ps1 -WhatIf
+./scripts/Invoke-SmokeTest.ps1 -WhatIf   # preview target users first
 ./scripts/Invoke-SmokeTest.ps1
-
-# Auto-discover + Insider Risk burst activity
-./scripts/Invoke-SmokeTest.ps1 -BurstActivity
-
-# Config mode — targeted test cases derived from a deployed lab profile
-./scripts/Invoke-SmokeTest.ps1 -LabProfile basic -Cloud commercial
-
-# Validate DLP matches in audit log
-./scripts/Invoke-SmokeTest.ps1 -ValidateOnly -Since (Get-Date).AddHours(-1)
-
-# Dry run
-./scripts/Invoke-SmokeTest.ps1 -LabProfile basic -SkipAuth -WhatIf
 ```
 
 A GitHub Actions workflow runs smoke tests daily at 10 AM ET on weekdays (`.github/workflows/daily-smoke-test.yml`). Requires OIDC setup — see below.
@@ -309,6 +285,7 @@ The daily workflow uses OIDC federated credentials. To set up:
 ## Additional docs
 
 - **[Quick Start Guide](QUICKSTART.md)** — get running in your tenant in 30 minutes
+- **[Smoke-test guide](SMOKETEST.md)** — post-deploy verification: DLP alerts, IRM bursts, Copilot / Shadow AI / Sentinel gates
 - [Commercial config guide](configs/commercial/README.md)
 - [GCC config guide](configs/gcc/README.md)
 - [Profiles overview](profiles/README.md)
