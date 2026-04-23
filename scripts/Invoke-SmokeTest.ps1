@@ -817,12 +817,12 @@ if (-not $SkipAuth) {
         # Prefer an existing az CLI session (works for OIDC in CI and `az login` locally),
         # but only when:
         #   (a) it's signed into the tenant we actually want (avoid wrong-tenant sends), AND
-        #   (b) the resulting Graph token actually carries the scopes the smoke test needs.
-        # Azure CLI's default consented scope set does NOT include Mail.Send /
-        # Files.ReadWrite.All — reusing that token would land every send/upload in a
-        # 403 wall. Decode the token's scp claim and fall through to interactive
-        # Connect-MgGraph if the required scopes are missing.
+        #   (b) the resulting Graph token actually carries the permissions the smoke test needs.
+        # Delegated user tokens carry permissions in the `scp` claim; app-only tokens
+        # (OIDC service principal client-credentials in CI) carry them in `roles`.
+        # Accept the token if EITHER claim satisfies the required permissions.
         $azToken = $null
+        $azTokenKind = $null   # 'delegated' or 'app'
         $requiredScopes = @('Mail.Send', 'Files.ReadWrite.All')
         if (Get-Command az -ErrorAction SilentlyContinue) {
             try {
@@ -838,7 +838,8 @@ if (-not $SkipAuth) {
                     $candidateToken = az account get-access-token --resource https://graph.microsoft.com --query accessToken -o tsv 2>$null
                     if ($candidateToken) {
                         $parts = $candidateToken.Split('.')
-                        $scopesPresent = @()
+                        $scpScopes = @()
+                        $roleScopes = @()
                         if ($parts.Length -ge 2) {
                             $payload = $parts[1].Replace('-', '+').Replace('_', '/')
                             switch ($payload.Length % 4) {
@@ -848,32 +849,58 @@ if (-not $SkipAuth) {
                             try {
                                 $claimsJson = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($payload))
                                 $claims = $claimsJson | ConvertFrom-Json
-                                if ($claims.scp) {
-                                    $scopesPresent = $claims.scp -split '\s+'
-                                }
+                                if ($claims.scp)   { $scpScopes  = @($claims.scp -split '\s+') }
+                                if ($claims.roles) { $roleScopes = @($claims.roles) }
                             }
                             catch {
-                                $scopesPresent = @()
+                                $scpScopes = @()
+                                $roleScopes = @()
                             }
                         }
-                        $missing = $requiredScopes | Where-Object { $_ -notin $scopesPresent }
-                        if (@($missing).Count -eq 0) {
+                        $missingDelegated = $requiredScopes | Where-Object { $_ -notin $scpScopes }
+                        $missingApp       = $requiredScopes | Where-Object { $_ -notin $roleScopes }
+                        if (@($missingDelegated).Count -eq 0) {
                             $azToken = $candidateToken
+                            $azTokenKind = 'delegated'
+                        }
+                        elseif (@($missingApp).Count -eq 0) {
+                            $azToken = $candidateToken
+                            $azTokenKind = 'app'
                         }
                         else {
-                            Write-Host "  az CLI Graph token is missing scopes: $($missing -join ', '). Skipping az token — will prompt interactively for Graph sign-in." -ForegroundColor DarkYellow
+                            $scpList  = if (@($scpScopes).Count)  { ($scpScopes  -join ', ') } else { '<none>' }
+                            $roleList = if (@($roleScopes).Count) { ($roleScopes -join ', ') } else { '<none>' }
+                            Write-Host "  az CLI Graph token lacks required permissions." -ForegroundColor DarkYellow
+                            Write-Host "    Required (either delegated scp OR app roles): $($requiredScopes -join ', ')" -ForegroundColor DarkYellow
+                            Write-Host "    Token scp claim:   $scpList"   -ForegroundColor DarkGray
+                            Write-Host "    Token roles claim: $roleList"  -ForegroundColor DarkGray
                         }
                     }
                 }
             }
             catch {
                 $azToken = $null
+                $azTokenKind = $null
             }
         }
+
+        # Detect non-interactive execution (CI, scheduled, containerized shells)
+        # so we fail fast instead of blocking on a Connect-MgGraph device-code prompt.
+        $nonInteractive = [bool]($env:CI -or $env:GITHUB_ACTIONS -or $env:TF_BUILD -or $env:BUILD_BUILDID)
 
         if ($azToken) {
             $secureToken = ConvertTo-SecureString $azToken -AsPlainText -Force
             Connect-MgGraph -AccessToken $secureToken -NoWelcome -ErrorAction Stop
+            Write-Host "  Graph connected via az CLI token ($azTokenKind permissions)." -ForegroundColor DarkGray
+        }
+        elseif ($nonInteractive) {
+            $ciHint = @(
+                "No usable Graph token from az CLI and running non-interactively ($($env:GITHUB_ACTIONS ? 'GITHUB_ACTIONS' : 'CI')).",
+                "Grant the OIDC service principal these Microsoft Graph APPLICATION permissions and admin-consent them:",
+                "  $($requiredScopes -join ', '), User.Read.All, Organization.Read.All",
+                "Then re-run. See SMOKETEST.md troubleshooting for the consent command."
+            ) -join "`n  "
+            throw $ciHint
         }
         elseif ($authTenantId) {
             Connect-MgGraph -TenantId $authTenantId -Scopes $graphScopes -NoWelcome -ErrorAction Stop

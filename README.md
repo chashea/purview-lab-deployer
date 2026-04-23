@@ -264,11 +264,18 @@ A GitHub Actions workflow runs smoke tests daily at 10 AM ET on weekdays (`.gith
 
 The daily workflow uses OIDC federated credentials. To set up:
 
-1. **Create an app registration** in Entra ID with these application permissions:
+1. **Create an app registration** in Entra ID with these Microsoft Graph **application** permissions (not delegated):
    - `Mail.Send` (send test emails)
    - `Files.ReadWrite.All` (upload to OneDrive)
    - `Sites.ReadWrite.All` (SharePoint access)
    - `User.Read.All` (resolve users)
+   - `Organization.Read.All` (read tenant context)
+
+   Then **grant admin consent** — without this the workflow hits "Graph token lacks required permissions":
+
+   ```bash
+   az ad app permission admin-consent --id <app-id>
+   ```
 
 2. **Add a federated credential** for GitHub Actions:
    - Issuer: `https://token.actions.githubusercontent.com`
@@ -281,6 +288,8 @@ The daily workflow uses OIDC federated credentials. To set up:
    - `AZURE_DOMAIN` — your tenant domain (e.g., `contoso.onmicrosoft.com`)
 
 4. **Create a GitHub environment** named `commercial` in repo settings.
+
+The smoke script accepts either delegated (local `az login` user) or application (CI OIDC service principal) tokens. CI uses the app-only path — make sure `roles` in the issued Graph token contains the permissions above by checking the token in a run log or with `az account get-access-token --resource https://graph.microsoft.com`.
 
 ## Additional docs
 
