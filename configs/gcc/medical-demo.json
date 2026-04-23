@@ -106,14 +106,36 @@
               "sensitiveInfoTypes": [
                 "Drug Enforcement Agency (DEA) Number"
               ],
-              "minCount": 1
+              "minCount": 1,
+              "enforcement": {
+                "action": "auditOnly",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "This content matches a DLP policy. Contact your compliance team if you believe this is in error."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "medium"
+                }
+              }
             },
             {
               "name": "Detect Health Insurance Claim Numbers",
               "sensitiveInfoTypes": [
                 "U.S. Health Insurance Claim Number (HICN)"
               ],
-              "minCount": 1
+              "minCount": 1,
+              "enforcement": {
+                "action": "auditOnly",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "This content matches a DLP policy. Contact your compliance team if you believe this is in error."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "medium"
+                }
+              }
             }
           ]
         },
@@ -130,14 +152,36 @@
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)"
               ],
-              "minCount": 1
+              "minCount": 1,
+              "enforcement": {
+                "action": "auditOnly",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "This content matches a DLP policy. Contact your compliance team if you believe this is in error."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "medium"
+                }
+              }
             },
             {
               "name": "Detect Medical Terms with PII",
               "sensitiveInfoTypes": [
                 "All Medical Terms And Conditions"
               ],
-              "minCount": 1
+              "minCount": 1,
+              "enforcement": {
+                "action": "auditOnly",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "This content matches a DLP policy. Contact your compliance team if you believe this is in error."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "medium"
+                }
+              }
             }
           ]
         },
@@ -154,14 +198,36 @@
               "sensitiveInfoTypes": [
                 "Drug Enforcement Agency (DEA) Number"
               ],
-              "minCount": 1
+              "minCount": 1,
+              "enforcement": {
+                "action": "auditOnly",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "This content matches a DLP policy. Contact your compliance team if you believe this is in error."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "medium"
+                }
+              }
             },
             {
               "name": "Detect HICN in Clinical Escalations",
               "sensitiveInfoTypes": [
                 "U.S. Health Insurance Claim Number (HICN)"
               ],
-              "minCount": 1
+              "minCount": 1,
+              "enforcement": {
+                "action": "auditOnly",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "This content matches a DLP policy. Contact your compliance team if you believe this is in error."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "medium"
+                }
+              }
             }
           ]
         },
@@ -178,14 +244,36 @@
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)"
               ],
-              "minCount": 1
+              "minCount": 1,
+              "enforcement": {
+                "action": "auditOnly",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "This content matches a DLP policy. Contact your compliance team if you believe this is in error."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "medium"
+                }
+              }
             },
             {
               "name": "Detect Medical Terms in Leave Documentation",
               "sensitiveInfoTypes": [
                 "All Medical Terms And Conditions"
               ],
-              "minCount": 1
+              "minCount": 1,
+              "enforcement": {
+                "action": "auditOnly",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "This content matches a DLP policy. Contact your compliance team if you believe this is in error."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "medium"
+                }
+              }
             }
           ]
         }

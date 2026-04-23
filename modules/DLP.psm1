@@ -468,9 +468,23 @@ function Get-LabDlpRuleOptionalParameters {
             $alertEnabledParam = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('GenerateAlert', 'AlertEnabled')
             if ($alertEnabledParam) {
                 # GenerateAlert takes a string[] of recipients; AlertEnabled is the boolean variant
+                # GenerateAlert rejects the Owner/LastModifier/SiteAdmin tokens that NotifyUser
+                # accepts — the server side throws "should be vaild SMTP address". Resolve a
+                # real SMTP recipient from the connected Graph context so the alert actually
+                # writes to the DLP alerts dashboard.
                 if ($alertEnabledParam -eq 'GenerateAlert') {
-                    if ($notificationRecipients.Count -gt 0) {
-                        $optionalParams[$alertEnabledParam] = $notificationRecipients
+                    $alertRecipients = @($notificationRecipients | Where-Object { $_ -match '@' })
+                    if ($alertRecipients.Count -eq 0) {
+                        $ctx = Get-MgContext -ErrorAction SilentlyContinue
+                        if ($ctx -and -not [string]::IsNullOrWhiteSpace([string]$ctx.Account)) {
+                            $alertRecipients = @([string]$ctx.Account)
+                        }
+                    }
+                    if ($alertRecipients.Count -gt 0) {
+                        $optionalParams[$alertEnabledParam] = $alertRecipients
+                    }
+                    else {
+                        Write-LabLog -Message "Rule '$RuleName' requested alert but no real SMTP recipient could be resolved for GenerateAlert; alert will not surface in the dashboard." -Level Warning
                     }
                 }
                 else {
@@ -484,7 +498,8 @@ function Get-LabDlpRuleOptionalParameters {
                 $null
             }
             if ($severity) {
-                $severityParam = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('Severity', 'AlertSeverity')
+                # Recent cmdlet signatures expose ReportSeverityLevel; older ones had Severity / AlertSeverity.
+                $severityParam = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('ReportSeverityLevel', 'Severity', 'AlertSeverity')
                 if ($severityParam) {
                     $optionalParams[$severityParam] = $severity
                 }

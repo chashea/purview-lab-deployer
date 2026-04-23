@@ -74,14 +74,36 @@
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)"
               ],
-              "minCount": 1
+              "minCount": 1,
+              "enforcement": {
+                "action": "auditOnly",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "This content matches a DLP policy. Contact your compliance team if you believe this is in error."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "medium"
+                }
+              }
             },
             {
               "name": "Detect Credit Card Numbers",
               "sensitiveInfoTypes": [
                 "Credit Card Number"
               ],
-              "minCount": 1
+              "minCount": 1,
+              "enforcement": {
+                "action": "auditOnly",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "This content matches a DLP policy. Contact your compliance team if you believe this is in error."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "medium"
+                }
+              }
             }
           ]
         },
@@ -98,14 +120,36 @@
               "sensitiveInfoTypes": [
                 "U.S. Bank Account Number"
               ],
-              "minCount": 1
+              "minCount": 1,
+              "enforcement": {
+                "action": "auditOnly",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "This content matches a DLP policy. Contact your compliance team if you believe this is in error."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "medium"
+                }
+              }
             },
             {
               "name": "Detect Credit Cards in Financial Comms",
               "sensitiveInfoTypes": [
                 "Credit Card Number"
               ],
-              "minCount": 1
+              "minCount": 1,
+              "enforcement": {
+                "action": "auditOnly",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "This content matches a DLP policy. Contact your compliance team if you believe this is in error."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "medium"
+                }
+              }
             }
           ]
         },
@@ -122,14 +166,36 @@
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)"
               ],
-              "minCount": 1
+              "minCount": 1,
+              "enforcement": {
+                "action": "auditOnly",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "This content matches a DLP policy. Contact your compliance team if you believe this is in error."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "medium"
+                }
+              }
             },
             {
               "name": "Detect Bank Account Data in HR Cases",
               "sensitiveInfoTypes": [
                 "U.S. Bank Account Number"
               ],
-              "minCount": 1
+              "minCount": 1,
+              "enforcement": {
+                "action": "auditOnly",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "This content matches a DLP policy. Contact your compliance team if you believe this is in error."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "medium"
+                }
+              }
             }
           ]
         },
@@ -146,14 +212,36 @@
               "sensitiveInfoTypes": [
                 "All Medical Terms And Conditions"
               ],
-              "minCount": 1
+              "minCount": 1,
+              "enforcement": {
+                "action": "auditOnly",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "This content matches a DLP policy. Contact your compliance team if you believe this is in error."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "medium"
+                }
+              }
             },
             {
               "name": "Detect SSNs in Workplace Health Records",
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)"
               ],
-              "minCount": 1
+              "minCount": 1,
+              "enforcement": {
+                "action": "auditOnly",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "This content matches a DLP policy. Contact your compliance team if you believe this is in error."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "medium"
+                }
+              }
             }
           ]
         }
