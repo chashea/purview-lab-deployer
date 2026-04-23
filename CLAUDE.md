@@ -7,7 +7,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Automated Microsoft Purview demo lab deployment via PowerShell 7+.
 Config-driven, modular by workload, deploy + teardown symmetry.
 Three canonical profiles: `basic` (prefix `PVLab`), `ai` (prefix `PVAI`), `purview-sentinel` — each with commercial and (where applicable) GCC variants.
-Deprecated aliases: `basic-lab` → `basic`; `shadow-ai`, `copilot-dlp`, `copilot-protection`, `ai-security` → `ai` (all emit a runtime warning).
 
 ## Stack
 

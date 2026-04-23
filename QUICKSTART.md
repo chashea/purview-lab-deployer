@@ -188,6 +188,4 @@ All resources are prefixed with `PVLab-` for reliable cleanup.
 | **ai** | `-LabProfile ai` | Copilot + gen-AI governance: Copilot DLP, Shadow AI (Endpoint/Browser/Network), AI labels, IRM, Sentinel. Prefix `PVAI`. Requires an Azure subscription. |
 | **purview-sentinel** | `-LabProfile purview-sentinel` | Sentinel workspace + Defender XDR / IRM / Office 365 connectors + Purview-focused analytics rules and workbook. Requires an Azure subscription and `az login`; fill in `subscriptionId` in the demo config first. |
 
-Deprecated aliases (`basic-lab`, `shadow-ai`, `copilot-dlp`, `copilot-protection`, `ai-security`) are still accepted and emit a deprecation warning.
-
 Each profile uses its own config under `configs/commercial/`. Copy and customize for your tenant.

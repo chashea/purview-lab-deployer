@@ -208,6 +208,6 @@
 **Deploy / teardown:**
 
 ```powershell
-./Deploy-Lab.ps1 -Cloud commercial -LabProfile basic-lab -TenantId <tenant-guid>
-./Remove-Lab.ps1 -Cloud commercial -LabProfile basic-lab -Confirm:$false -TenantId <tenant-guid>
+./Deploy-Lab.ps1 -Cloud commercial -LabProfile basic -TenantId <tenant-guid>
+./Remove-Lab.ps1 -Cloud commercial -LabProfile basic -Confirm:$false -TenantId <tenant-guid>
 ```

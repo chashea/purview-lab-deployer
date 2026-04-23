@@ -1,6 +1,6 @@
-# Integrated AI Security Lab (GCC)
+# Integrated AI Governance Lab (GCC)
 
-GCC variant of the Integrated AI Security lab. Same 4-in-1 story (Copilot DLP + Shadow AI + Sentinel + unified eDiscovery/retention/IRM) deployed to Azure Government.
+GCC variant of the Integrated AI Governance lab. Same 4-in-1 story (Copilot DLP + Shadow AI + Sentinel + unified eDiscovery/retention/IRM) deployed to Azure Government.
 
 ## GCC-Specific Notes
 
@@ -47,14 +47,14 @@ GCC variant of the Integrated AI Security lab. Same 4-in-1 story (Copilot DLP + 
 ## Deploy
 
 ```powershell
-./Deploy-Lab.ps1 -Cloud gcc -LabProfile ai-security `
+./Deploy-Lab.ps1 -Cloud gcc -LabProfile ai `
     -TenantId <gcc-tenant-guid> -SubscriptionId <gcc-subscription-guid>
 ```
 
 ## Scope
 
-- **Config:** `configs/gcc/ai-security-demo.json`
-- **Prefix:** `PVAISec`
+- **Config:** `configs/gcc/ai-demo.json`
+- **Prefix:** `PVAI`
 - **Default region:** `usgovvirginia`
 
 ## Deltas from commercial (verified against MS Learn April 2025+ service descriptions)
@@ -76,12 +76,12 @@ GCC variant of the Integrated AI Security lab. Same 4-in-1 story (Copilot DLP + 
 | Sentinel data lake tier | GA July 2025 | Rollout pending | Plan analytics-tier-only |
 | Graph `assignSensitivityLabel` | GA | GCC Moderate: may succeed; GCC-H/DoD: **unavailable** per MS Learn | Module falls back to manual portal labeling |
 
-See the [commercial README](../../commercial/ai-security/README.md), [RUNBOOK](../../commercial/ai-security/RUNBOOK.md), and [talk-track](../../commercial/ai-security/talk-track.md) for the full picture. The same artifact set deploys in GCC — only the Azure endpoints and feature-availability caveats differ.
+See the [commercial README](../../commercial/ai/README.md), [RUNBOOK](../../commercial/ai/RUNBOOK.md), and [talk-track](../../commercial/ai/talk-track.md) for the full picture. The same artifact set deploys in GCC — only the Azure endpoints and feature-availability caveats differ.
 
 ## Verification
 
 ```powershell
-./scripts/Test-CopilotDlpReady.ps1 -ConfigPath ./configs/gcc/ai-security-demo.json -Cloud gcc
-./scripts/Test-ShadowAiReady.ps1   -ConfigPath ./configs/gcc/ai-security-demo.json -Cloud gcc
-./scripts/Test-SentinelReady.ps1   -ConfigPath ./configs/gcc/ai-security-demo.json -Cloud gcc -SubscriptionId <gcc-sub>
+./scripts/Test-CopilotDlpReady.ps1 -ConfigPath ./configs/gcc/ai-demo.json -Cloud gcc
+./scripts/Test-ShadowAiReady.ps1   -ConfigPath ./configs/gcc/ai-demo.json -Cloud gcc
+./scripts/Test-SentinelReady.ps1   -ConfigPath ./configs/gcc/ai-demo.json -Cloud gcc -SubscriptionId <gcc-sub>
 ```

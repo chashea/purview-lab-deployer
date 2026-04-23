@@ -1,9 +1,9 @@
 {
   "profileType": "scenario-overlay",
-  "name": "ai-security",
+  "name": "ai",
   "baseCloud": "gcc",
   "notes": [
-    "GCC (Moderate) variant of the Integrated AI Security lab.",
+    "GCC (Moderate) variant of the Integrated AI Governance lab.",
     "Feature availability verified against MS Learn GCC service descriptions (April 2025 Purview-for-Copilot wave + DSPM for AI GCC GA).",
     "Real GCC gaps (not yet itemized in MS Learn GCC tables): Browser Data Security inline block, Network Data Security SASE/SSE integration, Sentinel data lake tier, Sentinel in Defender portal.",
     "Copilot prompt SIT DLP remains preview even on commercial — expect GCC rollout lag.",

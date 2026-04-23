@@ -1,6 +1,6 @@
-# Integrated AI Security Lab — Post-Deploy Runbook (GCC)
+# Integrated AI Governance Lab — Post-Deploy Runbook (GCC)
 
-GCC variant. See the [commercial RUNBOOK](../../commercial/ai-security/RUNBOOK.md) for the full flow; this document captures GCC-specific deltas.
+GCC variant. See the [commercial RUNBOOK](../../commercial/ai/RUNBOOK.md) for the full flow; this document captures GCC-specific deltas.
 
 ## GCC prerequisites
 
@@ -13,9 +13,9 @@ az account set --subscription <gcc-subscription-guid>
 ## GCC-specific readiness check
 
 ```powershell
-./scripts/Test-CopilotDlpReady.ps1 -ConfigPath ./configs/gcc/ai-security-demo.json -Cloud gcc
-./scripts/Test-ShadowAiReady.ps1   -ConfigPath ./configs/gcc/ai-security-demo.json -Cloud gcc
-./scripts/Test-SentinelReady.ps1   -ConfigPath ./configs/gcc/ai-security-demo.json -Cloud gcc -SubscriptionId <gcc-sub>
+./scripts/Test-CopilotDlpReady.ps1 -ConfigPath ./configs/gcc/ai-demo.json -Cloud gcc
+./scripts/Test-ShadowAiReady.ps1   -ConfigPath ./configs/gcc/ai-demo.json -Cloud gcc
+./scripts/Test-SentinelReady.ps1   -ConfigPath ./configs/gcc/ai-demo.json -Cloud gcc -SubscriptionId <gcc-sub>
 ```
 
 ## Feature availability map

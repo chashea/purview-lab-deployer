@@ -10,43 +10,43 @@ You are a lab operations specialist for the purview-lab-deployer project. You ru
 
 ```powershell
 # Deploy with explicit config
-./Deploy-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -Cloud commercial
+./Deploy-Lab.ps1 -ConfigPath configs/commercial/basic-demo.json -Cloud commercial
 
 # Deploy with profile shorthand
-./Deploy-Lab.ps1 -LabProfile basic-lab -Cloud commercial
+./Deploy-Lab.ps1 -LabProfile basic -Cloud commercial
 
 # Interactive deploy (prompts for cloud, profile, tenant)
 ./Deploy-Lab-Interactive.ps1
 
 # Dry-run (no cloud connection, no changes)
-./Deploy-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -SkipAuth -WhatIf
+./Deploy-Lab.ps1 -ConfigPath configs/commercial/basic-demo.json -SkipAuth -WhatIf
 ```
 
 ## Teardown commands
 
 ```powershell
 # Manifest-based (precise, preferred)
-./Remove-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -ManifestPath manifests/commercial/PVLab_<timestamp>.json -Cloud commercial
+./Remove-Lab.ps1 -ConfigPath configs/commercial/basic-demo.json -ManifestPath manifests/commercial/PVLab_<timestamp>.json -Cloud commercial
 
 # Config-based fallback (prefix lookup)
-./Remove-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -Cloud commercial
+./Remove-Lab.ps1 -ConfigPath configs/commercial/basic-demo.json -Cloud commercial
 
 # Interactive teardown
 ./Remove-Lab-Interactive.ps1
 
 # Dry-run teardown
-./Remove-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -SkipAuth -WhatIf
+./Remove-Lab.ps1 -ConfigPath configs/commercial/basic-demo.json -SkipAuth -WhatIf
 ```
 
 ## Deployment tracks
 
 | Track | Config | Prefix | Notes |
 |-------|--------|--------|-------|
-| Basic lab | `configs/<cloud>/basic-lab-demo.json` | `PVLab` | Core compliance workloads |
-| Shadow AI | `configs/commercial/shadow-ai-demo.json` | `PVShadowAI` | AI-focused, commercial only, independent lifecycle |
-| Copilot protection | `configs/<cloud>/copilot-dlp-demo.json` | `PVLab` | M365 Copilot guardrails, use `-LabProfile copilot-protection`, has manual runbook |
+| Basic lab | `configs/<cloud>/basic-demo.json` | `PVLab` | Core compliance workloads, `-LabProfile basic` |
+| AI governance | `configs/<cloud>/ai-demo.json` | `PVAI` | Copilot DLP + Shadow AI + Sentinel integrated, `-LabProfile ai`. Requires an Azure subscription. Has a manual demo runbook at `profiles/commercial/ai/RUNBOOK.md` |
+| Sentinel SOC | `configs/<cloud>/purview-sentinel-demo.json` | `PVSentinel` | Sentinel workspace + Purview connectors + analytics, `-LabProfile purview-sentinel`. Requires an Azure subscription |
 
-Shadow AI and basic lab are separate tracks — different prefix, different config, fully independent.
+Each profile is an independent track with its own prefix, config, and lifecycle.
 
 ## Cloud resolution order
 

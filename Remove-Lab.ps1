@@ -15,7 +15,6 @@
 .PARAMETER LabProfile
     Deployment profile name. Resolves to a config file under configs/<cloud>/.
     Available profiles: basic, ai, purview-sentinel.
-    Deprecated aliases: basic-lab, shadow-ai, copilot-dlp, copilot-protection, ai-security.
 
 .PARAMETER ManifestPath
     Optional path to a deployment manifest. When provided, uses manifest
@@ -52,7 +51,7 @@ param(
     [string]$ConfigPath,
 
     [Parameter()]
-    [ValidateSet('basic', 'ai', 'purview-sentinel', 'basic-lab', 'shadow-ai', 'copilot-dlp', 'copilot-protection', 'ai-security')]
+    [ValidateSet('basic', 'ai', 'purview-sentinel')]
     [string]$LabProfile,
 
     [Parameter()]
@@ -89,7 +88,6 @@ if (-not [string]::IsNullOrWhiteSpace($LabProfile) -and -not [string]::IsNullOrW
 }
 
 if (-not [string]::IsNullOrWhiteSpace($LabProfile)) {
-    $LabProfile = Resolve-LabProfile -LabProfile $LabProfile
     $resolvedCloud = if ([string]::IsNullOrWhiteSpace($Cloud)) { 'commercial' } else { $Cloud }
     $configFileName = $profileConfigMap[$LabProfile]
     $ConfigPath = Join-Path $PSScriptRoot "configs/$resolvedCloud/$configFileName"

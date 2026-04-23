@@ -1,10 +1,10 @@
 {
   "profileType": "scenario-overlay",
-  "name": "ai-security",
+  "name": "ai",
   "baseCloud": "commercial",
   "notes": [
-    "Integrated AI Security lab. Unifies the Copilot DLP, Shadow AI, and Purview → Sentinel stories into one deployment with correlated signals.",
-    "All resources use the single 'PVAISec' prefix. Labels, DLP policies, IRM policies, retention, eDiscovery, CC, CA, and Sentinel integration deploy as one coherent set.",
+    "Integrated AI Governance lab. Unifies the Copilot DLP, Shadow AI, and Purview → Sentinel stories into one deployment with correlated signals.",
+    "All resources use the single 'PVAI' prefix. Labels, DLP policies, IRM policies, retention, eDiscovery, CC, CA, and Sentinel integration deploy as one coherent set.",
     "Deployment time: ~20-25 minutes. Demo length: 45-75 minutes (much longer than the focused labs).",
     "Required: Microsoft 365 E5 + Copilot licenses + Azure subscription + Defender for Endpoint on test devices.",
     "Picks up DSPM for AI activation as a post-deploy step (see RUNBOOK)."

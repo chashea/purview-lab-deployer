@@ -1,6 +1,6 @@
-# Integrated AI Security Lab — Customer Talk Track (GCC)
+# Integrated AI Governance Lab — Customer Talk Track (GCC)
 
-GCC variant. See the [commercial talk-track](../../commercial/ai-security/talk-track.md) for the full 7-act narrative. This document captures GCC-specific framing and substitutions.
+GCC variant. See the [commercial talk-track](../../commercial/ai/talk-track.md) for the full 7-act narrative. This document captures GCC-specific framing and substitutions.
 
 ## Overview
 
@@ -36,7 +36,7 @@ The two Copilot DLP policies (prompt SIT block + label block) deploy identically
 
 Sentinel is GA in GCC (Azure portal experience). The Defender portal Sentinel experience rolls out separately per GCC tenant — if it's available, use it; if not, demo in the Azure portal.
 
-All 7 analytics rules deploy identically. The `PVAISec-RiskyAIUsageCorrel` cross-signal rule still correlates across the same `SecurityAlert` / `OfficeActivity` tables.
+All 7 analytics rules deploy identically. The `PVAI-RiskyAIUsageCorrel` cross-signal rule still correlates across the same `SecurityAlert` / `OfficeActivity` tables.
 
 ### Act 6 — The integrated loop in GCC
 
@@ -51,7 +51,7 @@ The same 6-step adaptive loop applies. One caveat: IRM feature rollout in GCC ca
 > "This lab targets GCC (Moderate). GCC High and DoD have more restricted feature rollouts and some APIs explicitly don't work — for example, Graph `assignSensitivityLabel` is unavailable in L4/L5. For GCC High or DoD, validate each capability against Azure Government service descriptions before deploying."
 
 **Q: "Does the cross-signal correlation still fire in GCC?"**
-> "Yes, the `PVAISec-RiskyAIUsageCorrel` rule works identically — it queries `SecurityAlert` rows from the IRM and DLP pipelines and joins them. The only GCC-specific concern: IRM feature rollout timing affects how soon those alerts start flowing. Once both sides are populated, correlation fires on schedule."
+> "Yes, the `PVAI-RiskyAIUsageCorrel` rule works identically — it queries `SecurityAlert` rows from the IRM and DLP pipelines and joins them. The only GCC-specific concern: IRM feature rollout timing affects how soon those alerts start flowing. Once both sides are populated, correlation fires on schedule."
 
 **Q: "Can we use the Defender portal?"**
 > "Sentinel in the Defender portal rolls out to GCC on a separate schedule from commercial. Validate in your tenant — if it's available, use it for the unified SecOps experience. If not, the Azure portal works identically; the lab's artifacts are portable. Microsoft has committed to bringing the Defender portal experience to GCC; timeline varies by tenant."
@@ -59,7 +59,7 @@ The same 6-step adaptive loop applies. One caveat: IRM feature rollout in GCC ca
 **Q: "Does DSPM for AI work in GCC?"**
 > "Yes, DSPM for AI is available in GCC Moderate per MS Learn service descriptions (Create policies and view analytics for AI apps = Available). The single GCC-H/DoD caveat — 'Browse to URL policy cannot be created; only supported AI sites' — doesn't apply to regular GCC. Activation flows identically to commercial (see commercial RUNBOOK section 7)."
 
-**Q: "Do all 11 workloads in the ai-security lab deploy in GCC?"**
+**Q: "Do all 11 workloads in the `ai` profile deploy in GCC?"**
 > "Based on MS Learn service-description tables, yes for 9 of them confirmed Available (testUsers, sensitivityLabels, retention incl. AI-Applications, eDiscovery, communicationCompliance, insiderRisk, conditionalAccess, auditConfig, sentinelIntegration). For dlp, the Copilot label-block policy is in the April 2025 Purview-for-Copilot wave so should work; Copilot prompt SIT and Browser/Network Data Security are the real gaps to validate per-tenant. The readiness scripts catch exactly this."
 
 ## What stays identical

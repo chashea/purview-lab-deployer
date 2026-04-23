@@ -412,42 +412,10 @@ function Get-ProfileConfigMapping {
     param()
 
     return @{
-        # Canonical profiles
         'basic'            = 'basic-demo.json'
         'ai'               = 'ai-demo.json'
         'purview-sentinel' = 'purview-sentinel-demo.json'
-        # Deprecated aliases — emit warning at call site via Resolve-LabProfile
-        'basic-lab'        = 'basic-demo.json'
-        'shadow-ai'        = 'ai-demo.json'
-        'copilot-dlp'      = 'ai-demo.json'
-        'copilot-protection' = 'ai-demo.json'
-        'ai-security'      = 'ai-demo.json'
     }
-}
-
-function Resolve-LabProfile {
-    [CmdletBinding()]
-    [OutputType([string])]
-    param(
-        [Parameter(Mandatory)]
-        [string]$LabProfile
-    )
-
-    $deprecated = @{
-        'basic-lab'          = 'basic'
-        'shadow-ai'          = 'ai'
-        'copilot-dlp'        = 'ai'
-        'copilot-protection' = 'ai'
-        'ai-security'        = 'ai'
-    }
-
-    if ($deprecated.ContainsKey($LabProfile)) {
-        $canonical = $deprecated[$LabProfile]
-        Write-Warning "Profile '$LabProfile' is deprecated; use '$canonical' instead. Resolving to '$canonical'."
-        return $canonical
-    }
-
-    return $LabProfile
 }
 
 function Test-LabAzPrerequisites {
@@ -788,7 +756,6 @@ Export-ModuleMember -Function @(
     'Export-LabManifest'
     'Import-LabManifest'
     'Get-ProfileConfigMapping'
-    'Resolve-LabProfile'
     'Test-LabAzPrerequisites'
     'Get-LabStringArray'
     'Get-LabSupportedParameterName'

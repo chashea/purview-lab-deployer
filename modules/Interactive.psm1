@@ -43,9 +43,9 @@ function Request-LabProfile {
     param()
 
     $profiles = @(
-        @{ Number = 1; Name = 'basic';            Aliases = @('basic-lab');                                              Description = 'OneDrive/Teams/Outlook/SharePoint compliance baseline' }
-        @{ Number = 2; Name = 'ai';               Aliases = @('shadow-ai', 'copilot-dlp', 'copilot-protection', 'ai-security'); Description = 'Copilot + gen-AI governance (Copilot DLP + Shadow AI + Sentinel)' }
-        @{ Number = 3; Name = 'purview-sentinel'; Aliases = @();                                                         Description = 'Standalone Purview → Sentinel integration lab' }
+        @{ Number = 1; Name = 'basic';            Description = 'OneDrive/Teams/Outlook/SharePoint compliance baseline' }
+        @{ Number = 2; Name = 'ai';               Description = 'Copilot + gen-AI governance (Copilot DLP + Shadow AI + Sentinel)' }
+        @{ Number = 3; Name = 'purview-sentinel'; Description = 'Standalone Purview → Sentinel integration lab' }
     )
 
     $profileNumbers = ($profiles | ForEach-Object { $_.Number }) -join '/'
@@ -68,8 +68,7 @@ function Request-LabProfile {
             $hasNumericInput = [int]::TryParse($trimmedProfileInput, [ref]$parsedNumber)
             $match = $profiles | Where-Object {
                 ($hasNumericInput -and $_.Number -eq $parsedNumber) -or
-                $_.Name -eq $trimmedProfileInput -or
-                (@($_.Aliases) -contains $trimmedProfileInput)
+                $_.Name -eq $trimmedProfileInput
             }
             if ($match) {
                 $selectedLabProfile = $match.Name

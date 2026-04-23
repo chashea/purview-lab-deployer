@@ -41,7 +41,7 @@
     (Config mode) Path to the lab configuration JSON file.
 
 .PARAMETER LabProfile
-    (Config mode) Lab profile shorthand (basic-lab, shadow-ai, copilot-protection).
+    (Config mode) Lab profile shorthand (basic, ai, purview-sentinel).
 
 .PARAMETER Cloud
     Cloud environment (commercial or gcc). Default: commercial.
@@ -84,13 +84,13 @@
 
 .EXAMPLE
     # Config mode — uses lab deployer config
-    ./scripts/Invoke-SmokeTest.ps1 -LabProfile basic-lab -Cloud commercial
+    ./scripts/Invoke-SmokeTest.ps1 -LabProfile basic -Cloud commercial
 
 .EXAMPLE
-    ./scripts/Invoke-SmokeTest.ps1 -LabProfile basic-lab -ValidateOnly -Since "2026-04-15T15:00:00"
+    ./scripts/Invoke-SmokeTest.ps1 -LabProfile basic -ValidateOnly -Since "2026-04-15T15:00:00"
 
 .EXAMPLE
-    ./scripts/Invoke-SmokeTest.ps1 -LabProfile basic-lab -BurstActivity -Cloud commercial
+    ./scripts/Invoke-SmokeTest.ps1 -LabProfile basic -BurstActivity -Cloud commercial
 #>
 
 [CmdletBinding(SupportsShouldProcess, DefaultParameterSetName = 'Send')]

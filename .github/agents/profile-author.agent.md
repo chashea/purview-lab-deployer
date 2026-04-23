@@ -38,19 +38,16 @@ Status values: `available`, `limited` (warns), `delayed` (warns), `unavailable` 
 
 | Profile | Commercial | GCC | Prefix | Config | Notes |
 |---------|-----------|-----|--------|--------|-------|
-| basic-lab | Yes | Yes | PVLab | basic-lab-demo.json | Core Purview (non-AI) |
-| shadow-ai | Yes | Yes | PVShadowAI | shadow-ai-demo.json | 5 DLP policies across Devices/Browser/Network/CopilotExperiences |
-| copilot-protection | Yes | Yes | PVCopilotDLP | copilot-dlp-demo.json | 2 Copilot DLP policies (prompt SIT + label block) |
-| purview-sentinel | Yes | Yes | PVSentinel | purview-sentinel-demo.json | Sentinel + Purview signal integration. Requires Azure subscription. |
-| ai-security | Yes | Yes | PVAISec | ai-security-demo.json | **Integrated** profile combining Copilot DLP + Shadow AI + Sentinel under one prefix. 11 workloads, 7 Sentinel analytics rules (3 AI-specific), 2 workbooks. |
-| foundry | Yes | No | PVFoundry | foundry-demo.json | AI Foundry agent security (separate repo sibling) |
+| basic | Yes | Yes | PVLab | basic-demo.json | Core Purview (non-AI) compliance workloads |
+| ai | Yes | Yes | PVAI | ai-demo.json | **Integrated** profile: Copilot DLP + Shadow AI (Endpoint/Browser/Network) + Sentinel under one prefix. 11 workloads, 7 Sentinel analytics rules (3 AI-specific), 2 workbooks. Requires Azure subscription. |
+| purview-sentinel | Yes | Yes | PVSentinel | purview-sentinel-demo.json | Sentinel + Purview signal integration (DLP / IRM / sensitivity labels). Requires Azure subscription. |
 
 ## README conventions
 
-Profile READMEs follow a consistent structure. Reference `profiles/commercial/basic-lab/README.md` as the baseline template:
+Profile READMEs follow a consistent structure. Reference `profiles/commercial/basic/README.md` as the baseline template:
 
 1. **Title** — `# <Profile Name> — <Cloud> Deployment Guide`
-2. **Tagline** — One-line value proposition (optional, used in copilot-protection and foundry)
+2. **Tagline** — One-line value proposition (optional)
 3. **Scenario Overview** — Table summarizing component counts
 4. **Prerequisites** — Licenses, roles, modules required
 5. **Quick Start** — Deploy, dry-run, and teardown commands

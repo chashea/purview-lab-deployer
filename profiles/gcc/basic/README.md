@@ -6,21 +6,21 @@ Baseline Microsoft Purview lab demonstrating core compliance workloads in GCC.
 
 ```powershell
 # Deploy
-./Deploy-Lab.ps1 -Cloud gcc -LabProfile basic-lab -TenantId <tenant-guid>
+./Deploy-Lab.ps1 -Cloud gcc -LabProfile basic -TenantId <tenant-guid>
 
 # Deploy with new test user creation
-./Deploy-Lab.ps1 -Cloud gcc -LabProfile basic-lab -TenantId <tenant-guid> -TestUsersMode create
+./Deploy-Lab.ps1 -Cloud gcc -LabProfile basic -TenantId <tenant-guid> -TestUsersMode create
 
 # Dry run
-./Deploy-Lab.ps1 -Cloud gcc -LabProfile basic-lab -WhatIf
+./Deploy-Lab.ps1 -Cloud gcc -LabProfile basic -WhatIf
 
 # Remove
-./Remove-Lab.ps1 -Cloud gcc -LabProfile basic-lab -Confirm:$false -TenantId <tenant-guid>
+./Remove-Lab.ps1 -Cloud gcc -LabProfile basic -Confirm:$false -TenantId <tenant-guid>
 ```
 
 ## Scope
 
-- **Config:** `configs/gcc/basic-lab-demo.json`
+- **Config:** `configs/gcc/basic-demo.json`
 - **Prefix:** `PVLab` (all resources scoped to this prefix)
 - **Cloud:** gcc
 

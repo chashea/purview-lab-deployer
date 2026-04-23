@@ -51,14 +51,3 @@ Standalone Purview → Sentinel integration: Log Analytics workspace, Defender X
 ./Deploy-Lab.ps1 -Cloud commercial -LabProfile purview-sentinel -TenantId <tenant-guid>
 ```
 
-## Deprecated aliases
-
-The following names are still accepted and emit a `Write-Warning` at runtime:
-
-| Deprecated | Resolves to |
-|------------|-------------|
-| `basic-lab` | `basic` |
-| `shadow-ai` | `ai` |
-| `copilot-dlp` | `ai` |
-| `copilot-protection` | `ai` |
-| `ai-security` | `ai` |

@@ -15,7 +15,7 @@ $mg = Get-MgContext
 "Graph account: $($mg.Account)"
 "Graph scopes: $($mg.Scopes -join ', ')"
 
-# Az context (only matters for Sentinel / ai-security profiles)
+# Az context (only matters for ai / purview-sentinel profiles)
 $az = Get-AzContext -ErrorAction SilentlyContinue
 if ($az) { "Az tenant: $($az.Tenant.Id), sub: $($az.Subscription.Name)" } else { "Az: not connected" }
 

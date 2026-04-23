@@ -1,9 +1,9 @@
 # Shadow AI Smoke Test Prompts
 
-Test prompts to trigger the shadow-ai lab's DLP, Insider Risk, and Communication Compliance policies. Use these before a live demo to populate Activity Explorer, DLP alert dashboard, and IRM risk signals.
+Test prompts to trigger the `ai` profile's Shadow AI DLP, Insider Risk, and Communication Compliance policies. Use these before a live demo to populate Activity Explorer, DLP alert dashboard, and IRM risk signals.
 
 > **Prerequisites:**
-> - Shadow AI lab deployed (`./Deploy-Lab.ps1 -LabProfile shadow-ai -Cloud commercial`)
+> - `ai` profile deployed (`./Deploy-Lab.ps1 -LabProfile ai -Cloud commercial`)
 > - DLP policies propagated (allow up to 4 hours after deploy)
 > - Endpoint DLP browser-and-domain restrictions pushed (`./scripts/Set-ShadowAiEndpointDlpDomains.ps1 -Apply`)
 > - At least one test device onboarded to Microsoft Defender for Endpoint
@@ -222,5 +222,5 @@ Search-UnifiedAuditLog -StartDate (Get-Date).AddHours(-2) -EndDate (Get-Date) `
 Or re-run the readiness check:
 
 ```powershell
-./scripts/Test-ShadowAiReady.ps1 -LabProfile shadow-ai -Cloud commercial
+./scripts/Test-ShadowAiReady.ps1 -LabProfile ai -Cloud commercial
 ```

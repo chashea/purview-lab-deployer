@@ -1,6 +1,6 @@
-# Integrated AI Security Lab — Post-Deploy Runbook (Commercial)
+# Integrated AI Governance Lab — Post-Deploy Runbook (Commercial)
 
-Post-deployment steps and demo-day preparation. This lab spans **all three focused lab profiles** (Copilot DLP, Shadow AI, Sentinel) under a single `PVAISec` prefix — use each focused lab's RUNBOOK for deeper per-surface guidance; this document covers the integrated flow.
+Post-deployment steps and demo-day preparation. This lab bundles Copilot DLP + Shadow AI (Endpoint / Browser / Network) + Sentinel under a single `PVAI` prefix — see `profiles/commercial/purview-sentinel/RUNBOOK.md` for deeper SOC-side guidance; this document covers the integrated flow.
 
 ## Prerequisites
 
@@ -15,9 +15,9 @@ Post-deployment steps and demo-day preparation. This lab spans **all three focus
 ## 1. Run all three readiness checks
 
 ```powershell
-./scripts/Test-CopilotDlpReady.ps1 -ConfigPath ./configs/commercial/ai-security-demo.json -Cloud commercial
-./scripts/Test-ShadowAiReady.ps1   -ConfigPath ./configs/commercial/ai-security-demo.json -Cloud commercial
-./scripts/Test-SentinelReady.ps1   -ConfigPath ./configs/commercial/ai-security-demo.json -Cloud commercial -SubscriptionId <sub>
+./scripts/Test-CopilotDlpReady.ps1 -ConfigPath ./configs/commercial/ai-demo.json -Cloud commercial
+./scripts/Test-ShadowAiReady.ps1   -ConfigPath ./configs/commercial/ai-demo.json -Cloud commercial
+./scripts/Test-SentinelReady.ps1   -ConfigPath ./configs/commercial/ai-demo.json -Cloud commercial -SubscriptionId <sub>
 ```
 
 Green across all three = lab is integrated-ready. The Sentinel check will also flag missing Copilot DLP or Shadow AI signal flow via the 24h data-flow check.
@@ -25,7 +25,7 @@ Green across all three = lab is integrated-ready. The Sentinel check will also f
 Deep smoke test:
 
 ```powershell
-./scripts/Test-SentinelLab.ps1 -ConfigPath ./configs/commercial/ai-security-demo.json
+./scripts/Test-SentinelLab.ps1 -ConfigPath ./configs/commercial/ai-demo.json
 ```
 
 ---
@@ -35,9 +35,9 @@ Deep smoke test:
 Tenant-wide setting; the config lists 10 AI sites to block. Review before applying (this touches settings shared by other DLP policies):
 
 ```powershell
-./scripts/Set-ShadowAiEndpointDlpDomains.ps1 -ConfigPath ./configs/commercial/ai-security-demo.json
+./scripts/Set-ShadowAiEndpointDlpDomains.ps1 -ConfigPath ./configs/commercial/ai-demo.json
 # Review, then:
-./scripts/Set-ShadowAiEndpointDlpDomains.ps1 -ConfigPath ./configs/commercial/ai-security-demo.json -Apply
+./scripts/Set-ShadowAiEndpointDlpDomains.ps1 -ConfigPath ./configs/commercial/ai-demo.json -Apply
 ```
 
 ---
@@ -54,7 +54,7 @@ Full walkthrough: see `profiles/commercial/purview-sentinel/RUNBOOK.md` section 
 
 Purview portal → Settings → Insider Risk Management → Export alerts → On.
 
-This is what lets the `PVAISec-RiskyAIUsageCorrel` cross-table Sentinel rule actually fire — without it, the IRM side of the correlation stays empty.
+This is what lets the `PVAI-RiskyAIUsageCorrel` cross-table Sentinel rule actually fire — without it, the IRM side of the correlation stays empty.
 
 ---
 
@@ -104,14 +104,14 @@ Integrated demos need all three signal sources actively flowing. Seed 30-60 min 
 
 ```powershell
 # Send test emails (triggers DLP + Defender XDR flow to Sentinel)
-./scripts/Invoke-SmokeTest.ps1 -ConfigPath ./configs/commercial/ai-security-demo.json
+./scripts/Invoke-SmokeTest.ps1 -ConfigPath ./configs/commercial/ai-demo.json
 ```
 
 Manual supplementary prompts:
 - Copilot DLP: prompts from `scripts/copilot-test-prompts.md` (SSN/CC/PHI in Copilot chat)
 - Shadow AI: prompts from `scripts/shadow-ai-test-prompts.md` (paste/upload to external AI)
 
-Running both prompt libraries from the same demo user triggers the cross-signal `PVAISec-RiskyAIUsageCorrel` rule within ~4 hours.
+Running both prompt libraries from the same demo user triggers the cross-signal `PVAI-RiskyAIUsageCorrel` rule within ~4 hours.
 
 ---
 
@@ -120,7 +120,7 @@ Running both prompt libraries from the same demo user triggers the cross-signal 
 Onboard the workspace to the Defender portal for the unified SecOps experience. New Sentinel customers after July 1, 2025 auto-onboard; existing workspaces opt in.
 
 1. Sign into [security.microsoft.com](https://security.microsoft.com)
-2. Microsoft Sentinel → connect workspace `PVAISec-ws`
+2. Microsoft Sentinel → connect workspace `PVAI-ws`
 3. After onboarding: Defender portal → Microsoft Sentinel → your rules, connectors, workbooks, incidents all appear alongside Defender XDR signals in advanced hunting
 
 ---
@@ -132,8 +132,8 @@ Teardown is safety-gated (same gates as the sentinel profile).
 ### Non-destructive (default — preserves Azure resources)
 
 ```powershell
-./Remove-Lab.ps1 -Cloud commercial -LabProfile ai-security `
-    -ManifestPath ./manifests/commercial/PVAISec_<timestamp>.json `
+./Remove-Lab.ps1 -Cloud commercial -LabProfile ai `
+    -ManifestPath ./manifests/commercial/PVAI_<timestamp>.json `
     -SubscriptionId <subscription-guid>
 ```
 
@@ -149,15 +149,15 @@ Requires ALL:
 - Name + subscription match
 
 ```powershell
-./Remove-Lab.ps1 -Cloud commercial -LabProfile ai-security `
-    -ManifestPath ./manifests/commercial/PVAISec_<timestamp>.json `
+./Remove-Lab.ps1 -Cloud commercial -LabProfile ai `
+    -ManifestPath ./manifests/commercial/PVAI_<timestamp>.json `
     -SubscriptionId <subscription-guid> -ForceDeleteResourceGroup
 ```
 
 ### Verify clean teardown
 
 ```bash
-az resource list --resource-group PVAISec-rg --subscription <sub> --output table
+az resource list --resource-group PVAI-rg --subscription <sub> --output table
 # Should be empty after destructive teardown
 ```
 
@@ -188,7 +188,7 @@ az resource list --resource-group PVAISec-rg --subscription <sub> --output table
 DLP policies deploy in `TestWithNotifications` by default. Switch to enforce when ready:
 
 1. Purview portal → DLP → Policies
-2. Select each `PVAISec-*` policy
+2. Select each `PVAI-*` policy
 3. Change status: Test it out → Turn it on
 4. Allow 4h for propagation
 

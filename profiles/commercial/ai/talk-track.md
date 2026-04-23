@@ -1,4 +1,4 @@
-# Integrated AI Security Lab — Customer Talk Track
+# Integrated AI Governance Lab — Customer Talk Track
 
 ## Overview
 
@@ -12,8 +12,8 @@
 
 ## When to use this lab vs. focused labs
 
-- **Use this lab** when the customer wants to see the full picture — especially when CISO, SecOps lead, and compliance director are in the same room.
-- **Use focused labs** (`copilot-protection`, `shadow-ai`, `purview-sentinel`) when the audience is a single persona or the time budget is tight (15-30 min).
+- **Use this lab** (`-LabProfile ai`) when the customer wants to see the full picture — especially when CISO, SecOps lead, and compliance director are in the same room.
+- **Use focused labs** (`-LabProfile basic` for compliance baseline, `-LabProfile purview-sentinel` for SOC-only audiences) when the audience is a single persona or the time budget is tight (15-30 min).
 
 ---
 
@@ -42,7 +42,7 @@
 2. **AI-DLP-Match-Audit** — every DLP rule match across all surfaces
 3. **AI-Policy-Override-Audit** — attempts to override DLP blocks
 
-**Portal:** Sentinel workspace → workbook `PVAISec-AI Risk Signals`
+**Portal:** Sentinel workspace → workbook `PVAI-AI Risk Signals`
 
 > "Once you've deployed this lab and signals are flowing, the workbook gives you the aggregated view: Copilot DLP blocks over time, Shadow AI paste attempts by target site (ChatGPT vs. Claude vs. Gemini), Risky AI Usage IRM alerts, and the key panel — **cross-signal users**, the users who have both Copilot DLP blocks AND IRM AI scoring. Those are your real AI-risk humans."
 
@@ -54,20 +54,20 @@
 
 ## Act 2: Copilot DLP — "Sanctioned AI with guardrails" (10 min)
 
-**Portal:** Purview → DLP → Policies → `PVAISec-Copilot Prompt SIT Block` and `PVAISec-Copilot Labeled Content Block`
+**Portal:** Purview → DLP → Policies → `PVAI-Copilot Prompt SIT Block` and `PVAI-Copilot Labeled Content Block`
 
 > "Microsoft 365 Copilot is the sanctioned tool. It runs inside your compliance boundary. But sanctioned doesn't mean unguarded."
 
 **Show the two Copilot DLP policies:**
 
-### PVAISec-Copilot Prompt SIT Block (public preview)
+### PVAI-Copilot Prompt SIT Block (public preview)
 - Location: Microsoft 365 Copilot and Copilot Chat (`CopilotExperiences`)
 - Condition: `Content contains sensitive info types` (SSN, Credit Card, PHI)
 - Action: `Prevent Copilot from processing content` → blocks the response AND blocks that sensitive text from reaching internal or web searches
 
 > "One policy, three protections: no Copilot response, no internal search, no web search. The sensitive string never leaves the guardrail."
 
-### PVAISec-Copilot Labeled Content Block (GA)
+### PVAI-Copilot Labeled Content Block (GA)
 - Location: CopilotExperiences
 - Condition: `Content contains sensitivity label = AI Blocked from External Tools` or `AI Regulated Data`
 - Action: Prevent Copilot from processing labeled content → files auto-labeled on SSN detection immediately become invisible to Copilot
@@ -94,7 +94,7 @@
 
 ### Layer 1 — Devices (Endpoint DLP)
 
-**Show:** `PVAISec-Shadow AI - Endpoint Protection`
+**Show:** `PVAI-Shadow AI - Endpoint Protection`
 - Location: Devices
 - Block list: 10 AI sites (ChatGPT, Claude, Gemini, Perplexity, Poe, HuggingFace, DeepSeek, etc.)
 - Enforcement: tiered by Insider Risk score
@@ -103,7 +103,7 @@
 
 ### Layer 2 — Browser (Edge for Business)
 
-**Show:** `PVAISec-Shadow AI - Browser Prompt Protection`
+**Show:** `PVAI-Shadow AI - Browser Prompt Protection`
 - Inline inspection of prompt text in Edge for Business
 - Covers consumer AI sites (Copilot consumer, ChatGPT consumer, Gemini, DeepSeek)
 
@@ -111,7 +111,7 @@
 
 ### Layer 3 — Network (SASE/SSE)
 
-**Show:** `PVAISec-Shadow AI - Network AI Traffic`
+**Show:** `PVAI-Shadow AI - Network AI Traffic`
 - Network-layer DLP via SASE/SSE integration
 - Covers non-Edge browsers, non-browser apps, APIs
 
@@ -132,9 +132,9 @@
 > "Here's where the system gets adaptive. The DLP policies you just saw aren't one-size-fits-all. They're tiered by the user's real-time Insider Risk score."
 
 **Show the 3 IRM policies:**
-- PVAISec-Risky AI Usage Watch (detects Copilot prompt injection, protected material access)
-- PVAISec-AI Data Exfiltration Watch (correlates DLP matches with data-leak signals)
-- PVAISec-Departing User AI Risk (elevates risk for departing users who touch AI)
+- PVAI-Risky AI Usage Watch (detects Copilot prompt injection, protected material access)
+- PVAI-AI Data Exfiltration Watch (correlates DLP matches with data-leak signals)
+- PVAI-Departing User AI Risk (elevates risk for departing users who touch AI)
 
 **Wizard-step choices to call out (each policy uses the same defaults — matches what most customers do in the portal):**
 - **Users and groups:** All users and groups in your organization (no priority-user scoping — keeps the demo simple and matches the default)
@@ -171,24 +171,24 @@
 
 ### Seven analytics rules, including three AI-specific
 
-1. **PVAISec-HighSevDLP** — high-severity DLP alerts
-2. **PVAISec-IRMHighSev** — Insider Risk escalations
-3. **PVAISec-LabelDowngrade** — pre-exfiltration label stripping (classic insider pattern)
-4. **PVAISec-MassDownloadAfterDLP** — cross-table: DLP match + mass download within 4h
-5. **PVAISec-CopilotDLPPromptBlock** — AI-specific: every Copilot DLP block becomes an incident
-6. **PVAISec-ShadowAIPasteUpload** — AI-specific: paste/upload to ChatGPT/Claude/Gemini
-7. **PVAISec-RiskyAIUsageCorrel** — the key rule: users with BOTH Risky AI IRM alerts AND DLP blocks on AI surfaces in the last 4 hours. Two soft signals become a hard incident.
+1. **PVAI-HighSevDLP** — high-severity DLP alerts
+2. **PVAI-IRMHighSev** — Insider Risk escalations
+3. **PVAI-LabelDowngrade** — pre-exfiltration label stripping (classic insider pattern)
+4. **PVAI-MassDownloadAfterDLP** — cross-table: DLP match + mass download within 4h
+5. **PVAI-CopilotDLPPromptBlock** — AI-specific: every Copilot DLP block becomes an incident
+6. **PVAI-ShadowAIPasteUpload** — AI-specific: paste/upload to ChatGPT/Claude/Gemini
+7. **PVAI-RiskyAIUsageCorrel** — the key rule: users with BOTH Risky AI IRM alerts AND DLP blocks on AI surfaces in the last 4 hours. Two soft signals become a hard incident.
 
 ### The IRM auto-triage playbook
 
-**Show:** `PVAISec-IRM-AutoTriage` Logic App
+**Show:** `PVAI-IRM-AutoTriage` Logic App
 
 > "When an IRM high-severity incident fires, this Logic App auto-enriches the Sentinel incident with a triage comment. Managed identity, no stored credentials. Sentinel first-party app gets Logic App Contributor on the resource group. Incident-to-comment in under a second."
 
 ### Two workbooks
 
-- **PVAISec-Purview Signals** — DLP volume, IRM severity, label activity, top users
-- **PVAISec-AI Risk Signals** — Copilot DLP blocks, Shadow AI by target site, Risky AI IRM, cross-signal users, Copilot interaction volume
+- **PVAI-Purview Signals** — DLP volume, IRM severity, label activity, top users
+- **PVAI-AI Risk Signals** — Copilot DLP blocks, Shadow AI by target site, Risky AI IRM, cross-signal users, Copilot interaction volume
 
 ### The Defender portal unified experience
 
@@ -203,11 +203,11 @@
 > "Let me close with the loop that makes this integrated:
 >
 > 1. Rachel tries to paste a customer SSN into ChatGPT. **Endpoint DLP blocks** it.
-> 2. That block generates a `SecurityAlert`. The `PVAISec-ShadowAIPasteUpload` Sentinel rule creates an incident. The SOC sees it.
+> 2. That block generates a `SecurityAlert`. The `PVAI-ShadowAIPasteUpload` Sentinel rule creates an incident. The SOC sees it.
 > 3. Rachel also has been running Risky AI prompts in Copilot Chat this week. **Copilot prompt SIT DLP** has blocked three. Her IRM score has crept up.
 > 4. **Insider Risk Management** now has Rachel tagged 'Elevated'.
 > 5. The *next* time Rachel pastes sensitive data to any AI surface, the DLP enforcement tier **tightens automatically** — no admin action needed. She gets hard-blocked where she used to just get a warning.
-> 6. The `PVAISec-RiskyAIUsageCorrel` Sentinel rule notices she has both IRM alerts and DLP AI blocks in the same 4-hour window. **Cross-table incident fires.** The auto-triage playbook enriches it. The SOC sees a single incident that says 'user combining IRM signals and DLP signals on AI surfaces' — and that's the investigation-worthy one.
+> 6. The `PVAI-RiskyAIUsageCorrel` Sentinel rule notices she has both IRM alerts and DLP AI blocks in the same 4-hour window. **Cross-table incident fires.** The auto-triage playbook enriches it. The SOC sees a single incident that says 'user combining IRM signals and DLP signals on AI surfaces' — and that's the investigation-worthy one.
 >
 > That loop closes entirely inside Microsoft tooling, with one config file of deploy, and shows up in one SIEM pane."
 
@@ -223,7 +223,7 @@
 > 4. **Sentinel** — unified SIEM pane, 7 analytics rules, auto-triage playbook, cross-signal correlation
 > 5. **The loop** — signals reinforce each other automatically, no admin intervention
 >
-> This entire environment was deployed programmatically in 20-25 minutes from one config file. It's config-driven, repeatable, tears down cleanly. It's also composable — you can peel off any one lab profile (copilot-protection, shadow-ai, purview-sentinel) for focused audiences.
+> This entire environment was deployed programmatically in 20-25 minutes from one config file. It's config-driven, repeatable, tears down cleanly. It's also composable — you can swap to the focused `basic` or `purview-sentinel` profile for audiences that only need the compliance or SOC view.
 >
 > That's the Microsoft integrated AI security model. Not four tools. One system."
 
@@ -250,7 +250,7 @@
 > "The Copilot DLP location covers prebuilt agents in M365 Copilot. Custom agents built in Copilot Studio have their own controls under Dataverse data policies and agent governance. DSPM for AI extends the visibility to those agents. The model is the same across both — sensitivity labels travel, SITs are honored — the control surface changes per agent type."
 
 **Q: "Can we scope the rollout?"**
-> "Every policy in the lab supports group-based scoping. Config already uses `PVAISec-Business-Users` / `PVAISec-AI-Governance` / `PVAISec-Privileged-Data-Owners` groups. Production rollout is typically: pilot on one department in simulation mode → enable enforcement → expand. Same config, change `simulationMode: false` and populate group membership."
+> "Every policy in the lab supports group-based scoping. Config already uses `PVAI-Business-Users` / `PVAI-AI-Governance` / `PVAI-Privileged-Data-Owners` groups. Production rollout is typically: pilot on one department in simulation mode → enable enforcement → expand. Same config, change `simulationMode: false` and populate group membership."
 
 **Q: "How does the teardown work?"**
 > "Two modes. Non-destructive: removes Purview policies and Sentinel child resources, preserves the Azure resource group and workspace for quick redeploy. Destructive: deletes the resource group entirely — but requires all of a manifest, the correct tags, exact name match, and an explicit `-ForceDeleteResourceGroup` flag. Multiple guards prevent accidents. See RUNBOOK section 10."
@@ -289,4 +289,4 @@
 | Playbook | 1 | IRM auto-triage Logic App |
 | Seed emails | 4 | Cross-reference Copilot + Shadow AI scenarios |
 | Seed documents | 5 | Auto-labeled via Graph assignSensitivityLabel |
-| Config | `configs/commercial/ai-security-demo.json` | Prefix: `PVAISec` |
+| Config | `configs/commercial/ai-demo.json` | Prefix: `PVAI` |

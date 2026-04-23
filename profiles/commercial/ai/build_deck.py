@@ -177,12 +177,12 @@ def slide_title():
     add_text(s, Inches(0.6), Inches(1.2), Inches(4.0), Inches(0.5),
              "PURVIEW LAB", size=13, bold=True, color=TEAL)
     add_text(s, Inches(0.6), Inches(1.6), Inches(4.2), Inches(1.2),
-             "Integrated\nAI Security Lab", size=36, bold=True, color=WHITE)
+             "Integrated\nAI Governance Lab", size=36, bold=True, color=WHITE)
     add_text(s, Inches(0.6), Inches(3.0), Inches(4.2), Inches(2.0),
              "Copilot DLP +\nShadow AI prevention +\nSentinel SIEM,\none correlated loop.",
              size=16, color=WHITE)
     add_text(s, Inches(0.6), Inches(6.6), Inches(4.2), Inches(0.4),
-             "PVAISec profile  |  commercial cloud", size=11, bold=True, color=TEAL)
+             "PVAI profile  |  commercial cloud", size=11, bold=True, color=TEAL)
     # right hero
     add_text(s, Inches(5.6), Inches(1.6), Inches(7.4), Inches(0.5),
              "THE EXEC LINE", size=13, bold=True, color=BLUE)
@@ -293,7 +293,7 @@ def slide_loop():
 
 def slide_deploy_overview():
     s = add_slide()
-    add_header(s, "What gets deployed", "One prefix: PVAISec")
+    add_header(s, "What gets deployed", "One prefix: PVAI")
     headers = ["Surface", "Count", "Resources"]
     rows = [
         ("Identity", "5 + 3", "Test users + security groups"),
@@ -309,7 +309,7 @@ def slide_deploy_overview():
     ]
     add_table(s, Inches(0.6), Inches(1.9), Inches(12.1), Inches(4.8), headers, rows)
     add_text(s, Inches(0.6), Inches(6.75), Inches(12.1), Inches(0.4),
-             "Config: configs/commercial/ai-security-demo.json  |  Deploy: ~20-25 min  |  Propagation: 4h DLP, 60 min Sentinel",
+             "Config: configs/commercial/ai-demo.json  |  Deploy: ~20-25 min  |  Propagation: 4h DLP, 60 min Sentinel",
              size=11, color=MUTED)
 
 
@@ -328,7 +328,7 @@ def slide_act1():
     add_text(s, Inches(7.0), Inches(2.0), Inches(6.0), Inches(0.5),
              "Then pivot to Sentinel workbook", size=18, bold=True, color=NAVY)
     add_text(s, Inches(7.0), Inches(2.6), Inches(6.0), Inches(3.0),
-             "PVAISec-AI Risk Signals workbook:\n\n— Copilot DLP blocks over time\n— Shadow AI paste attempts by target site\n— Risky AI Usage IRM alerts\n— Cross-signal users (Copilot + IRM)",
+             "PVAI-AI Risk Signals workbook:\n\n— Copilot DLP blocks over time\n— Shadow AI paste attempts by target site\n— Risky AI Usage IRM alerts\n— Cross-signal users (Copilot + IRM)",
              size=14, color=SLATE)
 
     add_rounded(s, Inches(0.6), Inches(5.6), Inches(12.1), Inches(1.2), LIGHT)
@@ -498,7 +498,7 @@ def slide_act5_sentinel():
 
 def slide_correlation():
     s = add_slide()
-    add_header(s, "Cross-signal correlation", "PVAISec-RiskyAIUsageCorrel — the key rule", kicker_color=AMBER)
+    add_header(s, "Cross-signal correlation", "PVAI-RiskyAIUsageCorrel — the key rule", kicker_color=AMBER)
 
     # two input panels
     add_rounded(s, Inches(0.6), Inches(2.0), Inches(4.5), Inches(2.0), WHITE, line=LIGHT)
@@ -611,7 +611,7 @@ def slide_deploy_cmds():
     add_text(s, Inches(0.9), Inches(2.15), Inches(11.5), Inches(0.4),
              "DEPLOY", size=12, bold=True, color=TEAL, font="Consolas")
     add_text(s, Inches(0.9), Inches(2.55), Inches(11.5), Inches(1.6),
-             "az login\naz account set --subscription <sub>\n./Deploy-Lab.ps1 -Cloud commercial -LabProfile ai-security `\n    -TenantId <tenant-guid> -SubscriptionId <sub-guid>",
+             "az login\naz account set --subscription <sub>\n./Deploy-Lab.ps1 -Cloud commercial -LabProfile ai `\n    -TenantId <tenant-guid> -SubscriptionId <sub-guid>",
              size=14, color=WHITE, font="Consolas")
 
     # readiness block
@@ -619,9 +619,9 @@ def slide_deploy_cmds():
     add_text(s, Inches(0.9), Inches(4.55), Inches(11.5), Inches(0.4),
              "POST-DEPLOY READINESS", size=12, bold=True, color=BLUE, font="Consolas")
     add_text(s, Inches(0.9), Inches(4.95), Inches(11.5), Inches(1.8),
-             "./scripts/Test-CopilotDlpReady.ps1  -ConfigPath ./configs/commercial/ai-security-demo.json\n"
-             "./scripts/Test-ShadowAiReady.ps1    -ConfigPath ./configs/commercial/ai-security-demo.json\n"
-             "./scripts/Test-SentinelReady.ps1    -ConfigPath ./configs/commercial/ai-security-demo.json\n"
+             "./scripts/Test-CopilotDlpReady.ps1  -ConfigPath ./configs/commercial/ai-demo.json\n"
+             "./scripts/Test-ShadowAiReady.ps1    -ConfigPath ./configs/commercial/ai-demo.json\n"
+             "./scripts/Test-SentinelReady.ps1    -ConfigPath ./configs/commercial/ai-demo.json\n"
              "./scripts/Set-ShadowAiEndpointDlpDomains.ps1 -ConfigPath ./configs/... -Apply",
              size=12, color=SLATE, font="Consolas")
 
@@ -676,11 +676,11 @@ def slide_references():
     add_text(s, Inches(7.0), Inches(1.95), Inches(6.0), Inches(0.5),
              "In this repo", size=16, bold=True, color=NAVY)
     add_bullets(s, Inches(7.0), Inches(2.5), Inches(6.0), Inches(4.0), [
-        "profiles/commercial/ai-security/README.md",
-        "profiles/commercial/ai-security/talk-track.md",
-        "profiles/commercial/ai-security/RUNBOOK.md",
-        "profiles/commercial/ai-security/demo-scenarios.json",
-        "configs/commercial/ai-security-demo.json",
+        "profiles/commercial/ai/README.md",
+        "profiles/commercial/ai/talk-track.md",
+        "profiles/commercial/ai/RUNBOOK.md",
+        "profiles/commercial/ai/demo-scenarios.json",
+        "configs/commercial/ai-demo.json",
     ], size=12)
 
 
@@ -730,6 +730,6 @@ for i, sl in enumerate(prs.slides, start=1):
         continue
     add_footer(sl, i, total)
 
-out = "/Users/charlesshea/repos/purview-lab-deployer/profiles/commercial/ai-security/ai-security-lab.pptx"
+out = "/Users/charlesshea/repos/purview-lab-deployer/profiles/commercial/ai/ai-governance-lab.pptx"
 prs.save(out)
 print(f"wrote {out}  ({total} slides)")

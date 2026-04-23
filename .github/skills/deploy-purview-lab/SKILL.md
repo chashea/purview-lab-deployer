@@ -1,6 +1,6 @@
 ---
 name: deploy-purview-lab
-description: Deploy or dry-run the Purview demo lab using repository scripts, cloud profiles, and workload compatibility checks. Covers all five deployment tracks (basic-lab, shadow-ai, copilot-protection, purview-sentinel, ai-security).
+description: Deploy or dry-run the Purview demo lab using repository scripts, cloud profiles, and workload compatibility checks. Covers the three canonical profiles (basic, ai, purview-sentinel).
 ---
 
 Use this skill when the task is to deploy lab resources, validate a config, or troubleshoot deploy flow.
@@ -9,11 +9,9 @@ Use this skill when the task is to deploy lab resources, validate a config, or t
 
 | Profile | Config | Prefix | Notes |
 |---|---|---|---|
-| basic-lab | `configs/<cloud>/basic-lab-demo.json` | PVLab | Core Purview (non-AI) |
-| shadow-ai | `configs/<cloud>/shadow-ai-demo.json` | PVShadowAI | 5 DLP policies across Devices/Browser/Network/CopilotExperiences |
-| copilot-protection | `configs/<cloud>/copilot-dlp-demo.json` | PVCopilotDLP | Focused Copilot DLP (prompt SIT + label) |
+| basic | `configs/<cloud>/basic-demo.json` | PVLab | Core Purview (non-AI) compliance workloads |
+| ai | `configs/<cloud>/ai-demo.json` | PVAI | Integrated Copilot DLP + Shadow AI (Endpoint/Browser/Network) + Sentinel. Needs Azure sub. |
 | purview-sentinel | `configs/<cloud>/purview-sentinel-demo.json` | PVSentinel | Sentinel + Purview signal integration. Needs Azure sub. |
-| ai-security | `configs/<cloud>/ai-security-demo.json` | PVAISec | Integrated Copilot DLP + Shadow AI + Sentinel. Needs Azure sub. |
 
 Each profile has its own lifecycle and prefix — they can coexist or replace each other.
 
@@ -21,32 +19,30 @@ Each profile has its own lifecycle and prefix — they can coexist or replace ea
 
 1. **Pick cloud/config.** Use the profile shorthand for the common path:
    ```powershell
-   ./Deploy-Lab.ps1 -Cloud commercial -LabProfile ai-security -TenantId <tenant> -SubscriptionId <sub>
+   ./Deploy-Lab.ps1 -Cloud commercial -LabProfile ai -TenantId <tenant> -SubscriptionId <sub>
    ```
    Resolve cloud using `-Cloud` first, then config `cloud`, then default (`commercial`).
 
 2. **Dry-run first when making changes:**
    ```powershell
-   ./Deploy-Lab.ps1 -Cloud commercial -LabProfile ai-security -SkipAuth -WhatIf
+   ./Deploy-Lab.ps1 -Cloud commercial -LabProfile ai -SkipAuth -WhatIf
    ```
 
-3. **Subscription ID for Sentinel profiles:** `purview-sentinel` and `ai-security` require `-SubscriptionId <guid>` (or `PURVIEW_SUBSCRIPTION_ID` env var). The config ships with empty subscriptionId — no tenant-specific GUIDs in the repo.
+3. **Subscription ID for Sentinel-backed profiles:** `ai` and `purview-sentinel` require `-SubscriptionId <guid>` (or `PURVIEW_SUBSCRIPTION_ID` env var). The configs ship with empty subscriptionId — no tenant-specific GUIDs in the repo.
 
 4. **Readiness checks after deploy** (before presenting):
    ```powershell
-   # Per-surface gates
-   ./scripts/Test-CopilotDlpReady.ps1 -LabProfile copilot-protection -Cloud commercial
-   ./scripts/Test-ShadowAiReady.ps1   -LabProfile shadow-ai          -Cloud commercial
-   ./scripts/Test-SentinelReady.ps1   -LabProfile purview-sentinel   -Cloud commercial -SubscriptionId <sub>
+   # ai profile — run all three against the unified config
+   ./scripts/Test-CopilotDlpReady.ps1 -LabProfile ai -Cloud commercial
+   ./scripts/Test-ShadowAiReady.ps1   -LabProfile ai -Cloud commercial
+   ./scripts/Test-SentinelReady.ps1   -LabProfile ai -Cloud commercial -SubscriptionId <sub>
 
-   # For ai-security — run all three against the unified config
-   ./scripts/Test-CopilotDlpReady.ps1 -ConfigPath configs/commercial/ai-security-demo.json -Cloud commercial
-   ./scripts/Test-ShadowAiReady.ps1   -ConfigPath configs/commercial/ai-security-demo.json -Cloud commercial
-   ./scripts/Test-SentinelReady.ps1   -ConfigPath configs/commercial/ai-security-demo.json -Cloud commercial -SubscriptionId <sub>
+   # Sentinel-only profile
+   ./scripts/Test-SentinelReady.ps1   -LabProfile purview-sentinel -Cloud commercial -SubscriptionId <sub>
 
    # Endpoint DLP domain block list push (tenant-wide setting; preview + apply)
-   ./scripts/Set-ShadowAiEndpointDlpDomains.ps1 -ConfigPath configs/commercial/ai-security-demo.json
-   ./scripts/Set-ShadowAiEndpointDlpDomains.ps1 -ConfigPath configs/commercial/ai-security-demo.json -Apply
+   ./scripts/Set-ShadowAiEndpointDlpDomains.ps1 -LabProfile ai -Cloud commercial
+   ./scripts/Set-ShadowAiEndpointDlpDomains.ps1 -LabProfile ai -Cloud commercial -Apply
    ```
 
 5. **Deploy order** (enforced by Deploy-Lab.ps1):
@@ -66,7 +62,7 @@ Each profile has its own lifecycle and prefix — they can coexist or replace ea
 
 ## Known deploy-time quirks
 
-- **First ai-security deploy exits non-zero even on success:** the validation-summary block throws if any AI-Applications retention policy is still invisible to `Get-*ComplianceP olicy`. Policies are actually written; manifest is exported before the throw. Re-run picks up any remaining gaps cleanly.
+- **First `ai` deploy sometimes exits non-zero even on success:** the validation-summary block throws if any AI-Applications retention policy is still invisible to `Get-*CompliancePolicy`. Policies are actually written; manifest is exported before the throw. Re-run picks up any remaining gaps cleanly.
 - **Copilot Prompt SIT DLP rule fails to PUT with "RestrictAccess or RestrictWebGrounding are required":** known MS-side issue with the SIT-rule shape. Label-based Copilot rule works. Plan on manual portal config for the SIT rules or leave them as policy-without-rules.
 - **SensitivityLabels step may throw `LabelAlreadyPublishedException` on re-run:** label publication step isn't idempotent. Error-isolated — DLP, retention, Sentinel all continue.
 
@@ -75,5 +71,5 @@ Each profile has its own lifecycle and prefix — they can coexist or replace ea
 - Do not bypass capability gating from `profiles/<cloud>/capabilities.json`; deploy must block workloads marked `unavailable`.
 - Keep `SupportsShouldProcess` / `-WhatIf` behavior intact.
 - Preserve module import pattern from `Deploy-Lab.ps1` (`modules/*.psm1`).
-- Profiles must remain separate tracks — different config, prefix, and lifecycle. Exception: `ai-security` intentionally unifies Copilot DLP + Shadow AI + Sentinel under one prefix (`PVAISec`).
+- Profiles are separate tracks — different config, prefix, and lifecycle. The `ai` profile intentionally unifies Copilot DLP + Shadow AI + Sentinel under one prefix (`PVAI`).
 - Sentinel teardown is safety-gated: `-ForceDeleteResourceGroup` requires manifest + `createdBy=purview-lab-deployer` tag + name match.

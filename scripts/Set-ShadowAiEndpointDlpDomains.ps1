@@ -5,7 +5,7 @@
     Configure Endpoint DLP browser-and-domain restrictions for Shadow AI lab.
 
 .DESCRIPTION
-    Reads the `endpointDlpBrowserRestrictions.blockedUrls` list from a shadow-ai
+    Reads the `endpointDlpBrowserRestrictions.blockedUrls` list from an ai-profile
     config, compares it against the tenant's current Endpoint DLP global
     settings (via Get-PolicyConfig), and adds any missing AI service domains to
     the block list.
@@ -24,10 +24,10 @@
     re-run with -Apply only if the plan looks correct.
 
 .PARAMETER ConfigPath
-    Path to the shadow-ai lab config JSON. Defaults to commercial profile.
+    Path to the ai lab config JSON. Defaults to commercial profile.
 
 .PARAMETER LabProfile
-    Lab profile shorthand — currently only 'shadow-ai' is meaningful.
+    Lab profile shorthand. Default: 'ai'.
 
 .PARAMETER Cloud
     Cloud environment (commercial or gcc). Default: commercial.
@@ -41,11 +41,11 @@
 
 .EXAMPLE
     # Discovery mode — read current tenant settings, print merge preview
-    ./scripts/Set-ShadowAiEndpointDlpDomains.ps1 -LabProfile shadow-ai
+    ./scripts/Set-ShadowAiEndpointDlpDomains.ps1 -LabProfile ai
 
 .EXAMPLE
     # Apply the merge (interactive confirmation, still honours -WhatIf)
-    ./scripts/Set-ShadowAiEndpointDlpDomains.ps1 -LabProfile shadow-ai -Apply
+    ./scripts/Set-ShadowAiEndpointDlpDomains.ps1 -LabProfile ai -Apply
 #>
 
 [CmdletBinding(SupportsShouldProcess)]
@@ -54,7 +54,7 @@ param(
     [string]$ConfigPath,
 
     [Parameter()]
-    [string]$LabProfile = 'shadow-ai',
+    [string]$LabProfile = 'ai',
 
     [Parameter()]
     [ValidateSet('commercial', 'gcc')]

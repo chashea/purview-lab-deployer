@@ -69,9 +69,10 @@ Use this skill when creating a new lab config file from scratch.
 ## Reference configs
 
 Use existing configs as templates for different complexity levels:
-- **Full-featured**: `configs/commercial/basic-lab-demo.json`
+- **Full-featured baseline**: `configs/commercial/basic-demo.json` (prefix `PVLab`)
 - **Minimal/focused**: `configs/commercial/dlp-only.json`
-- **Shadow AI track**: `configs/commercial/shadow-ai-demo.json` (uses prefix `PVShadowAI`)
+- **Integrated AI governance**: `configs/commercial/ai-demo.json` (prefix `PVAI`, includes Sentinel)
+- **Sentinel-only**: `configs/commercial/purview-sentinel-demo.json` (prefix `PVSentinel`)
 
 ## Smoke test
 

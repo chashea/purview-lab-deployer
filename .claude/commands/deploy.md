@@ -10,7 +10,7 @@ Deploy a Purview lab profile via `Deploy-Lab.ps1`.
 
 1. **Confirm scope** — ask user (or accept from `$ARGUMENTS`):
    - Cloud: `commercial` or `gcc`
-   - Profile: one of `basic`, `ai`, `purview-sentinel` (deprecated aliases: `basic-lab`, `shadow-ai`, `copilot-dlp`, `copilot-protection`, `ai-security`)
+   - Profile: one of `basic`, `ai`, `purview-sentinel`
    - Test users: optional `-TestUsers <upn>[,<upn>...]` to override profile defaults
    - Dry run: `-WhatIf` if user wants no side effects
 2. **Pre-flight** — run `Invoke-Pester tests/ -Output Detailed`. Abort on any failure.
@@ -22,4 +22,4 @@ Deploy a Purview lab profile via `Deploy-Lab.ps1`.
 5. **Post-deploy** — list the new manifest at `manifests/<cloud>/<prefix>_<timestamp>.json`. Confirm it exists and is well-formed (delegate to `manifest-auditor` agent).
 6. **Report** — workloads deployed, manifest path, any warnings/skips.
 
-If `$ARGUMENTS` is empty, prompt interactively. If args supplied (e.g., `commercial basic-lab`), parse and proceed without prompts.
+If `$ARGUMENTS` is empty, prompt interactively. If args supplied (e.g., `commercial basic`), parse and proceed without prompts.

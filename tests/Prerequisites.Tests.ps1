@@ -7,10 +7,10 @@ BeforeAll {
 }
 
 Describe 'Get-ProfileConfigMapping' {
-    It 'Returns a hashtable with all canonical profiles and deprecated aliases' {
+    It 'Returns a hashtable with the three canonical profiles' {
         $map = Get-ProfileConfigMapping
         $map | Should -BeOfType [hashtable]
-        $map.Keys.Count | Should -Be 8
+        $map.Keys.Count | Should -Be 3
     }
 
     It 'Canonical profiles resolve correctly' {
@@ -18,53 +18,6 @@ Describe 'Get-ProfileConfigMapping' {
         $map['basic']            | Should -Be 'basic-demo.json'
         $map['ai']               | Should -Be 'ai-demo.json'
         $map['purview-sentinel'] | Should -Be 'purview-sentinel-demo.json'
-    }
-
-    It 'Deprecated aliases resolve to canonical config files' {
-        $map = Get-ProfileConfigMapping
-        $map['basic-lab']        | Should -Be 'basic-demo.json'
-        $map['shadow-ai']        | Should -Be 'ai-demo.json'
-        $map['copilot-dlp']      | Should -Be 'ai-demo.json'
-        $map['copilot-protection'] | Should -Be 'ai-demo.json'
-        $map['ai-security']      | Should -Be 'ai-demo.json'
-    }
-}
-
-Describe 'Resolve-LabProfile' {
-    It 'Returns canonical name unchanged' {
-        Resolve-LabProfile -LabProfile 'basic'            | Should -Be 'basic'
-        Resolve-LabProfile -LabProfile 'ai'               | Should -Be 'ai'
-        Resolve-LabProfile -LabProfile 'purview-sentinel' | Should -Be 'purview-sentinel'
-    }
-
-    It 'Resolves basic-lab to basic with a warning' {
-        $result = Resolve-LabProfile -LabProfile 'basic-lab' -WarningVariable w 3>$null
-        $result | Should -Be 'basic'
-        $w | Should -Not -BeNullOrEmpty
-    }
-
-    It 'Resolves shadow-ai to ai with a warning' {
-        $result = Resolve-LabProfile -LabProfile 'shadow-ai' -WarningVariable w 3>$null
-        $result | Should -Be 'ai'
-        $w | Should -Not -BeNullOrEmpty
-    }
-
-    It 'Resolves copilot-dlp to ai with a warning' {
-        $result = Resolve-LabProfile -LabProfile 'copilot-dlp' -WarningVariable w 3>$null
-        $result | Should -Be 'ai'
-        $w | Should -Not -BeNullOrEmpty
-    }
-
-    It 'Resolves copilot-protection to ai with a warning' {
-        $result = Resolve-LabProfile -LabProfile 'copilot-protection' -WarningVariable w 3>$null
-        $result | Should -Be 'ai'
-        $w | Should -Not -BeNullOrEmpty
-    }
-
-    It 'Resolves ai-security to ai with a warning' {
-        $result = Resolve-LabProfile -LabProfile 'ai-security' -WarningVariable w 3>$null
-        $result | Should -Be 'ai'
-        $w | Should -Not -BeNullOrEmpty
     }
 }
 

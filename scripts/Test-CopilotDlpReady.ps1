@@ -26,7 +26,7 @@
     Path to the Copilot DLP lab config JSON. Defaults to the commercial profile.
 
 .PARAMETER LabProfile
-    Lab profile shorthand. Accepts 'copilot-protection' or legacy 'copilot-dlp'.
+    Lab profile shorthand. Default: 'ai'.
 
 .PARAMETER Cloud
     Cloud environment (commercial or gcc). Default: commercial.
@@ -39,10 +39,10 @@
     licenses. Useful when running without Graph consent.
 
 .EXAMPLE
-    ./scripts/Test-CopilotDlpReady.ps1 -LabProfile copilot-protection -Cloud commercial
+    ./scripts/Test-CopilotDlpReady.ps1 -LabProfile ai -Cloud commercial
 
 .EXAMPLE
-    ./scripts/Test-CopilotDlpReady.ps1 -ConfigPath ./configs/commercial/copilot-dlp-demo.json -TenantId 00000000-0000-0000-0000-000000000000
+    ./scripts/Test-CopilotDlpReady.ps1 -ConfigPath ./configs/commercial/ai-demo.json -TenantId 00000000-0000-0000-0000-000000000000
 #>
 
 [CmdletBinding()]
@@ -51,7 +51,7 @@ param(
     [string]$ConfigPath,
 
     [Parameter()]
-    [string]$LabProfile,
+    [string]$LabProfile = 'ai',
 
     [Parameter()]
     [ValidateSet('commercial', 'gcc')]
@@ -88,16 +88,7 @@ function Resolve-LabConfigPath {
         return (Resolve-Path $ExplicitConfigPath).Path
     }
 
-    $profileSlug = if ($ProfileName) {
-        switch ($ProfileName) {
-            'copilot-protection' { 'copilot-dlp-demo.json' }
-            'copilot-dlp' { 'copilot-dlp-demo.json' }
-            default { "$ProfileName-demo.json" }
-        }
-    }
-    else {
-        'copilot-dlp-demo.json'
-    }
+    $profileSlug = if ($ProfileName) { "$ProfileName-demo.json" } else { 'ai-demo.json' }
 
     $candidate = Join-Path $repoRoot 'configs' $CloudEnv $profileSlug
     if (-not (Test-Path $candidate)) {

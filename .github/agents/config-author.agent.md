@@ -51,9 +51,9 @@ DLP rules reference built-in Microsoft SITs by exact name:
 - Config files are always cloud-scoped: `configs/commercial/*.json` or `configs/gcc/*.json`
 - Never create root-level config files
 - Naming pattern: `<scenario>-demo.json` (e.g., `medical-demo.json`)
-- Baseline labs use prefix `PVLab`; Shadow AI uses `PVShadowAI`
+- Baseline labs use prefix `PVLab`; the integrated `ai` profile uses `PVAI`; Sentinel uses `PVSentinel`
 - When creating a GCC variant, check `profiles/gcc/capabilities.json` for workload availability — disable workloads marked `unavailable`
-- Reference existing configs as templates: `basic-lab-demo.json` for full-featured, `dlp-only.json` for minimal
+- Reference existing configs as templates: `basic-demo.json` for full-featured, `dlp-only.json` for minimal
 
 ## Validation
 

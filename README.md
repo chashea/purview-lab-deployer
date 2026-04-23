@@ -28,16 +28,6 @@ Each profile is a self-contained deployment with its own prefix, config, and lif
 
 Run with `./Deploy-Lab.ps1 -ConfigPath configs/commercial/<config>.json -Cloud commercial`.
 
-**Deprecated aliases** — the following names are still accepted and emit a deprecation warning at runtime:
-
-| Deprecated name | Resolves to |
-|-----------------|-------------|
-| `basic-lab` | `basic` |
-| `shadow-ai` | `ai` |
-| `copilot-dlp` | `ai` |
-| `copilot-protection` | `ai` |
-| `ai-security` | `ai` |
-
 By default each profile uses the test users listed in its config. Pass `-TestUsers <upn>[,<upn>...]` to Deploy-Lab.ps1 to run the same profile against your own pre-licensed tenant users instead.
 
 ## How it works

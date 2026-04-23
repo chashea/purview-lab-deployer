@@ -27,7 +27,7 @@
     Path to the Shadow AI config JSON. Defaults to commercial profile.
 
 .PARAMETER LabProfile
-    Lab profile shorthand. Default: 'shadow-ai'.
+    Lab profile shorthand. Default: 'ai'.
 
 .PARAMETER Cloud
     Cloud environment (commercial or gcc). Default: commercial.
@@ -42,7 +42,7 @@
     Skip Get-PolicyConfig inspection (which is slow and requires S&C session).
 
 .EXAMPLE
-    ./scripts/Test-ShadowAiReady.ps1 -LabProfile shadow-ai -Cloud commercial
+    ./scripts/Test-ShadowAiReady.ps1 -LabProfile ai -Cloud commercial
 #>
 
 [CmdletBinding()]
@@ -51,7 +51,7 @@ param(
     [string]$ConfigPath,
 
     [Parameter()]
-    [string]$LabProfile = 'shadow-ai',
+    [string]$LabProfile = 'ai',
 
     [Parameter()]
     [ValidateSet('commercial', 'gcc')]

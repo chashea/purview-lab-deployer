@@ -224,5 +224,5 @@ Search-UnifiedAuditLog -StartDate (Get-Date).AddHours(-2) -EndDate (Get-Date) -O
 Or use the smoke test script in validate mode:
 
 ```powershell
-./scripts/Invoke-SmokeTest.ps1 -LabProfile basic-lab -ValidateOnly -Since (Get-Date).AddHours(-2)
+./scripts/Invoke-SmokeTest.ps1 -LabProfile basic -ValidateOnly -Since (Get-Date).AddHours(-2)
 ```

@@ -99,13 +99,13 @@ Write-LabLog "Failed to create policy: $_" -Level Error
 ## Validation after changes
 
 1. Lint: `Invoke-ScriptAnalyzer -Path . -Recurse -Severity Warning -ExcludeRule PSAvoidUsingWriteHost,PSUseSingularNouns`
-2. Dry-run deploy: `./Deploy-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -SkipAuth -WhatIf`
-3. Dry-run remove: `./Remove-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -SkipAuth -WhatIf`
+2. Dry-run deploy: `./Deploy-Lab.ps1 -ConfigPath configs/commercial/basic-demo.json -SkipAuth -WhatIf`
+3. Dry-run remove: `./Remove-Lab.ps1 -ConfigPath configs/commercial/basic-demo.json -SkipAuth -WhatIf`
 4. Run Pester tests: `Invoke-Pester tests/ -Output Detailed`
 
 ## Known Microsoft-side behaviors worth knowing before modifying modules
 
-These emerged during live ai-security deploys — worth not re-learning the hard way:
+These emerged during live `ai` profile deploys — worth not re-learning the hard way:
 
 ### 1. Copilot DLP `RestrictAccess` — SIT-based vs label-based rules need different values
 

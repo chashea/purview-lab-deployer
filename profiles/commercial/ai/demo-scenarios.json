@@ -1,14 +1,14 @@
 {
-  "demoName": "Integrated AI Security",
+  "demoName": "Integrated AI Governance",
   "version": "1.0",
   "presentationFlow": [
     { "step": 0, "title": "Opening — one story, not four",                     "talkTrack": "Copilot DLP + Shadow AI + SIEM are usually treated as separate projects. They're one system. This lab wires them together with correlated signals and an adaptive enforcement loop.",                                                            "showInPortal": null, "duration": "3 min",  "automated": false },
-    { "step": 1, "title": "Discovery — what's happening today",                 "talkTrack": "Audit searches + AI Risk Signals workbook surface the baseline. DSPM for AI reports (if activated) show posture.",                                                                                                                         "showInPortal": ["Purview > Audit > saved searches", "Sentinel > Workbooks > PVAISec-AI Risk Signals"],                         "duration": "5 min",  "automated": true },
-    { "step": 2, "title": "Copilot DLP — sanctioned AI guardrails",             "talkTrack": "Prompt SIT blocking (preview) + labeled content blocking (GA). Same SITs as the broader Purview stack; Copilot gets the same guardrails other surfaces do.",                                                                       "showInPortal": ["Purview > DLP > PVAISec-Copilot Prompt SIT Block", "Purview > DLP > PVAISec-Copilot Labeled Content Block"], "duration": "10 min", "automated": true },
-    { "step": 3, "title": "Shadow AI — unsanctioned AI prevention",             "talkTrack": "Three layers: Endpoint DLP (device), Browser Data Security (Edge), Network Data Security (SASE/SSE). Risk-tiered enforcement.",                                                                                            "showInPortal": ["Purview > DLP > PVAISec-Shadow AI - Endpoint Protection", "Browser Prompt Protection", "Network AI Traffic"], "duration": "12 min", "automated": true },
-    { "step": 4, "title": "Insider Risk — the adaptive bridge",                 "talkTrack": "IRM scores drive DLP tier. Elevated = block, Moderate = warn, Minor = audit. Automatic, real-time, no admin action.",                                                                                                       "showInPortal": ["Purview > Insider Risk > 3 PVAISec policies", "PVAISec-Shadow AI - Endpoint Protection rule tiers"],          "duration": "5 min",  "automated": true },
-    { "step": 5, "title": "Sentinel — unified SIEM pane",                       "talkTrack": "3 connectors, 7 analytics rules (including 3 AI-specific), 2 workbooks, IRM auto-triage playbook. Cross-signal correlation via RiskyAIUsageCorrel rule.",                                                              "showInPortal": ["Sentinel > Data connectors", "Sentinel > Analytics (7 PVAISec rules)", "Sentinel > Workbooks > AI Risk Signals", "Sentinel > Automation > PVAISec-IRM-AutoTriage"], "duration": "15 min", "automated": true },
-    { "step": 6, "title": "The integrated loop",                                 "talkTrack": "Walk through the 6-step cycle: Shadow AI block → Sentinel incident → IRM score rise → DLP tier tightens → cross-signal correlation fires → SOC sees one investigation-worthy incident. All automatic.",                "showInPortal": ["Sentinel > Incidents filtered to PVAISec-RiskyAIUsageCorrel"],                                              "duration": "3 min",  "automated": false },
+    { "step": 1, "title": "Discovery — what's happening today",                 "talkTrack": "Audit searches + AI Risk Signals workbook surface the baseline. DSPM for AI reports (if activated) show posture.",                                                                                                                         "showInPortal": ["Purview > Audit > saved searches", "Sentinel > Workbooks > PVAI-AI Risk Signals"],                         "duration": "5 min",  "automated": true },
+    { "step": 2, "title": "Copilot DLP — sanctioned AI guardrails",             "talkTrack": "Prompt SIT blocking (preview) + labeled content blocking (GA). Same SITs as the broader Purview stack; Copilot gets the same guardrails other surfaces do.",                                                                       "showInPortal": ["Purview > DLP > PVAI-Copilot Prompt SIT Block", "Purview > DLP > PVAI-Copilot Labeled Content Block"], "duration": "10 min", "automated": true },
+    { "step": 3, "title": "Shadow AI — unsanctioned AI prevention",             "talkTrack": "Three layers: Endpoint DLP (device), Browser Data Security (Edge), Network Data Security (SASE/SSE). Risk-tiered enforcement.",                                                                                            "showInPortal": ["Purview > DLP > PVAI-Shadow AI - Endpoint Protection", "Browser Prompt Protection", "Network AI Traffic"], "duration": "12 min", "automated": true },
+    { "step": 4, "title": "Insider Risk — the adaptive bridge",                 "talkTrack": "IRM scores drive DLP tier. Elevated = block, Moderate = warn, Minor = audit. Automatic, real-time, no admin action.",                                                                                                       "showInPortal": ["Purview > Insider Risk > 3 PVAI policies", "PVAI-Shadow AI - Endpoint Protection rule tiers"],          "duration": "5 min",  "automated": true },
+    { "step": 5, "title": "Sentinel — unified SIEM pane",                       "talkTrack": "3 connectors, 7 analytics rules (including 3 AI-specific), 2 workbooks, IRM auto-triage playbook. Cross-signal correlation via RiskyAIUsageCorrel rule.",                                                              "showInPortal": ["Sentinel > Data connectors", "Sentinel > Analytics (7 PVAI rules)", "Sentinel > Workbooks > AI Risk Signals", "Sentinel > Automation > PVAI-IRM-AutoTriage"], "duration": "15 min", "automated": true },
+    { "step": 6, "title": "The integrated loop",                                 "talkTrack": "Walk through the 6-step cycle: Shadow AI block → Sentinel incident → IRM score rise → DLP tier tightens → cross-signal correlation fires → SOC sees one investigation-worthy incident. All automatic.",                "showInPortal": ["Sentinel > Incidents filtered to PVAI-RiskyAIUsageCorrel"],                                              "duration": "3 min",  "automated": false },
     { "step": 7, "title": "Complementary stories (optional)",                   "talkTrack": "DSPM for AI as posture surface. Microsoft Purview Content Hub solution for MS-maintained analytics rules. Defender portal unified SecOps. Security Copilot for AI-on-AI triage.",                                          "showInPortal": ["DSPM for AI > Reports", "Sentinel > Content Hub > Microsoft Purview solution"],                             "duration": "5 min",  "automated": false }
   ],
   "scenarios": [
@@ -21,7 +21,7 @@
         "Prompt: 'Summarize benefits for employee 078-05-1120'",
         "Copilot refuses with policy message",
         "Wait 15-30 min for Defender XDR → Sentinel flow",
-        "Sentinel > Incidents > PVAISec-CopilotDLPPromptBlock shows matching incident"
+        "Sentinel > Incidents > PVAI-CopilotDLPPromptBlock shows matching incident"
       ],
       "expectedOutcome": "End-to-end signal chain from Copilot chat to Sentinel incident",
       "automatedArtifacts": ["Copilot Prompt SIT Block policy", "Defender XDR connector", "CopilotDLPPromptBlock rule"],
@@ -36,7 +36,7 @@
         "Paste sensitive content with SSN",
         "Endpoint DLP blocks with policy tip",
         "Wait 15-30 min",
-        "Sentinel > Incidents > PVAISec-ShadowAIPasteUpload incident appears"
+        "Sentinel > Incidents > PVAI-ShadowAIPasteUpload incident appears"
       ],
       "expectedOutcome": "Device-layer block, SIEM visibility",
       "automatedArtifacts": ["Shadow AI - Endpoint Protection policy", "ShadowAIPasteUpload Sentinel rule"],
@@ -67,7 +67,7 @@
         "Generate Shadow AI paste block for rtorres (S2)",
         "Generate IRM Risky AI usage signal (run Copilot prompts from scripts/copilot-test-prompts.md sections E1-E5)",
         "Wait 2-4 hours for all signals to flow + rule to evaluate",
-        "Sentinel > Incidents > PVAISec-RiskyAIUsageCorrel fires with rtorres as entity",
+        "Sentinel > Incidents > PVAI-RiskyAIUsageCorrel fires with rtorres as entity",
         "IRM auto-triage playbook enriches the incident with triage context"
       ],
       "expectedOutcome": "Audience sees the correlation Sentinel rule is what makes this lab integrated",
@@ -79,7 +79,7 @@
       "name": "Executive dashboard",
       "description": "CISO-level view across all AI risk signals.",
       "steps": [
-        "Sentinel > Workbooks > PVAISec-AI Risk Signals",
+        "Sentinel > Workbooks > PVAI-AI Risk Signals",
         "Show Copilot DLP blocks timechart (7d)",
         "Show Shadow AI paste attempts by target site (ChatGPT vs Claude vs Gemini)",
         "Show Risky AI Usage IRM alerts",
@@ -92,11 +92,11 @@
     }
   ],
   "userExperienceTable": [
-    { "scenario": "Paste SSN into Copilot chat",                            "systemBehavior": "Copilot refuses, DLP policy message. SecurityAlert → Sentinel incident via PVAISec-CopilotDLPPromptBlock." },
-    { "scenario": "Paste SSN into ChatGPT from managed device",             "systemBehavior": "Endpoint DLP blocks paste, policy tip shown. SecurityAlert → Sentinel incident via PVAISec-ShadowAIPasteUpload." },
+    { "scenario": "Paste SSN into Copilot chat",                            "systemBehavior": "Copilot refuses, DLP policy message. SecurityAlert → Sentinel incident via PVAI-CopilotDLPPromptBlock." },
+    { "scenario": "Paste SSN into ChatGPT from managed device",             "systemBehavior": "Endpoint DLP blocks paste, policy tip shown. SecurityAlert → Sentinel incident via PVAI-ShadowAIPasteUpload." },
     { "scenario": "Ask Copilot to summarize Highly Confidential file",       "systemBehavior": "Copilot refuses citing label-based policy. Alert flows to Sentinel." },
-    { "scenario": "User has IRM Risky AI alert + Copilot DLP block in 4h", "systemBehavior": "PVAISec-RiskyAIUsageCorrel fires cross-table incident. IRM auto-triage playbook enriches it." },
-    { "scenario": "User downgrades Highly Confidential label to Internal",  "systemBehavior": "OfficeActivity audit, PVAISec-LabelDowngrade Sentinel incident (pre-exfiltration pattern)." },
+    { "scenario": "User has IRM Risky AI alert + Copilot DLP block in 4h", "systemBehavior": "PVAI-RiskyAIUsageCorrel fires cross-table incident. IRM auto-triage playbook enriches it." },
+    { "scenario": "User downgrades Highly Confidential label to Internal",  "systemBehavior": "OfficeActivity audit, PVAI-LabelDowngrade Sentinel incident (pre-exfiltration pattern)." },
     { "scenario": "Clean Copilot prompt with no sensitive data",             "systemBehavior": "Normal response. No DLP match, no Sentinel incident. Sanctioned path works as intended." },
     { "scenario": "Departing user tries to paste to ChatGPT",                "systemBehavior": "If Departing User AI Risk IRM policy in scope: immediate Elevated risk tier → hard block at DLP, Sentinel incident fires." }
   ]

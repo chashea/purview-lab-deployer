@@ -19,8 +19,8 @@ Invoke-ScriptAnalyzer -Path ./Deploy-Lab.ps1 -Severity Warning -ExcludeRule PSAv
 Optional smoke checks without connecting to cloud services:
 
 ```powershell
-./Deploy-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -Cloud commercial -SkipAuth -WhatIf
-./Remove-Lab.ps1 -ConfigPath configs/commercial/basic-lab-demo.json -Cloud commercial -SkipAuth -WhatIf
+./Deploy-Lab.ps1 -ConfigPath configs/commercial/basic-demo.json -Cloud commercial -SkipAuth -WhatIf
+./Remove-Lab.ps1 -ConfigPath configs/commercial/basic-demo.json -Cloud commercial -SkipAuth -WhatIf
 ```
 
 ## Repository layout
@@ -33,21 +33,23 @@ root/
 ├── configs/
 │   ├── _schema.json                      # Canonical JSON schema
 │   ├── commercial/                       # Commercial tenant configs
-│   │   ├── basic-lab-demo.json, shadow-ai-demo.json, dlp-only.json, ...
+│   │   ├── basic-demo.json, ai-demo.json, purview-sentinel-demo.json, dlp-only.json, ...
 │   │   └── README.md
 │   └── gcc/                              # GCC tenant configs
-│       ├── basic-lab-demo.json, dlp-only.json, ...
+│       ├── basic-demo.json, dlp-only.json, ...
 │       └── README.md
 ├── modules/                              # Workload modules (*.psm1)
 ├── profiles/
 │   ├── commercial/
 │   │   ├── capabilities.json             # Commercial workload capabilities
-│   │   ├── basic-lab/                    # Basic lab scenario profile + guide
-│   │   ├── shadow-ai/                    # Shadow AI scenario profile + guide
-│   │   └── copilot-dlp/                  # Copilot protection profile + runbook + demo
+│   │   ├── basic/                        # Basic lab scenario profile + guide
+│   │   ├── ai/                           # Integrated AI governance profile (Copilot DLP + Shadow AI + Sentinel) + runbook + demo
+│   │   └── purview-sentinel/             # Sentinel SOC profile + guide
 │   ├── gcc/
 │   │   ├── capabilities.json             # GCC workload capabilities
-│   │   └── shadow-ai/                    # Shadow AI scenario profile + guide
+│   │   ├── basic/                        # Basic lab scenario profile + guide
+│   │   ├── ai/                           # Integrated AI governance profile (GCC variant)
+│   │   └── purview-sentinel/             # Sentinel SOC profile (GCC variant)
 │   └── README.md
 ├── scripts/                              # Helper scripts
 ├── manifests/                            # Deploy manifests (gitignored)
@@ -93,12 +95,12 @@ root/
 
 ## Deployment tracks
 
-- **Basic lab** (baseline): `configs/<cloud>/basic-lab-demo.json` — core compliance workloads, prefix `PVLab`
-- **Shadow AI** (separate): `configs/commercial/shadow-ai-demo.json` — AI-focused DLP/labels/retention/eDiscovery/IRM, prefix `PVShadowAI`
-- **Copilot protection** (M365 Copilot guardrails): `configs/<cloud>/copilot-dlp-demo.json` — Copilot-specific DLP rules, labeled content protection, prompt blocking, prefix `PVLab`. Use with `-LabProfile copilot-protection`. Has a manual demo runbook at `profiles/commercial/copilot-dlp/RUNBOOK.md`.
-- **Scenario configs**: `dlp-only.json`, `education-demo.json`, `eu-gdpr-demo.json`, etc.
+- **Basic lab** (baseline): `configs/<cloud>/basic-demo.json` — core compliance workloads, prefix `PVLab`. `-LabProfile basic`.
+- **AI governance** (integrated): `configs/<cloud>/ai-demo.json` — Copilot DLP + Shadow AI (Endpoint/Browser/Network) + Sentinel + cross-signal analytics, prefix `PVAI`. `-LabProfile ai`. Has a manual demo runbook at `profiles/commercial/ai/RUNBOOK.md`. Requires an Azure subscription.
+- **Sentinel SOC**: `configs/<cloud>/purview-sentinel-demo.json` — Sentinel workspace + Purview connectors + analytics + IRM auto-triage playbook, prefix `PVSentinel`. `-LabProfile purview-sentinel`. Requires an Azure subscription.
+- **Scenario configs**: `dlp-only.json`, `ediscovery-retention.json`, `education-demo.json`, `eu-gdpr-demo.json`, `government-demo.json`, `medical-demo.json` — narrower overlays, deploy via `-ConfigPath`.
 
-Shadow AI is intentionally separated from baseline basic-lab. Different prefix, different config, independent deploy/remove lifecycle. Copilot protection shares the `PVLab` prefix with basic-lab.
+The three canonical profiles are independent tracks with separate prefixes and lifecycles.
 
 ## Key conventions
 

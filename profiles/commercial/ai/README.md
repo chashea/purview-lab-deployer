@@ -1,4 +1,4 @@
-# Integrated AI Security Lab (Commercial)
+# Integrated AI Governance Lab (Commercial)
 
 One unified deployment covering the full AI security story: **Copilot DLP guardrails + Shadow AI prevention + Sentinel signal integration**, all correlated and signal-feeding into a single SIEM pane.
 
@@ -8,13 +8,13 @@ One unified deployment covering the full AI security story: **Copilot DLP guardr
 
 This lab isn't just the sum of the three focused labs. The signals from each surface **correlate**:
 
-1. **Copilot DLP block** → `SecurityAlert` via Defender XDR → Sentinel `PVAISec-CopilotDLPPromptBlock` rule
-2. **Shadow AI paste attempt** → `SecurityAlert` via Endpoint DLP → Sentinel `PVAISec-ShadowAIPasteUpload` rule
-3. **Risky AI Usage IRM score rises** → `SecurityAlert` via OfficeIRM connector → Sentinel `PVAISec-IRMHighSev` rule
-4. **Same user with BOTH Copilot DLP blocks AND Risky AI IRM scoring** → Sentinel `PVAISec-RiskyAIUsageCorrel` cross-table rule → elevated incident
+1. **Copilot DLP block** → `SecurityAlert` via Defender XDR → Sentinel `PVAI-CopilotDLPPromptBlock` rule
+2. **Shadow AI paste attempt** → `SecurityAlert` via Endpoint DLP → Sentinel `PVAI-ShadowAIPasteUpload` rule
+3. **Risky AI Usage IRM score rises** → `SecurityAlert` via OfficeIRM connector → Sentinel `PVAI-IRMHighSev` rule
+4. **Same user with BOTH Copilot DLP blocks AND Risky AI IRM scoring** → Sentinel `PVAI-RiskyAIUsageCorrel` cross-table rule → elevated incident
 5. **Adaptive Protection loop**: Sentinel incidents escalate the user's IRM risk score → the DLP policies here are tiered by `insiderRiskLevel` → enforcement *tightens automatically* for repeat offenders
 
-The whole cycle is visible in the `PVAISec-AI Risk Signals` Sentinel workbook.
+The whole cycle is visible in the `PVAI-AI Risk Signals` Sentinel workbook.
 
 ## Prerequisites
 
@@ -31,7 +31,7 @@ The whole cycle is visible in the `PVAISec-AI Risk Signals` Sentinel workbook.
 az login
 az account set --subscription <subscription-guid>
 
-./Deploy-Lab.ps1 -Cloud commercial -LabProfile ai-security `
+./Deploy-Lab.ps1 -Cloud commercial -LabProfile ai `
     -TenantId <tenant-guid> -SubscriptionId <subscription-guid>
 ```
 
@@ -41,20 +41,20 @@ Deploy time: ~20-25 minutes. Propagation: allow 4 hours for DLP policies + 60 mi
 
 ```powershell
 # Dry run (no cloud mutations)
-./Deploy-Lab.ps1 -Cloud commercial -LabProfile ai-security -WhatIf
+./Deploy-Lab.ps1 -Cloud commercial -LabProfile ai -WhatIf
 
 # Use your own test accounts
-./Deploy-Lab.ps1 -Cloud commercial -LabProfile ai-security `
+./Deploy-Lab.ps1 -Cloud commercial -LabProfile ai `
     -TenantId <tenant> -SubscriptionId <sub> -SkipTestUsers
 
 # Teardown (non-destructive; Azure resources preserved)
-./Remove-Lab.ps1 -Cloud commercial -LabProfile ai-security `
-    -ManifestPath ./manifests/commercial/PVAISec_<timestamp>.json `
+./Remove-Lab.ps1 -Cloud commercial -LabProfile ai `
+    -ManifestPath ./manifests/commercial/PVAI_<timestamp>.json `
     -SubscriptionId <subscription-guid>
 
 # Teardown including Azure resource group (safety-gated — see RUNBOOK)
-./Remove-Lab.ps1 -Cloud commercial -LabProfile ai-security `
-    -ManifestPath ./manifests/commercial/PVAISec_<timestamp>.json `
+./Remove-Lab.ps1 -Cloud commercial -LabProfile ai `
+    -ManifestPath ./manifests/commercial/PVAI_<timestamp>.json `
     -SubscriptionId <subscription-guid> -ForceDeleteResourceGroup
 ```
 
@@ -62,20 +62,20 @@ Deploy time: ~20-25 minutes. Propagation: allow 4 hours for DLP policies + 60 mi
 
 ```powershell
 # Covers Copilot DLP + Shadow AI readiness
-./scripts/Test-CopilotDlpReady.ps1 -ConfigPath ./configs/commercial/ai-security-demo.json -Cloud commercial
-./scripts/Test-ShadowAiReady.ps1   -ConfigPath ./configs/commercial/ai-security-demo.json -Cloud commercial
+./scripts/Test-CopilotDlpReady.ps1 -ConfigPath ./configs/commercial/ai-demo.json -Cloud commercial
+./scripts/Test-ShadowAiReady.ps1   -ConfigPath ./configs/commercial/ai-demo.json -Cloud commercial
 
 # Sentinel readiness
-./scripts/Test-SentinelReady.ps1 -ConfigPath ./configs/commercial/ai-security-demo.json -Cloud commercial -SubscriptionId <sub>
+./scripts/Test-SentinelReady.ps1 -ConfigPath ./configs/commercial/ai-demo.json -Cloud commercial -SubscriptionId <sub>
 
 # Apply Endpoint DLP browser restrictions (Shadow AI paste/upload blocks)
-./scripts/Set-ShadowAiEndpointDlpDomains.ps1 -ConfigPath ./configs/commercial/ai-security-demo.json -Apply
+./scripts/Set-ShadowAiEndpointDlpDomains.ps1 -ConfigPath ./configs/commercial/ai-demo.json -Apply
 ```
 
 ## Scope
 
-- **Config:** `configs/commercial/ai-security-demo.json`
-- **Prefix:** `PVAISec` (all resources)
+- **Config:** `configs/commercial/ai-demo.json`
+- **Prefix:** `PVAI` (all resources)
 - **Cloud:** commercial
 - **Lifecycle:** fully independent from the focused labs — can coexist with them or replace them
 
@@ -83,7 +83,7 @@ Deploy time: ~20-25 minutes. Propagation: allow 4 hours for DLP policies + 60 mi
 
 ### Identity
 - 5 test users (`rtorres`, `mchen`, `nbrooks`, `dokafor`, `sreeves`)
-- 3 security groups: `PVAISec-AI-Governance`, `PVAISec-Privileged-Data-Owners`, `PVAISec-Business-Users`
+- 3 security groups: `PVAI-AI-Governance`, `PVAI-Privileged-Data-Owners`, `PVAI-Business-Users`
 
 ### Sensitivity labels
 - 2 parents × 5 AI-specific sublabels each: All Employees, AI Internal Use, AI Restricted Recipients, AI Blocked from External Tools, AI Regulated Data

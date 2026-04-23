@@ -9,23 +9,23 @@ git clone https://github.com/chashea/purview-lab-deployer.git
 cd purview-lab-deployer
 
 # Deploy (test users auto-created)
-./Deploy-Lab.ps1 -Cloud commercial -LabProfile basic-lab -TenantId <tenant-guid>
+./Deploy-Lab.ps1 -Cloud commercial -LabProfile basic -TenantId <tenant-guid>
 
 # Deploy without test users
-./Deploy-Lab.ps1 -Cloud commercial -LabProfile basic-lab -TenantId <tenant-guid> -SkipTestUsers
+./Deploy-Lab.ps1 -Cloud commercial -LabProfile basic -TenantId <tenant-guid> -SkipTestUsers
 
 # Dry run
-./Deploy-Lab.ps1 -Cloud commercial -LabProfile basic-lab -WhatIf
+./Deploy-Lab.ps1 -Cloud commercial -LabProfile basic -WhatIf
 
 # Remove
-./Remove-Lab.ps1 -Cloud commercial -LabProfile basic-lab -Confirm:$false -TenantId <tenant-guid>
+./Remove-Lab.ps1 -Cloud commercial -LabProfile basic -Confirm:$false -TenantId <tenant-guid>
 ```
 
 ## Scope
 
-- **Config:** `configs/commercial/basic-lab-demo.json`
+- **Config:** `configs/commercial/basic-demo.json`
 - **Prefix:** `PVLab` (all resources scoped to this prefix)
-- **Cloud:** commercial (also available as `configs/gcc/basic-lab-demo.json`)
+- **Cloud:** commercial (also available as `configs/gcc/basic-demo.json`)
 
 ## What gets deployed
 
