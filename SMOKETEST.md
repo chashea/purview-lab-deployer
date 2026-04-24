@@ -8,11 +8,13 @@ All smoke-test scripts live in `scripts/`. The main entry is `Invoke-SmokeTest.p
 
 ## Before sharing with teammates
 
-Auto-discover mode picks the **first 2 alphabetically-sorted licensed mailbox users** in the tenant — in a production tenant that is often an executive or real employee's inbox. Always:
+Auto-discover mode targets **every licensed mailbox user in the tenant** (up to 100), so each user sends one DLP-triggering email per SIT type and uploads a matching file to their OneDrive. In a production tenant that means touching every real employee's inbox and drive — always:
 
 - **Preview with `-WhatIf` first**, or
 - Run against a lab tenant when possible, or
-- Pass `-Users alice@...,bob@...` to target known lab accounts.
+- Pass `-Users alice@...,bob@...` to restrict to known lab accounts.
+
+Set `$env:SMOKE_TEST_ASSUME_YES = '1'` before the run to skip the interactive "proceed?" prompt (useful for CI).
 
 The script also requires the `ExchangeOnlineManagement` module for `-ValidateOnly` audit-log checks, plus Graph scopes `Mail.Send`, `User.Read.All`, `Files.ReadWrite.All`, `Sites.ReadWrite.All`, and `Organization.Read.All` (consented on first interactive run).
 

@@ -11,10 +11,11 @@
 
     Auto-discover mode (default): run with no args. Connects to Microsoft Graph
     using the signed-in user (or current az login), discovers the tenant ID,
-    primary .onmicrosoft.com domain, and two licensed mailbox-enabled users
-    automatically. Works against ANY Purview tenant — no config file, no lab
-    profile, no hardcoded tenant required. Ideal for teammates cloning the repo
-    and running against their own tenant.
+    primary .onmicrosoft.com domain, and EVERY licensed mailbox-enabled user in
+    the tenant (up to 100). Each user sends one DLP-triggering email per SIT
+    type and uploads one SIT-bearing file to their OneDrive, so all licensed
+    accounts exercise the policies. Works against ANY Purview tenant — no
+    config file, no lab profile, no hardcoded tenant required.
 
     Config mode: reads a lab config JSON to identify DLP policies and generate targeted
     test cases for each rule's SIT conditions. Useful when validating a specific
@@ -36,7 +37,9 @@
     (Standalone mode) Tenant domain (e.g., contoso.onmicrosoft.com).
 
 .PARAMETER Users
-    (Standalone mode) Array of licensed user UPNs. Minimum 2 required.
+    (Standalone mode, optional in auto-discover mode) Array of licensed user
+    UPNs. Minimum 2 required. In auto-discover mode, omit to target every
+    licensed mailbox user in the tenant.
 
 .PARAMETER ConfigPath
     (Config mode) Path to the lab configuration JSON file.
@@ -191,14 +194,19 @@ function Get-DiscoveredLicensedUsers {
     [OutputType([string[]])]
     param(
         [int]$MinCount = 2,
-        [int]$MaxCount = 3
+        [int]$MaxCount = 100
     )
 
-    # Pull enabled users that have at least one license assigned and a mailbox-capable UPN.
-    # Deterministic sort (by UPN) so repeated runs hit the same users.
-    $uri = "https://graph.microsoft.com/v1.0/users?`$select=userPrincipalName,accountEnabled,assignedLicenses,mail,userType&`$top=200"
-    $resp = Invoke-MgGraphRequest -Method GET -Uri $uri -ErrorAction Stop
-    $allUsers = @($resp.value)
+    # Pull EVERY enabled, non-guest user with at least one license and a mailbox.
+    # Pages through /users to cover tenants with >200 users. Deterministic sort
+    # (by UPN) so reruns are reproducible.
+    $allUsers = [System.Collections.Generic.List[object]]::new()
+    $next = "https://graph.microsoft.com/v1.0/users?`$select=userPrincipalName,accountEnabled,assignedLicenses,mail,userType&`$top=200"
+    while ($next) {
+        $resp = Invoke-MgGraphRequest -Method GET -Uri $next -ErrorAction Stop
+        foreach ($u in @($resp.value)) { $allUsers.Add($u) }
+        $next = $resp.'@odata.nextLink'
+    }
 
     $candidates = $allUsers |
         Where-Object {
@@ -932,9 +940,9 @@ if ($autoDiscoverMode) {
 
     $autoPickedUsers = $false
     if (-not $Users -or $Users.Count -lt 2) {
-        Write-Host "  Discovering licensed mailbox users..." -ForegroundColor DarkGray
-        $Users = Get-DiscoveredLicensedUsers -MinCount 2 -MaxCount 3
-        Write-Host "  Users: $($Users -join ', ')`n" -ForegroundColor Green
+        Write-Host "  Discovering every licensed mailbox user in the tenant..." -ForegroundColor DarkGray
+        $Users = Get-DiscoveredLicensedUsers -MinCount 2 -MaxCount 100
+        Write-Host "  Users ($($Users.Count)): $($Users -join ', ')`n" -ForegroundColor Green
         $autoPickedUsers = $true
     }
     else {
@@ -946,18 +954,21 @@ if ($autoDiscoverMode) {
     Write-Host " Prefix: $prefix | Domain: $domain" -ForegroundColor Yellow
     Write-Host "========================================`n" -ForegroundColor Yellow
 
-    # Safety gate: warn before sending real emails + OneDrive uploads to
-    # auto-picked users. Skipped under -WhatIf, -ValidateOnly, or -SkipAuth.
+    # Safety gate: warn before sending real emails + OneDrive uploads across
+    # every licensed mailbox. Skipped under -WhatIf, -ValidateOnly, or -SkipAuth.
     if ($autoPickedUsers -and -not $WhatIfPreference -and -not $ValidateOnly -and -not $SkipAuth) {
-        Write-Host "WARNING: auto-discover picked the first 2 licensed mailbox users (alphabetical)." -ForegroundColor Yellow
-        Write-Host "         This script will send emails with fake SSN / credit-card / medical payloads" -ForegroundColor Yellow
-        Write-Host "         AND upload files to OneDrive for the users above. Make sure these are" -ForegroundColor Yellow
-        Write-Host "         lab accounts, not executives or real employees.`n" -ForegroundColor Yellow
-        Write-Host "         Preview with -WhatIf first, or pass -Users explicitly to target lab accounts." -ForegroundColor DarkYellow
-        $response = Read-Host "`nProceed with these users? (y/N)"
-        if ($response -notmatch '^(y|yes)$') {
-            Write-Host "  Aborted by user." -ForegroundColor DarkYellow
-            exit 0
+        Write-Host "WARNING: auto-discover will send DLP test content FROM every licensed mailbox ($($Users.Count) users)." -ForegroundColor Yellow
+        Write-Host "         Payloads include fake SSN / credit-card / bank-account / medical terms, and" -ForegroundColor Yellow
+        Write-Host "         OneDrive uploads for each user. Make sure these are lab accounts, not" -ForegroundColor Yellow
+        Write-Host "         executives or real employees.`n" -ForegroundColor Yellow
+        Write-Host "         Preview with -WhatIf, pass -Users to target specific accounts, or run" -ForegroundColor DarkYellow
+        Write-Host "         with `$env:SMOKE_TEST_ASSUME_YES=1 to skip this prompt (CI-friendly)." -ForegroundColor DarkYellow
+        if ($env:SMOKE_TEST_ASSUME_YES -ne '1') {
+            $response = Read-Host "`nProceed with these users? (y/N)"
+            if ($response -notmatch '^(y|yes)$') {
+                Write-Host "  Aborted by user." -ForegroundColor DarkYellow
+                exit 0
+            }
         }
         Write-Host ''
     }
@@ -967,7 +978,9 @@ if ($autoDiscoverMode) {
 Write-Host "--- Building test cases ---" -ForegroundColor Cyan
 
 if ($standaloneMode -or $autoDiscoverMode) {
-    # Standalone/auto-discover: generate test cases for all SIT types
+    # Standalone/auto-discover: generate one email + one OneDrive upload per
+    # (user, SIT) pair so EVERY licensed mailbox exercises EVERY DLP rule. With
+    # N licensed users and 4 SITs that's 4N emails + 4N file uploads.
     $testCases = [System.Collections.Generic.List[hashtable]]::new()
     $sitNames = @(
         'U.S. Social Security Number (SSN)'
@@ -975,39 +988,37 @@ if ($standaloneMode -or $autoDiscoverMode) {
         'U.S. Bank Account Number'
         'All Medical Terms And Conditions'
     )
-    $userIdx = 0
-    foreach ($sitName in $sitNames) {
-        $payloads = $sitPayloads[$sitName]
-        if (-not $payloads) { continue }
-        $payload = $payloads[(Get-Random -Minimum 0 -Maximum $payloads.Count)]
-        $from = $Users[$userIdx % $Users.Count]
+    for ($userIdx = 0; $userIdx -lt $Users.Count; $userIdx++) {
+        $from = $Users[$userIdx]
         $to = $Users[($userIdx + 1) % $Users.Count]
-        $userIdx++
+        foreach ($sitName in $sitNames) {
+            $payloads = $sitPayloads[$sitName]
+            if (-not $payloads) { continue }
+            $payload = $payloads[(Get-Random -Minimum 0 -Maximum $payloads.Count)]
+            $safeSit = ($sitName -replace '[^a-zA-Z0-9-]', '_')
+            $safeFrom = ($from -split '@')[0] -replace '[^a-zA-Z0-9]', '_'
 
-        $safeSit = ($sitName -replace '[^a-zA-Z0-9-]', '_')
+            $testCases.Add(@{
+                Policy    = 'DLP'
+                Rule      = "$prefix-$sitName"
+                SIT       = $sitName
+                Transport = 'Email'
+                From      = $from
+                To        = $to
+                Subject   = "[$runId] DLP Test - $sitName ($safeFrom)"
+                Body      = "$payload`n`n---`nSmoke test: $runId | SIT: $sitName | From: $from"
+            })
 
-        # Email test case
-        $testCases.Add(@{
-            Policy    = 'DLP'
-            Rule      = "$prefix-$sitName"
-            SIT       = $sitName
-            Transport = 'Email'
-            From      = $from
-            To        = $to
-            Subject   = "[$runId] DLP Test - $sitName"
-            Body      = "$payload`n`n---`nSmoke test: $runId | SIT: $sitName"
-        })
-
-        # File upload test case
-        $testCases.Add(@{
-            Policy    = 'DLP'
-            Rule      = "$prefix-$sitName"
-            SIT       = $sitName
-            Transport = 'OneDrive'
-            Owner     = $from
-            FileName  = "$runId-$safeSit.txt"
-            Content   = "CONFIDENTIAL`n`n$payload`n`n---`nSmoke test: $runId | SIT: $sitName"
-        })
+            $testCases.Add(@{
+                Policy    = 'DLP'
+                Rule      = "$prefix-$sitName"
+                SIT       = $sitName
+                Transport = 'OneDrive'
+                Owner     = $from
+                FileName  = "$runId-$safeFrom-$safeSit.txt"
+                Content   = "CONFIDENTIAL`n`n$payload`n`n---`nSmoke test: $runId | SIT: $sitName | Owner: $from"
+            })
+        }
     }
 }
 else {
