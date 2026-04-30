@@ -162,6 +162,79 @@ if ($partialStandalone -and -not $configMode) {
     $autoDiscoverMode = $true
 }
 
+# --- DOCX builder (Open XML) ---
+# Builds a minimal valid .docx (Word 2007+) Open XML package from plain text.
+# DLP scans the inner word/document.xml so the SIT regex can match against
+# the document body just like a real Word document.
+function ConvertTo-DocxBytes {
+    [CmdletBinding()]
+    [OutputType([byte[]])]
+    param(
+        [Parameter(Mandatory)]
+        [AllowEmptyString()]
+        [string]$Text
+    )
+
+    Add-Type -AssemblyName System.IO.Compression -ErrorAction SilentlyContinue
+    Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction SilentlyContinue
+
+    $contentTypesXml = @'
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+</Types>
+'@
+
+    $rootRelsXml = @'
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>
+'@
+
+    # Build paragraphs — one <w:p> per line, with literal text escaped.
+    $sb = [System.Text.StringBuilder]::new()
+    [void]$sb.Append('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>')
+    [void]$sb.Append('<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>')
+    foreach ($line in ($Text -split "`r?`n")) {
+        $escaped = [System.Security.SecurityElement]::Escape($line)
+        if ([string]::IsNullOrEmpty($escaped)) {
+            [void]$sb.Append('<w:p/>')
+        }
+        else {
+            [void]$sb.Append('<w:p><w:r><w:t xml:space="preserve">')
+            [void]$sb.Append($escaped)
+            [void]$sb.Append('</w:t></w:r></w:p>')
+        }
+    }
+    [void]$sb.Append('<w:sectPr/></w:body></w:document>')
+    $documentXml = $sb.ToString()
+
+    $ms = [System.IO.MemoryStream]::new()
+    $zip = [System.IO.Compression.ZipArchive]::new($ms, [System.IO.Compression.ZipArchiveMode]::Create, $true)
+    try {
+        $entries = @(
+            @{ Path = '[Content_Types].xml'; Body = $contentTypesXml },
+            @{ Path = '_rels/.rels';         Body = $rootRelsXml },
+            @{ Path = 'word/document.xml';   Body = $documentXml }
+        )
+        foreach ($e in $entries) {
+            $entry = $zip.CreateEntry($e.Path, [System.IO.Compression.CompressionLevel]::Optimal)
+            $writer = [System.IO.StreamWriter]::new($entry.Open(), [System.Text.UTF8Encoding]::new($false))
+            try { $writer.Write($e.Body) }
+            finally { $writer.Dispose() }
+        }
+    }
+    finally {
+        $zip.Dispose()
+    }
+    return $ms.ToArray()
+}
+
+$script:DocxContentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+
 # --- Auto-discover helpers ---
 function Get-DiscoveredTenantContext {
     [CmdletBinding()]
@@ -420,7 +493,7 @@ function Get-DlpTestCases {
                         SIT       = $sit
                         Transport = 'OneDrive'
                         Owner     = $from
-                        FileName  = "$RunId-$safeRuleName.txt"
+                        FileName  = "$RunId-$safeRuleName.docx"
                         Content   = "CONFIDENTIAL — FOR INTERNAL USE ONLY`n`n$payload`n`n---`nSmoke test: $RunId | Rule: $ruleName | SIT: $sit"
                     })
                 }
@@ -516,7 +589,7 @@ function Send-SmokeTestFiles {
     foreach ($tc in $TestCases) {
         if ($PSCmdlet.ShouldProcess("OneDrive: $($tc.FileName)", 'Upload file')) {
             try {
-                $contentBytes = [System.Text.Encoding]::UTF8.GetBytes($tc.Content)
+                $contentBytes = ConvertTo-DocxBytes -Text $tc.Content
                 $stream = [System.IO.MemoryStream]::new($contentBytes)
 
                 $folderPath = 'DLP-Smoke-Tests'
@@ -526,7 +599,7 @@ function Send-SmokeTestFiles {
                 try {
                     $uploadUri = "https://graph.microsoft.com/v1.0/users/$($tc.Owner)/drive/root:/$folderPath/$($tc.FileName):/content"
                     Invoke-MgGraphRequest -Method PUT -Uri $uploadUri `
-                        -Body $stream -ContentType 'text/plain' -ErrorAction Stop | Out-Null
+                        -Body $stream -ContentType $script:DocxContentType -ErrorAction Stop | Out-Null
                     $uploadSuccess = $true
                     Write-Host "  Uploaded: $($tc.Owner)/DLP-Smoke-Tests/$($tc.FileName)" -ForegroundColor Green
                 }
@@ -534,7 +607,7 @@ function Send-SmokeTestFiles {
                     $stream.Position = 0
                     $uploadUri = "https://graph.microsoft.com/v1.0/me/drive/root:/$folderPath/$($tc.FileName):/content"
                     Invoke-MgGraphRequest -Method PUT -Uri $uploadUri `
-                        -Body $stream -ContentType 'text/plain' -ErrorAction Stop | Out-Null
+                        -Body $stream -ContentType $script:DocxContentType -ErrorAction Stop | Out-Null
                     $uploadSuccess = $true
                     Write-Host "  Uploaded: me/DLP-Smoke-Tests/$($tc.FileName)" -ForegroundColor Green
                 }
@@ -631,19 +704,19 @@ function Send-BurstActivity {
     Write-Host "`n  [Burst] Mass file uploads to $uploadUser OneDrive (15 files)..." -ForegroundColor White
 
     $fileNames = @(
-        "customer-database-export.csv"
-        "employee-salary-data-2026.xlsx"
+        "customer-database-export.docx"
+        "employee-salary-data-2026.docx"
         "board-meeting-minutes-confidential.docx"
-        "merger-target-financials.pdf"
-        "intellectual-property-inventory.xlsx"
+        "merger-target-financials.docx"
+        "intellectual-property-inventory.docx"
         "vendor-pricing-agreements.docx"
-        "executive-compensation-review.xlsx"
-        "client-contact-list-full.csv"
-        "strategic-roadmap-2027.pptx"
+        "executive-compensation-review.docx"
+        "client-contact-list-full.docx"
+        "strategic-roadmap-2027.docx"
         "audit-findings-draft.docx"
         "hr-investigation-notes.docx"
-        "patent-portfolio-analysis.pdf"
-        "revenue-forecast-model.xlsx"
+        "patent-portfolio-analysis.docx"
+        "revenue-forecast-model.docx"
         "confidential-legal-memo.docx"
         "departing-employee-handover.docx"
     )
@@ -652,18 +725,18 @@ function Send-BurstActivity {
         if ($PSCmdlet.ShouldProcess("OneDrive: $fileName", 'Upload burst file')) {
             try {
                 $content = "CONFIDENTIAL - INTERNAL USE ONLY`n`nThis document contains sensitive business data.`nSSN: 219-09-9999`nAccount: routing 021000021 account 123456789012`n`nSmoke test burst: $RunId`nFile: $fileName"
-                $contentBytes = [System.Text.Encoding]::UTF8.GetBytes($content)
+                $contentBytes = ConvertTo-DocxBytes -Text $content
                 $stream = [System.IO.MemoryStream]::new($contentBytes)
 
                 $burstFolder = "DLP-Smoke-Tests/burst-$RunId"
                 try {
                     $uploadUri = "https://graph.microsoft.com/v1.0/users/$uploadUser/drive/root:/$burstFolder/$fileName`:/content"
-                    Invoke-MgGraphRequest -Method PUT -Uri $uploadUri -Body $stream -ContentType 'text/plain' -ErrorAction Stop | Out-Null
+                    Invoke-MgGraphRequest -Method PUT -Uri $uploadUri -Body $stream -ContentType $script:DocxContentType -ErrorAction Stop | Out-Null
                 }
                 catch {
                     $stream.Position = 0
                     $uploadUri = "https://graph.microsoft.com/v1.0/me/drive/root:/$burstFolder/$fileName`:/content"
-                    Invoke-MgGraphRequest -Method PUT -Uri $uploadUri -Body $stream -ContentType 'text/plain' -ErrorAction Stop | Out-Null
+                    Invoke-MgGraphRequest -Method PUT -Uri $uploadUri -Body $stream -ContentType $script:DocxContentType -ErrorAction Stop | Out-Null
                 }
                 $filesUploaded++
             }
@@ -1015,7 +1088,7 @@ if ($standaloneMode -or $autoDiscoverMode) {
                 SIT       = $sitName
                 Transport = 'OneDrive'
                 Owner     = $from
-                FileName  = "$runId-$safeFrom-$safeSit.txt"
+                FileName  = "$runId-$safeFrom-$safeSit.docx"
                 Content   = "CONFIDENTIAL`n`n$payload`n`n---`nSmoke test: $runId | SIT: $sitName | Owner: $from"
             })
         }
