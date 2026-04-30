@@ -25,3 +25,6 @@ Thumbs.db
 *.pfx
 *.pem
 *.key
+
+# App-only auth secrets — never commit
+.secrets/
