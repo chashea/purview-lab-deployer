@@ -596,20 +596,26 @@ function Send-SmokeTestFiles {
 
                 # Try user's OneDrive first, fall back to /me/drive for delegated auth
                 $uploadSuccess = $false
+                $uploadedAs = $null
                 try {
                     $uploadUri = "https://graph.microsoft.com/v1.0/users/$($tc.Owner)/drive/root:/$folderPath/$($tc.FileName):/content"
-                    Invoke-MgGraphRequest -Method PUT -Uri $uploadUri `
-                        -Body $stream -ContentType $script:DocxContentType -ErrorAction Stop | Out-Null
+                    $resp = Invoke-MgGraphRequest -Method PUT -Uri $uploadUri `
+                        -Body $stream -ContentType $script:DocxContentType -ErrorAction Stop
                     $uploadSuccess = $true
-                    Write-Host "  Uploaded: $($tc.Owner)/DLP-Smoke-Tests/$($tc.FileName)" -ForegroundColor Green
+                    $uploadedAs = if ($resp.createdBy.user.email) { $resp.createdBy.user.email } else { $tc.Owner }
+                    Write-Host "  Uploaded: $uploadedAs/DLP-Smoke-Tests/$($tc.FileName)" -ForegroundColor Green
                 }
                 catch {
+                    Write-Verbose "Per-user upload to /users/$($tc.Owner)/drive failed: $($_.Exception.Message)"
                     $stream.Position = 0
                     $uploadUri = "https://graph.microsoft.com/v1.0/me/drive/root:/$folderPath/$($tc.FileName):/content"
-                    Invoke-MgGraphRequest -Method PUT -Uri $uploadUri `
-                        -Body $stream -ContentType $script:DocxContentType -ErrorAction Stop | Out-Null
+                    $resp = Invoke-MgGraphRequest -Method PUT -Uri $uploadUri `
+                        -Body $stream -ContentType $script:DocxContentType -ErrorAction Stop
                     $uploadSuccess = $true
-                    Write-Host "  Uploaded: me/DLP-Smoke-Tests/$($tc.FileName)" -ForegroundColor Green
+                    $uploadedAs = if ($resp.createdBy.user.email) { $resp.createdBy.user.email } else { (Get-MgContext).Account }
+                    Write-Host "  Uploaded: $uploadedAs/DLP-Smoke-Tests/$($tc.FileName)" -ForegroundColor Yellow
+                    Write-Host "           (intended owner $($tc.Owner) has no provisioned OneDrive — fell back to signed-in user)" -ForegroundColor DarkYellow
+                    if ($resp.webUrl) { Write-Host "           $($resp.webUrl)" -ForegroundColor DarkGray }
                 }
 
                 if ($uploadSuccess) {
