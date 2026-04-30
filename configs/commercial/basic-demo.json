@@ -76,7 +76,7 @@
               ],
               "minCount": 1,
               "enforcement": {
-                "action": "auditOnly",
+                "action": "block",
                 "userNotification": {
                   "enabled": true,
                   "message": "This content matches a DLP policy. Contact your compliance team if you believe this is in error."
@@ -94,7 +94,7 @@
               ],
               "minCount": 1,
               "enforcement": {
-                "action": "auditOnly",
+                "action": "block",
                 "userNotification": {
                   "enabled": true,
                   "message": "This content matches a DLP policy. Contact your compliance team if you believe this is in error."
@@ -122,7 +122,7 @@
               ],
               "minCount": 1,
               "enforcement": {
-                "action": "auditOnly",
+                "action": "block",
                 "userNotification": {
                   "enabled": true,
                   "message": "This content matches a DLP policy. Contact your compliance team if you believe this is in error."
@@ -140,7 +140,7 @@
               ],
               "minCount": 1,
               "enforcement": {
-                "action": "auditOnly",
+                "action": "block",
                 "userNotification": {
                   "enabled": true,
                   "message": "This content matches a DLP policy. Contact your compliance team if you believe this is in error."
@@ -168,7 +168,7 @@
               ],
               "minCount": 1,
               "enforcement": {
-                "action": "auditOnly",
+                "action": "block",
                 "userNotification": {
                   "enabled": true,
                   "message": "This content matches a DLP policy. Contact your compliance team if you believe this is in error."
@@ -186,7 +186,7 @@
               ],
               "minCount": 1,
               "enforcement": {
-                "action": "auditOnly",
+                "action": "block",
                 "userNotification": {
                   "enabled": true,
                   "message": "This content matches a DLP policy. Contact your compliance team if you believe this is in error."
@@ -214,7 +214,7 @@
               ],
               "minCount": 1,
               "enforcement": {
-                "action": "auditOnly",
+                "action": "block",
                 "userNotification": {
                   "enabled": true,
                   "message": "This content matches a DLP policy. Contact your compliance team if you believe this is in error."
@@ -232,7 +232,7 @@
               ],
               "minCount": 1,
               "enforcement": {
-                "action": "auditOnly",
+                "action": "block",
                 "userNotification": {
                   "enabled": true,
                   "message": "This content matches a DLP policy. Contact your compliance team if you believe this is in error."

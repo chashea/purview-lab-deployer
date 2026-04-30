@@ -1,0 +1,53 @@
+{
+  "labName": "Pipeline Test (DLP signal validation)",
+  "prefix": "PVPipe",
+  "domain": "MngEnvMCAP659995.onmicrosoft.com",
+  "cloud": "gcc",
+  "workloads": {
+    "testUsers": {
+      "enabled": true,
+      "mode": "existing",
+      "users": [
+        { "upn": "mtorres@MngEnvMCAP659995.onmicrosoft.com" },
+        { "upn": "mahmed@MngEnvMCAP659995.onmicrosoft.com" },
+        { "upn": "nshah@MngEnvMCAP659995.onmicrosoft.com" },
+        { "upn": "opark@MngEnvMCAP659995.onmicrosoft.com" },
+        { "upn": "DebraB@MngEnvMCAP659995.onmicrosoft.com" },
+        { "upn": "NestorW@MngEnvMCAP659995.onmicrosoft.com" },
+        { "upn": "JoniS@MngEnvMCAP659995.onmicrosoft.com" },
+        { "upn": "jkim@MngEnvMCAP659995.onmicrosoft.com" }
+      ]
+    },
+    "dlp": {
+      "enabled": true,
+      "policies": [
+        {
+          "name": "Pipeline-Test-SSN-v2",
+          "locations": ["Exchange", "OneDrive"],
+          "rules": [
+            {
+              "name": "Pipeline-Test-Detect-SSN-v2",
+              "sensitiveInfoTypes": ["U.S. Social Security Number (SSN)"],
+              "minCount": 1,
+              "enforcement": {
+                "action": "block",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "PIPELINE TEST: This message was blocked because it contains a U.S. Social Security Number. This is a deliberate DLP test."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "high"
+                },
+                "incidentReport": {
+                  "enabled": true,
+                  "severity": "high"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

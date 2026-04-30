@@ -63,11 +63,29 @@ function Connect-LabServices {
     )
 
     Write-Verbose "Connecting to Security & Compliance PowerShell (tenant: $TenantId)..."
-    Connect-IPPSSession -CommandName * -WarningAction SilentlyContinue -ErrorAction Stop
+    $ippsParams = @{ CommandName = '*'; WarningAction = 'SilentlyContinue'; ErrorAction = 'Stop' }
+    if ($env:PURVIEW_LAB_UPN) {
+        Write-Host "  IPPS: pinning UserPrincipalName=$($env:PURVIEW_LAB_UPN), disabling WAM to force fresh browser auth" -ForegroundColor Yellow
+        $ippsParams.UserPrincipalName = $env:PURVIEW_LAB_UPN
+        $ippsParams.DisableWAM = $true
+    }
+    Connect-IPPSSession @ippsParams
 
     Write-Verbose "Connecting to Microsoft Graph (tenant: $TenantId)..."
-    Disconnect-MgGraph -ErrorAction SilentlyContinue
-    Connect-MgGraph -TenantId $TenantId -Scopes $graphScopes -NoWelcome -ErrorAction Stop
+    $existingCtx = Get-MgContext -ErrorAction SilentlyContinue
+    if ($env:PURVIEW_LAB_REUSE_GRAPH -and $existingCtx -and $existingCtx.TenantId -eq $TenantId) {
+        Write-Host "  Reusing existing Microsoft Graph context (account=$($existingCtx.Account), tenant=$($existingCtx.TenantId))" -ForegroundColor Yellow
+    }
+    else {
+        Disconnect-MgGraph -ErrorAction SilentlyContinue
+        if ($env:PURVIEW_LAB_DEVICE_CODE) {
+            Write-Host "  Using device-code flow for Microsoft Graph (PURVIEW_LAB_DEVICE_CODE set)" -ForegroundColor Yellow
+            Connect-MgGraph -TenantId $TenantId -Scopes $graphScopes -UseDeviceCode -NoWelcome -ErrorAction Stop
+        }
+        else {
+            Connect-MgGraph -TenantId $TenantId -Scopes $graphScopes -NoWelcome -ErrorAction Stop
+        }
+    }
 
     $graphContext = Get-MgContext
     if (-not $graphContext -or [string]::IsNullOrWhiteSpace($graphContext.Account)) {
