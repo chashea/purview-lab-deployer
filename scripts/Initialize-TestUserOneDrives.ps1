@@ -10,15 +10,28 @@ user whose personal OneDrive site has never been provisioned. The smoke test
 falls back to /me/drive (the signed-in admin) when that happens, which
 distorts the per-user DLP signal in Activity Explorer.
 
-This script reads the lab profile, extracts the test users, and triggers
-OneDrive provisioning for each one via:
+IMPORTANT — KNOWN LIMITATIONS (read before running)
+====================================================
+A. Licensing alone does NOT auto-provision OneDrive. The user must either:
+     1) Sign in to https://portal.office.com once, OR
+     2) An admin must trigger provisioning (this script, or SPO Admin Center
+        > More features > User profiles > Set up OneDrive).
 
-  1. Graph /users/{upn}/drive  — auto-provisions on demand for many tenants
-  2. SharePoint Online Request-SPOPersonalSite (preferred, faster) — used if
-     -UseSpoPowerShell is passed and the SPO module is available
+B. Even AFTER provisioning, the Invoke-SmokeTest.ps1 script today uses
+   delegated Microsoft Graph auth as the signed-in admin. That delegated
+   token CANNOT write to other users' OneDrives — Graph returns 403/404 on
+   PUT to /users/{otherUpn}/drive/.... Cross-user upload requires APPLICATION
+   permission (Files.ReadWrite.All app-only), which means registering an
+   Entra app + storing a cert/secret + tenant admin consent. Without that,
+   even a successfully-provisioned per-user OneDrive will not receive files
+   from this smoke test.
 
-After running this script, wait 5–15 minutes for SPO to finish provisioning
-the personal sites, then re-run Invoke-SmokeTest.ps1.
+So this script alone is necessary but not sufficient for per-user signal.
+For demo purposes, the simplest workable path is:
+   - Have each test user sign into portal.office.com once (provisions their
+     OneDrive AND lets them be a real DLP-signal owner if they upload).
+   - OR accept that all smoke-test files land in the admin's drive (still
+     triggers the rules; signal attributed to admin in Activity Explorer).
 
 .PARAMETER LabProfile
 Lab profile name (basic, financial, healthcare, etc.). Used to look up
@@ -31,19 +44,27 @@ Explicit config file path. Overrides -LabProfile.
 Azure cloud (commercial, gcc, gcchigh, dod). Default: commercial.
 
 .PARAMETER UseSpoPowerShell
-Use the Microsoft.Online.SharePoint.PowerShell module's Request-SPOPersonalSite
-cmdlet instead of poking Graph. Faster and more reliable, but requires the
-SPO admin URL and the SharePoint Admin role.
+Use Request-(PnP|SPO)PersonalSite to provision OneDrives in bulk. Requires
+either the PnP.PowerShell module + a registered Entra app (-PnPClientId)
+or Microsoft.Online.SharePoint.PowerShell on Windows + SharePoint Admin role.
 
 .PARAMETER SpoAdminUrl
 Required when -UseSpoPowerShell is set. e.g. https://contoso-admin.sharepoint.com
 
+.PARAMETER PnPClientId
+Entra app id for PnP.PowerShell. Required as of Sep 2024 since the built-in
+PnP Management Shell app (-Interactive) was deprecated. Register an app with
+Sites.FullControl.All (App) granted by tenant admin, then pass its appId here.
+
 .EXAMPLE
+# Best-effort: just poke Graph (rarely succeeds — see KNOWN LIMITATIONS)
 ./scripts/Initialize-TestUserOneDrives.ps1 -LabProfile basic -Cloud gcc
 
 .EXAMPLE
+# Reliable: PnP with a tenant-registered Entra app
 ./scripts/Initialize-TestUserOneDrives.ps1 -LabProfile basic -Cloud gcc `
-  -UseSpoPowerShell -SpoAdminUrl https://mngenvmcap659995-admin.sharepoint.com
+  -UseSpoPowerShell -SpoAdminUrl https://mngenvmcap659995-admin.sharepoint.com `
+  -PnPClientId 00000000-0000-0000-0000-000000000000
 #>
 
 [CmdletBinding(DefaultParameterSetName = 'Profile', SupportsShouldProcess)]
@@ -60,7 +81,9 @@ param(
 
     [switch]$UseSpoPowerShell,
 
-    [string]$SpoAdminUrl
+    [string]$SpoAdminUrl,
+
+    [string]$PnPClientId
 )
 
 $ErrorActionPreference = 'Stop'
@@ -83,28 +106,71 @@ $config = Get-Content $ConfigPath -Raw | ConvertFrom-Json -Depth 20
 
 # --- Extract unique test user UPNs ---
 $users = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
-foreach ($u in @($config.users)) {
-    if ($u.upn) { [void]$users.Add($u.upn) }
+
+# Schema: workloads.testUsers.users[].upn (current), with legacy fallback to .users[]
+$candidateUserLists = @()
+if ($config.workloads.testUsers.users) { $candidateUserLists += , @($config.workloads.testUsers.users) }
+if ($config.users) { $candidateUserLists += , @($config.users) }
+
+foreach ($list in $candidateUserLists) {
+    foreach ($u in $list) {
+        if ($u.upn) { [void]$users.Add($u.upn) }
+    }
 }
 
 if ($users.Count -eq 0) {
-    throw 'No users found in config.users[].upn'
+    throw 'No users found in workloads.testUsers.users[].upn (or legacy users[].upn)'
 }
 
 Write-Host "Found $($users.Count) test user(s)" -ForegroundColor Cyan
 
 # --- Path A: SPO PowerShell (preferred) ---
 if ($UseSpoPowerShell) {
-    if (-not (Get-Module -ListAvailable -Name Microsoft.Online.SharePoint.PowerShell)) {
-        throw 'Microsoft.Online.SharePoint.PowerShell module is not installed. Install with: Install-Module Microsoft.Online.SharePoint.PowerShell -Scope CurrentUser'
+    # Prefer cross-platform PnP.PowerShell on macOS/Linux/PS7;
+    # fall back to legacy Microsoft.Online.SharePoint.PowerShell on Windows.
+    $pnpAvailable = [bool](Get-Module -ListAvailable -Name PnP.PowerShell)
+    $sposAvailable = [bool](Get-Module -ListAvailable -Name Microsoft.Online.SharePoint.PowerShell)
+
+    if (-not $pnpAvailable -and -not $sposAvailable) {
+        throw 'Neither PnP.PowerShell nor Microsoft.Online.SharePoint.PowerShell is installed. Install with: Install-Module PnP.PowerShell -Scope CurrentUser'
+    }
+
+    $upnList = @($users)
+
+    if ($pnpAvailable) {
+        Import-Module PnP.PowerShell -DisableNameChecking | Out-Null
+        Write-Host "Connecting to SPO admin via PnP.PowerShell: $SpoAdminUrl" -ForegroundColor Cyan
+
+        $connectArgs = @{ Url = $SpoAdminUrl; Interactive = $true }
+        if ($PnPClientId) { $connectArgs['ClientId'] = $PnPClientId }
+
+        try {
+            Connect-PnPOnline @connectArgs
+        }
+        catch {
+            if (-not $PnPClientId) {
+                Write-Host "PnP connect failed without -PnPClientId. The default PnP Management Shell Entra app must be consented in this tenant," -ForegroundColor Yellow
+                Write-Host "or pass -PnPClientId <appId> for a multi-tenant Entra app you have registered with Sites.FullControl.All." -ForegroundColor Yellow
+            }
+            throw
+        }
+
+        if ($PSCmdlet.ShouldProcess("$($upnList.Count) users", 'Request-PnPPersonalSite')) {
+            try {
+                Request-PnPPersonalSite -UserEmails $upnList
+                Write-Host "Provisioning queued for $($upnList.Count) user(s) via PnP. Wait 5-15 min, then re-run smoke test." -ForegroundColor Green
+            }
+            finally {
+                Disconnect-PnPOnline
+            }
+        }
+        return
     }
 
     Import-Module Microsoft.Online.SharePoint.PowerShell -DisableNameChecking | Out-Null
-
-    Write-Host "Connecting to SPO admin: $SpoAdminUrl" -ForegroundColor Cyan
+    Write-Host "Connecting to SPO admin via Microsoft.Online.SharePoint.PowerShell: $SpoAdminUrl" -ForegroundColor Cyan
     Connect-SPOService -Url $SpoAdminUrl
 
-    $upnList = @($users)
     if ($PSCmdlet.ShouldProcess("$($upnList.Count) users", 'Request-SPOPersonalSite')) {
         Request-SPOPersonalSite -UserEmails $upnList -NoWait
         Write-Host "Provisioning queued for $($upnList.Count) user(s). Wait 5-15 min, then re-run smoke test." -ForegroundColor Green
