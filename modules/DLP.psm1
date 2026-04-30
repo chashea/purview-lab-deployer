@@ -313,6 +313,19 @@ function Get-LabDlpRuleOptionalParameters {
                 switch ($enforcementAction) {
                     'block' {
                         $optionalParams[$actionSwitchParameter] = $true
+                        # GCC (and some commercial rollouts) silently drop BlockAccess and
+                        # emit "Rule contains no actions" if BlockAccessScope is omitted.
+                        # Default to 'All' so the action is registered and the rule blocks
+                        # both internal and external sharing. Allow the config to override
+                        # via enforcement.blockAccessScope (PerUser | PerAnonymousUser | All).
+                        $scopeParam = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('BlockAccessScope')
+                        if ($scopeParam) {
+                            $blockAccessScope = 'All'
+                            if (($enforcement.PSObject.Properties.Name -contains 'blockAccessScope') -and -not [string]::IsNullOrWhiteSpace([string]$enforcement.blockAccessScope)) {
+                                $blockAccessScope = ([string]$enforcement.blockAccessScope).Trim()
+                            }
+                            $optionalParams[$scopeParam] = $blockAccessScope
+                        }
                     }
                     'auditOnly' {
                         $optionalParams[$actionSwitchParameter] = $false
@@ -513,9 +526,20 @@ function Get-LabDlpRuleOptionalParameters {
             $incidentEnabledParam = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('IncidentReportEnabled', 'GenerateIncidentReport')
             if ($incidentEnabledParam) {
                 # GenerateIncidentReport takes a string[] of recipients; IncidentReportEnabled is the boolean variant
+                # Server rejects 'LastModifier' / 'Owner' tokens — only SMTP addresses and 'SiteAdmin' are valid.
                 if ($incidentEnabledParam -eq 'GenerateIncidentReport') {
-                    if ($notificationRecipients.Count -gt 0) {
-                        $optionalParams[$incidentEnabledParam] = $notificationRecipients
+                    $incidentRecipients = @($notificationRecipients | Where-Object { $_ -eq 'SiteAdmin' -or $_ -match '@' })
+                    if ($incidentRecipients.Count -eq 0) {
+                        $ctx = Get-MgContext -ErrorAction SilentlyContinue
+                        if ($ctx -and -not [string]::IsNullOrWhiteSpace([string]$ctx.Account)) {
+                            $incidentRecipients = @([string]$ctx.Account)
+                        }
+                    }
+                    if ($incidentRecipients.Count -gt 0) {
+                        $optionalParams[$incidentEnabledParam] = $incidentRecipients
+                    }
+                    else {
+                        Write-LabLog -Message "Rule '$RuleName' requested incident report but no valid recipient (SMTP or SiteAdmin) could be resolved; incident report will be skipped." -Level Warning
                     }
                 }
                 else {
