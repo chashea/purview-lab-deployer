@@ -66,7 +66,8 @@
           "locations": [
             "Exchange",
             "SharePoint",
-            "OneDrive"
+            "OneDrive",
+            "Teams"
           ],
           "rules": [
             {
@@ -74,7 +75,7 @@
               "sensitiveInfoTypes": [
                 "U.S. Social Security Number (SSN)"
               ],
-              "minCount": 1,
+              "minCount": 5,
               "enforcement": {
                 "action": "block",
                 "userNotification": {
@@ -92,7 +93,7 @@
               "sensitiveInfoTypes": [
                 "Credit Card Number"
               ],
-              "minCount": 1,
+              "minCount": 5,
               "enforcement": {
                 "action": "block",
                 "userNotification": {
@@ -112,7 +113,11 @@
           "locations": [
             "Exchange",
             "SharePoint",
+            "OneDrive",
             "Teams"
+          ],
+          "appliesToGroups": [
+            "PVLab-Finance-Team"
           ],
           "rules": [
             {
@@ -158,7 +163,11 @@
           "locations": [
             "Exchange",
             "SharePoint",
-            "OneDrive"
+            "OneDrive",
+            "Teams"
+          ],
+          "appliesToGroups": [
+            "PVLab-Legal-Team"
           ],
           "rules": [
             {
@@ -244,6 +253,34 @@
               }
             }
           ]
+        },
+        {
+          "name": "Confidential Label Egress Block",
+          "locations": [
+            "Exchange",
+            "SharePoint",
+            "OneDrive",
+            "Teams"
+          ],
+          "rules": [
+            {
+              "name": "Block external sharing of Highly Confidential Regulated-Data",
+              "labels": [
+                "Highly Confidential\\Regulated-Data"
+              ],
+              "enforcement": {
+                "action": "block",
+                "userNotification": {
+                  "enabled": true,
+                  "message": "Content labeled Highly Confidential / Regulated-Data cannot be shared externally. Contact compliance for an exception."
+                },
+                "alert": {
+                  "enabled": true,
+                  "severity": "high"
+                }
+              }
+            }
+          ]
         }
       ]
     },
@@ -256,48 +293,48 @@
           "color": "#0078D4",
           "sublabels": [
             {
-              "name": "Medical",
-              "tooltip": "Encrypted - for medical and clinical data only",
-              "encryption": true,
+              "name": "Internal",
+              "tooltip": "Internal-use only - all employees",
+              "encryption": false,
               "contentMarking": {
-                "headerText": "CONFIDENTIAL - Medical",
-                "footerText": "Medical data - restricted to authorized medical and compliance staff"
-              }
-            },
-            {
-              "name": "Financial",
-              "tooltip": "Encrypted - for financial and accounting data only",
-              "encryption": true,
-              "contentMarking": {
-                "headerText": "CONFIDENTIAL - Financial",
-                "footerText": "Financial data - restricted distribution"
-              }
-            },
-            {
-              "name": "HR",
-              "tooltip": "Encrypted - for HR and employee records only",
-              "encryption": true,
-              "contentMarking": {
-                "headerText": "CONFIDENTIAL - HR",
-                "footerText": "HR data - restricted to HR and compliance personnel"
-              }
-            },
-            {
-              "name": "All-Employees",
-              "tooltip": "Encrypted - accessible to all employees within the organization",
-              "encryption": true,
-              "contentMarking": {
-                "headerText": "CONFIDENTIAL - All Employees",
+                "headerText": "CONFIDENTIAL - Internal",
                 "footerText": "Do not share outside the organization"
               }
             },
             {
-              "name": "Recipients Only",
+              "name": "Recipients-Only",
               "tooltip": "Encrypted - accessible only to named recipients",
               "encryption": true,
               "contentMarking": {
                 "headerText": "CONFIDENTIAL - Recipients Only",
-                "footerText": "This document is encrypted and restricted to named recipients"
+                "footerText": "Encrypted and restricted to named recipients"
+              }
+            },
+            {
+              "name": "Anyone-No-Forwarding",
+              "tooltip": "Encrypted - recipients can read but cannot forward, copy, or print",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "CONFIDENTIAL - Do Not Forward",
+                "footerText": "Forwarding, copying, and printing are disabled"
+              }
+            },
+            {
+              "name": "Regulated-Data",
+              "tooltip": "Encrypted - regulated data (PII, PCI, financial). Block external egress.",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "CONFIDENTIAL - Regulated Data",
+                "footerText": "Subject to regulatory protection (PII / PCI / financial). Restricted distribution."
+              }
+            },
+            {
+              "name": "Vertical-Specific",
+              "tooltip": "Encrypted - vertical-specific scoping (e.g., medical, HR). Restricted to authorized teams.",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "CONFIDENTIAL - Vertical-Specific",
+                "footerText": "Restricted to authorized vertical/business unit"
               }
             }
           ]
@@ -308,48 +345,48 @@
           "color": "#D13438",
           "sublabels": [
             {
-              "name": "Medical",
-              "tooltip": "Encrypted - for medical and clinical data only",
+              "name": "Internal",
+              "tooltip": "Encrypted - highly sensitive internal-only content",
               "encryption": true,
               "contentMarking": {
-                "headerText": "HIGHLY CONFIDENTIAL - Medical",
-                "footerText": "Medical data - restricted to authorized medical and compliance staff"
+                "headerText": "HIGHLY CONFIDENTIAL - Internal",
+                "footerText": "Encrypted - do not share outside the organization"
               }
             },
             {
-              "name": "Financial",
-              "tooltip": "Encrypted - for financial and accounting data only",
-              "encryption": true,
-              "contentMarking": {
-                "headerText": "HIGHLY CONFIDENTIAL - Financial",
-                "footerText": "Financial data - restricted distribution"
-              }
-            },
-            {
-              "name": "HR",
-              "tooltip": "Encrypted - for HR and employee records only",
-              "encryption": true,
-              "contentMarking": {
-                "headerText": "HIGHLY CONFIDENTIAL - HR",
-                "footerText": "HR data - restricted to HR and compliance personnel"
-              }
-            },
-            {
-              "name": "All-Employees",
-              "tooltip": "Encrypted - accessible to all employees within the organization",
-              "encryption": true,
-              "contentMarking": {
-                "headerText": "HIGHLY CONFIDENTIAL - All Employees",
-                "footerText": "Do not share outside the organization"
-              }
-            },
-            {
-              "name": "Recipients Only",
+              "name": "Recipients-Only",
               "tooltip": "Encrypted - accessible only to named recipients",
               "encryption": true,
               "contentMarking": {
                 "headerText": "HIGHLY CONFIDENTIAL - Recipients Only",
-                "footerText": "This document is encrypted and restricted to named recipients"
+                "footerText": "Encrypted and restricted to named recipients"
+              }
+            },
+            {
+              "name": "Anyone-No-Forwarding",
+              "tooltip": "Encrypted - recipients can read but cannot forward, copy, or print",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "HIGHLY CONFIDENTIAL - Do Not Forward",
+                "footerText": "Forwarding, copying, and printing are disabled"
+              }
+            },
+            {
+              "name": "Regulated-Data",
+              "tooltip": "Encrypted - regulated data (PII, PCI, PHI, financial). Block all external egress.",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "HIGHLY CONFIDENTIAL - Regulated Data",
+                "footerText": "Subject to regulatory protection. External egress blocked by DLP."
+              }
+            },
+            {
+              "name": "Vertical-Specific",
+              "tooltip": "Encrypted - vertical-specific scoping (e.g., medical, executive, board-only).",
+              "encryption": true,
+              "contentMarking": {
+                "headerText": "HIGHLY CONFIDENTIAL - Vertical-Specific",
+                "footerText": "Restricted to authorized vertical/business unit"
               }
             }
           ]
@@ -357,19 +394,32 @@
       ],
       "autoLabelPolicies": [
         {
-          "name": "Auto-label SSN as Confidential Recipients Only",
-          "labelName": "Confidential\\Recipients Only",
+          "name": "Auto-label SSN as Highly Confidential Regulated-Data",
+          "labelName": "Highly Confidential\\Regulated-Data",
           "sensitiveInfoTypes": [
             "U.S. Social Security Number (SSN)"
           ],
           "locations": [
             "Exchange",
-            "SharePoint"
+            "SharePoint",
+            "OneDrive"
           ]
         },
         {
-          "name": "Auto-label Internal-Corp as Confidential All-Employees",
-          "labelName": "Confidential\\All-Employees",
+          "name": "Auto-label Credit Card as Highly Confidential Regulated-Data",
+          "labelName": "Highly Confidential\\Regulated-Data",
+          "sensitiveInfoTypes": [
+            "Credit Card Number"
+          ],
+          "locations": [
+            "Exchange",
+            "SharePoint",
+            "OneDrive"
+          ]
+        },
+        {
+          "name": "Auto-label Internal-Corp Identifiers as Confidential Internal",
+          "labelName": "Confidential\\Internal",
           "sensitiveInfoTypes": [
             "U.S. Employer Identification Number (EIN)",
             "International Banking Account Number (IBAN)",
@@ -493,6 +543,15 @@
               "sourceSearch": "Background-Check-PII"
             }
           ]
+        }
+      ]
+    },
+    "communicationCompliance": {
+      "enabled": true,
+      "policies": [
+        {
+          "name": "Workplace AI Activity Monitoring",
+          "description": "DSPM for AI collection policy - captures AI prompt/response activity for compliance review (Copilot experiences and enterprise AI apps)."
         }
       ]
     },
@@ -696,6 +755,12 @@
           "to": "pnair",
           "subject": "Workplace Accommodation Documentation",
           "body": "Priya, occupational health completed review for employee accommodation request 24-771. Documentation includes physician statement, treatment plan, and return-to-work restrictions through 05/31. Please retain per HR medical records policy."
+        },
+        {
+          "from": "mchen",
+          "to": "rtorres",
+          "subject": "Bulk Customer SSN Reconciliation - Q4 Audit",
+          "body": "Rachel, attached is the bulk SSN reconciliation pull for the Q4 external audit. Records on file: 123-45-6789, 234-56-7890, 345-67-8901, 456-78-9012, 567-89-0123. Need this reviewed and acknowledged by EOD. The auditors expect formal sign-off before they can finalize the engagement."
         }
       ]
     },

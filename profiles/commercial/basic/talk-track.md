@@ -50,33 +50,35 @@
 
 | Parent | Sublabels | Use case |
 |---|---|---|
-| Confidential | Internal, Recipients-Only, Anyone-No-Forwarding, Financial-Data, Legal-Privileged | Everyday sensitive business content |
-| Highly Confidential | Internal, Recipients-Only, Anyone-No-Forwarding, Board-Only, Regulated-Data | Restricted content (PII, financials, IP) |
+| Confidential | Internal, Recipients-Only, Anyone-No-Forwarding, Regulated-Data, Vertical-Specific | Everyday sensitive business content |
+| Highly Confidential | Internal, Recipients-Only, Anyone-No-Forwarding, Regulated-Data, Vertical-Specific | Restricted content (PII, PCI, PHI, board-only) |
 
 > "Two parent labels, ten sublabels. Flat enough that users don't freeze at the dropdown, rich enough to express real protection tiers. Each sublabel carries its own encryption, watermarking, and access rules — the user picks the label, the platform does the enforcement."
 
-**Show the two auto-label policies:**
-- SSN auto-apply → `Highly Confidential - Regulated-Data`
-- Credit card auto-apply → `Highly Confidential - Regulated-Data`
+**Show the three auto-label policies:**
+- SSN auto-apply → `Highly Confidential\Regulated-Data`
+- Credit Card auto-apply → `Highly Confidential\Regulated-Data`
+- EIN / IBAN / SWIFT auto-apply → `Confidential\Internal`
 
 > "Users don't need to remember to label. When they save a document that contains an SSN or credit card, Purview applies the label automatically. That label then drives everything downstream — DLP rules, retention, Copilot access, Sentinel signals."
 
 ---
 
-## Act 2: DLP — "Four policies covering the regulated-data footprint" (5 min)
+## Act 2: DLP — "Five policies covering the regulated-data footprint" (5 min)
 
 **Portal:** Purview → Data Loss Prevention → Policies
 
-**Show the 4 policies:**
+**Show the 5 policies:**
 
-| Policy | Locations | What it catches |
-|---|---|---|
-| US PII Protection | Exchange, SharePoint, OneDrive, Teams | Messages or files with ≥5 SSNs |
-| Financial Data Protection | Exchange, SharePoint, OneDrive | Any document with a credit card number |
-| HR Case Data Protection | Exchange, SharePoint | Any message/file with an SSN |
-| Workplace Health Record Protection | Exchange, SharePoint | SSN + medical keyword proximity |
+| Policy | Locations | Scope | What it catches |
+|---|---|---|---|
+| US PII Protection | Exchange, SharePoint, OneDrive, Teams | All users | Messages or files with ≥5 SSNs or credit cards (bulk leak) |
+| Financial Data Protection | Exchange, SharePoint, OneDrive, Teams | `PVLab-Finance-Team` | Bank account or credit card content from Finance |
+| HR Case Data Protection | Exchange, SharePoint, OneDrive, Teams | `PVLab-Legal-Team` | SSN or bank-account data in legal/HR communications |
+| Workplace Health Record Protection | Exchange, SharePoint, Teams | All users | SSN + medical keyword proximity |
+| Confidential Label Egress Block | Exchange, SharePoint, OneDrive, Teams | All users | Anything labeled `Highly Confidential\Regulated-Data` going external |
 
-> "Four policies, different thresholds for different business units. HR gets a threshold of 1 — every case matters. Sales gets a threshold of 5 — catch the bulk leak, not the one-off. Same SIT (Social Security Number), scoped differently to the workloads and groups where each business unit works."
+> "Five policies, different thresholds for different business units. HR and Legal get a threshold of 1 — every case matters. The org-wide US PII rule uses ≥5 — catch the bulk leak, not the one-off. The last policy is the integration moment: anything auto-labeled Regulated-Data is automatically blocked from external egress. One policy, one label, no SIT lookup needed at evaluation time."
 
 **Show what a DLP hit looks like:**
 - Policy tip in Outlook ("This message contains sensitive info and can't be sent to external recipients")
@@ -107,42 +109,66 @@
 **Portal:** Purview → eDiscovery → Cases → `PVLab-Data-Breach-Investigation`
 
 **Show the case structure:**
-- **Custodians:** rtorres, mchen, nbrooks (pre-attached — the people under investigation)
+- **Custodians:** mchen, jblake, pnair, msullivan (pre-attached — the people under investigation)
 - **Hold:** all their mailboxes + OneDrive sites frozen
-- **Search:** pre-built query for sensitive terms
+- **Searches:** Financial-Records, PII-Exfil, Suspicious-Activity (pre-built queries on sensitive terms)
+- **Review sets:** one per search, ready for attorney review
 
-> "A real case takes hours to set up. The config deploys the whole thing — custodians, hold, search — in one call. Your legal team can clone this structure the next time HR flags a departure or an incident fires."
+> "A real case takes hours to set up. The config deploys the whole thing — custodians, hold, searches, review sets — in one call. Your legal team can clone this structure the next time HR flags a departure or an incident fires."
 
 **Show:** Review set → filtered results → export as PST or CSV
 
 > "One workflow from 'we think something happened' to 'here's the legal production'. No bouncing between mailbox tools, SharePoint admin, and manual exports."
 
+**Bonus case:** `PVLab-HR-Investigation` — same shape, different custodians (rtorres, pnair, nbrooks, msullivan), scoped to harassment / termination / background-check searches. Use it to show how the same pattern repeats per investigation type.
+
 ---
 
-## Act 5: Communication Compliance — "Policy for what people say" (3 min)
+## Act 5: Communication Compliance — "Visibility into AI conversations" (3 min)
 
-**Portal:** Purview → Communication Compliance → Policies → `PVLab-Offensive Language Monitoring`
+**Portal:** Purview → DSPM for AI → Recommendations / Activity explorer
 
-> "DLP is about what's in the content. Communication Compliance is about the conduct — harassment language, code of conduct violations, regulated conversations in Teams or email. This lab deploys one baseline policy; production tenants add more for regulated-speech categories like FINRA or HIPAA."
+> "DLP is about what's in the content. Communication Compliance, in its current shape, is about visibility into how people interact with AI — Copilot prompts, prompt-and-response pairs, and traffic to enterprise AI apps. The lab deploys one DSPM-for-AI collection policy: `Workplace AI Activity Monitoring`. That gives the compliance team a queryable activity stream they can review, build trainable classifiers on top of, or wire into Insider Risk."
 
 **Show:**
-- Pending review queue (alerts from the deployed test data)
-- Reviewer workflow: flag → resolve → document
+- DSPM for AI → Activity explorer (queryable Copilot prompts/responses)
+- Recommendations page (`Control Unethical Behavior in AI`, etc.) — the policy is the data ingestion; the review queue and remediation workflows are completed in the portal.
+
+> "The legacy `SupervisoryReviewPolicy` cmdlets that powered classic offensive-language reviews are retired. DSPM-for-AI is where Microsoft is investing — it inherits the same Communication Compliance review experience but with AI activity as the primary signal."
 
 ---
 
 ## Act 6: Insider Risk — "Behavior over time, not a single event" (4 min)
 
-**Portal:** Purview → Insider Risk Management → Policies → `PVLab-Departing User Data Theft`
+**Portal:** Purview → Insider Risk Management → Policies
 
-> "DLP catches an event. Insider Risk catches a pattern. This policy uses the *Data theft by departing users* template — when someone's about to leave, we watch for unusual download, share, and copy activity in the 30 days around their HR departure date."
+> "DLP catches an event. Insider Risk catches a pattern. The lab ships four IRM policies that overlap and reinforce each other:
+> - `PVLab-Departing User Data Theft` — uses the *Data theft by departing users* template; priority on Executives.
+> - `PVLab-General-Data-Leaks` — broad data-leak signals across all users (DLP-high-sev triggering).
+> - `PVLab-Priority-Executive-Data-Exfil` — elevated scoring for the Executives priority group.
+> - `PVLab-Security-Policy-Violations` — Defender-for-Endpoint-driven (malware, suspicious endpoint activity).
+>
+> Together they show the layering pattern: a baseline policy for everyone, plus priority-user policies for the people whose risk score should escalate faster."
 
 **Wizard-step defaults to call out** (matches how most customers configure in the portal):
-- **Users and groups:** All users and groups in your organization — no priority-user scoping. Keeps the demo simple and matches the portal default.
+- **Users and groups:** `Departing User Data Theft` and `Priority-Executive-Data-Exfil` scope to `PVLab-Executives`. The other two are tenant-wide. Easy story for "baseline + priority overlay".
 - **Content to prioritize:** one randomly-selected sensitivity label + one SIT + one trainable classifier (skip SharePoint sites — content-specific and brittle across tenants).
 - **Detection options:** every indicator and triggering event the template exposes is selected — maximizes the signal surface for the demo.
 
 > "The policy enriches with HR departure signals from your identity system. When someone's 30 days out and their copy-to-personal-email count jumps 5x, the user's IRM score escalates and appears on the investigator queue."
+
+---
+
+## Act 7: Identity + Audit baseline (90 sec)
+
+**Portal:** Entra → Conditional Access (report-only) and Purview → Audit → Saved searches
+
+> "Two pieces that aren't strictly Purview but every compliance lab needs them:
+>
+> - **Conditional Access** — three policies deploy in *report-only* mode: require MFA, block high-risk sign-ins, require compliant device. Report-only means they evaluate and log without enforcing. Flip to enabled when you're ready.
+> - **Audit** — seven saved searches across DLP matches, DLP overrides, file access, sharing, mailbox permissions, admin role changes, sign-in failures. The searches themselves are the demo — they show what's worth saving as a recurring investigation pattern.
+>
+> Both are deployed because every Purview workload above generates events that land in audit, and Conditional Access is what makes 'compliant device required' real for sensitive content."
 
 ---
 
@@ -197,13 +223,15 @@
 | Test users | 8 | rtorres (CCO), mchen (Finance), nbrooks (Legal), dokafor (IT), sreeves (HR), jblake/msullivan/pnair |
 | Groups | 3 | PVLab-Executives, PVLab-Finance-Team, PVLab-Legal-Team |
 | Sensitivity labels | 2 parents + 10 sublabels | Confidential (5), Highly Confidential (5) |
-| Auto-label policies | 2 | SSN, Credit Card → Highly Confidential - Regulated-Data |
-| DLP policies | 4 | US PII, Financial, HR Case, Workplace Health |
+| Auto-label policies | 3 | SSN, Credit Card → Highly Confidential\Regulated-Data; EIN/IBAN/SWIFT → Confidential\Internal |
+| DLP policies | 5 | US PII (≥5), Financial (Finance scope), HR Case (Legal scope), Workplace Health, Label Egress Block |
 | Retention policies | 2 | Financial (7y), Legal Hold (1y) |
-| eDiscovery case | 1 | Data-Breach-Investigation (custodians + hold + search) |
-| Communication Compliance | 1 | Offensive Language Monitoring |
-| Insider Risk policy | 1 | Departing User Data Theft |
-| Test emails | 6 | PII, financial, sensitive content |
+| eDiscovery cases | 2 | Data-Breach-Investigation, HR-Investigation |
+| Communication Compliance | 1 | Workplace AI Activity Monitoring (DSPM-for-AI collection) |
+| Insider Risk policies | 4 | Departing User, General Leaks, Priority Exec Exfil, Security Violations |
+| Conditional Access | 3 (report-only) | Require MFA, Block High-Risk, Require Compliant Device |
+| Audit searches | 7 | DLP match/override, file access, sharing, mailbox perms, admin role, sign-in failures |
+| Test emails | 7 | PII, financial, sensitive content, bulk SSN dump |
 
 **Deploy / teardown:**
 
