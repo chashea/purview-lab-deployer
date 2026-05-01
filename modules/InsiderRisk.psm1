@@ -247,7 +247,7 @@ function Remove-InsiderRisk {
             }
 
             if ($PSCmdlet.ShouldProcess($name, 'Remove Insider Risk policy')) {
-                Remove-InsiderRiskPolicy -Name $name -ErrorAction Stop
+                Remove-InsiderRiskPolicy -Identity $name -ErrorAction Stop
                 Write-LabLog -Message "Removed Insider Risk policy: $name" -Level Success
             }
         }
