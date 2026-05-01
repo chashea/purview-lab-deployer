@@ -72,7 +72,15 @@ Baseline Microsoft Purview lab demonstrating core compliance workloads in GCC.
 
 ### Communication Compliance
 
-- Offensive Language Monitoring policy
+- Inappropriate Text Policy
+
+> Implemented as a DSPM for AI Know Your Data collection policy
+> (`New-FeatureConfiguration -FeatureScenario KnowYourData`), not a classic
+> Communication Compliance template — the `SupervisoryReviewPolicyV2`
+> cmdlets are retired. Captures Copilot `UploadText`/`DownloadText`
+> activity across all sensitive info types. Full review/remediation flow
+> is configured in the Microsoft Purview portal under
+> **DSPM for AI → Recommendations → Control Unethical Behavior in AI**.
 
 ### Insider Risk Management
 

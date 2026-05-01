@@ -496,6 +496,15 @@
         }
       ]
     },
+    "communicationCompliance": {
+      "enabled": true,
+      "policies": [
+        {
+          "name": "Inappropriate Text Policy",
+          "description": "DSPM for AI collection policy — captures Copilot UploadText/DownloadText activity across all sensitive info types for inappropriate-text review."
+        }
+      ]
+    },
     "insiderRisk": {
       "enabled": true,
       "policies": [
