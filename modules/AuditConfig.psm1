@@ -19,9 +19,14 @@ function Deploy-AuditConfig {
     # deployer connects to by default. Without an EXO connection these cmdlets are
     # unrecognized and unified audit log ingestion is never enabled — which causes
     # Activity Explorer to stay empty in fresh tenants. Open a transient EXO session
-    # for the duration of this module if the cmdlet is missing.
+    # for the duration of this module if any of the cmdlets we actually call are
+    # missing — IPPS exposes Get-AdminAuditLogConfig as a proxy in some cloud/version
+    # combos but does not expose Set-AdminAuditLogConfig or Search-UnifiedAuditLog,
+    # so probing only Get-AdminAuditLogConfig is not sufficient.
     $exoConnectedHere = $false
-    if (-not (Get-Command Get-AdminAuditLogConfig -ErrorAction SilentlyContinue)) {
+    $requiredExoCmdlets = @('Get-AdminAuditLogConfig', 'Set-AdminAuditLogConfig', 'Search-UnifiedAuditLog')
+    $missingExoCmdlets = @($requiredExoCmdlets | Where-Object { -not (Get-Command $_ -ErrorAction SilentlyContinue) })
+    if ($missingExoCmdlets.Count -gt 0) {
         try {
             if (-not (Get-Module -ListAvailable -Name ExchangeOnlineManagement)) {
                 throw "ExchangeOnlineManagement module is not installed."
@@ -43,7 +48,7 @@ function Deploy-AuditConfig {
                 $exoParams['UserPrincipalName'] = $env:PURVIEW_LAB_UPN
             }
             Connect-ExchangeOnline @exoParams
-            Write-LabLog -Message "Opened transient Exchange Online session for audit configuration ($cloud)." -Level Info
+            Write-LabLog -Message "Opened transient Exchange Online session for audit configuration ($cloud). Missing cmdlets in prior session: $($missingExoCmdlets -join ', ')." -Level Info
             $exoConnectedHere = $true
             $results.exoConnected = $true
         }
