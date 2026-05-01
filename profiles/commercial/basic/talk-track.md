@@ -55,6 +55,8 @@
 
 > "Two parent labels, ten sublabels. Flat enough that users don't freeze at the dropdown, rich enough to express real protection tiers. Each sublabel carries its own encryption, watermarking, and access rules — the user picks the label, the platform does the enforcement."
 
+> **Note on `Confidential\Internal`:** intentionally unencrypted. Internal-use marking provides classification + footer/header visibility and feeds DLP/Insider Risk signals without the operational overhead of crypto. Every other sublabel is encrypted.
+
 **Show the three auto-label policies:**
 - SSN auto-apply → `Highly Confidential\Regulated-Data`
 - Credit Card auto-apply → `Highly Confidential\Regulated-Data`
@@ -135,6 +137,8 @@
 - Recommendations page (`Control Unethical Behavior in AI`, etc.) — the policy is the data ingestion; the review queue and remediation workflows are completed in the portal.
 
 > "The legacy `SupervisoryReviewPolicy` cmdlets that powered classic offensive-language reviews are retired. DSPM-for-AI is where Microsoft is investing — it inherits the same Communication Compliance review experience but with AI activity as the primary signal."
+
+> **Demo note:** the lab's seeded test emails won't trigger DSPM-for-AI on their own — the policy reads Copilot prompts and responses, not mailbox content. To see signals in Activity explorer, sign in as one of the test users and issue a Copilot prompt that includes PII (e.g., *"Summarize this customer record: SSN 123-45-6789, CC 4111-1111-1111-1111"*). The activity will appear in DSPM for AI within a few minutes.
 
 ---
 

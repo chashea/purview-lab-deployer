@@ -205,6 +205,15 @@
                           },
                           "description": "Optional sensitivity label conditions applied at rule level."
                         },
+                        "accessScope": {
+                          "type": "string",
+                          "enum": [
+                            "NotInOrganization",
+                            "InOrganization",
+                            "All"
+                          ],
+                          "description": "Optional rule scope. NotInOrganization restricts the rule to communications/sharing with recipients outside the tenant; InOrganization restricts to internal-only; All (default) applies to both. Maps to New-DlpComplianceRule -AccessScope."
+                        },
                         "enforcement": {
                           "type": "object",
                           "properties": {

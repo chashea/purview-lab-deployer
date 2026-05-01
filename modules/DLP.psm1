@@ -290,6 +290,18 @@ function Get-LabDlpRuleOptionalParameters {
     }
 
     $enforcement = if (($Rule.PSObject.Properties.Name -contains 'enforcement') -and $null -ne $Rule.enforcement) { $Rule.enforcement } else { $null }
+
+    if (($Rule.PSObject.Properties.Name -contains 'accessScope') -and -not [string]::IsNullOrWhiteSpace([string]$Rule.accessScope)) {
+        $accessScopeParam = Get-LabSupportedParameterName -CommandInfo $CommandInfo -CandidateNames @('AccessScope')
+        if ($accessScopeParam) {
+            $optionalParams[$accessScopeParam] = ([string]$Rule.accessScope).Trim()
+            Write-LabLog -Message "Rule '$RuleName' scoped via AccessScope='$([string]$Rule.accessScope)'." -Level Info
+        }
+        else {
+            Write-LabLog -Message "Rule '$RuleName' requested accessScope='$([string]$Rule.accessScope)' but '$($CommandInfo.Name)' has no supported AccessScope parameter. Scope condition will not be applied." -Level Warning
+        }
+    }
+
     if (-not $enforcement) {
         return $optionalParams
     }
@@ -818,7 +830,7 @@ function Deploy-DLP {
                 # label predicate (AdvancedRule for Copilot, SensitivityLabels/SensitivityLabel/Labels
                 # otherwise). On retry we preserve essentials and drop only the decoration
                 # (BlockAccess, NotifyUser, GenerateAlert, IncidentReport*, etc.).
-                $predicateParamNames = @('AdvancedRule', 'SensitivityLabels', 'SensitivityLabel', 'Labels', 'RestrictAccess')
+                $predicateParamNames = @('AdvancedRule', 'SensitivityLabels', 'SensitivityLabel', 'Labels', 'RestrictAccess', 'AccessScope')
                 $predicateParams = @{}
                 $enforcementParams = @{}
                 foreach ($entry in $optionalRuleParams.GetEnumerator()) {

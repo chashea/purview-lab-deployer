@@ -44,7 +44,9 @@
           "displayName": "PVLab-Finance-Team",
           "members": [
             "mchen",
-            "jblake"
+            "jblake",
+            "sreeves",
+            "msullivan"
           ]
         },
         {
@@ -269,6 +271,7 @@
               "labels": [
                 "Highly Confidential\\Regulated-Data"
               ],
+              "accessScope": "NotInOrganization",
               "enforcement": {
                 "action": "block",
                 "userNotification": {
@@ -295,7 +298,7 @@
           "sublabels": [
             {
               "name": "Internal",
-              "tooltip": "Internal-use only - all employees",
+              "tooltip": "Internal-use only - all employees. Classification only (no encryption); marker + footer for visibility.",
               "encryption": false,
               "contentMarking": {
                 "headerText": "CONFIDENTIAL - Internal",
