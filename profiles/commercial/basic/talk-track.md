@@ -75,7 +75,7 @@
 | US PII Protection | Exchange, SharePoint, OneDrive, Teams | All users | Messages or files with ≥5 SSNs or credit cards (bulk leak) |
 | Financial Data Protection | Exchange, SharePoint, OneDrive, Teams | `PVLab-Finance-Team` | Bank account or credit card content from Finance |
 | HR Case Data Protection | Exchange, SharePoint, OneDrive, Teams | `PVLab-Legal-Team` | SSN or bank-account data in legal/HR communications |
-| Workplace Health Record Protection | Exchange, SharePoint, Teams | All users | SSN + medical keyword proximity |
+| Workplace Health Record Protection | Exchange, SharePoint, OneDrive, Teams | All users | SSN + medical keyword proximity |
 | Confidential Label Egress Block | Exchange, SharePoint, OneDrive, Teams | All users | Anything labeled `Highly Confidential\Regulated-Data` going external |
 
 > "Five policies, different thresholds for different business units. HR and Legal get a threshold of 1 — every case matters. The org-wide US PII rule uses ≥5 — catch the bulk leak, not the one-off. The last policy is the integration moment: anything auto-labeled Regulated-Data is automatically blocked from external egress. One policy, one label, no SIT lookup needed at evaluation time."

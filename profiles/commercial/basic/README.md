@@ -60,7 +60,7 @@ cd purview-lab-deployer
 | US PII Protection | Exchange, SharePoint, OneDrive, Teams | All users | SSN ≥5, Credit Card ≥5 |
 | Financial Data Protection | Exchange, SharePoint, OneDrive, Teams | `PVLab-Finance-Team` | Bank account ≥1, Credit card ≥1 |
 | HR Case Data Protection | Exchange, SharePoint, OneDrive, Teams | `PVLab-Legal-Team` | SSN ≥1, Bank account ≥1 |
-| Workplace Health Record Protection | Exchange, SharePoint, Teams | All users | Medical terms ≥1, SSN ≥1 |
+| Workplace Health Record Protection | Exchange, SharePoint, OneDrive, Teams | All users | Medical terms ≥1, SSN ≥1 |
 | Confidential Label Egress Block | Exchange, SharePoint, OneDrive, Teams | All users | Block content labeled `Highly Confidential\Regulated-Data` |
 
 ### Retention Policies

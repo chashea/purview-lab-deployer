@@ -213,6 +213,7 @@
           "locations": [
             "Exchange",
             "SharePoint",
+            "OneDrive",
             "Teams"
           ],
           "rules": [
