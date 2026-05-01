@@ -16,17 +16,16 @@ function Deploy-AuditConfig {
 
     # Get-AdminAuditLogConfig / Set-AdminAuditLogConfig / Search-UnifiedAuditLog live in
     # Exchange Online PowerShell, not the Security & Compliance (IPPS) session that the
-    # deployer connects to by default. Without an EXO connection these cmdlets are
-    # unrecognized and unified audit log ingestion is never enabled — which causes
-    # Activity Explorer to stay empty in fresh tenants. Open a transient EXO session
-    # for the duration of this module if any of the cmdlets we actually call are
-    # missing — IPPS exposes Get-AdminAuditLogConfig as a proxy in some cloud/version
-    # combos but does not expose Set-AdminAuditLogConfig or Search-UnifiedAuditLog,
-    # so probing only Get-AdminAuditLogConfig is not sufficient.
+    # deployer connects to by default. The IPPS REST session in some cloud/version combos
+    # exposes Get-AdminAuditLogConfig as a proxy but NOT Set-AdminAuditLogConfig or
+    # Search-UnifiedAuditLog. Open a transient EXO session only when Get is missing
+    # entirely — opening (and later disconnecting) an EXO session when an IPPS session
+    # is already alive collapses BOTH sessions and breaks downstream workloads
+    # (observed: Get-DlpCompliancePolicy disappears from the post-deploy validation
+    # step). When Set-/Search- are missing but Get works, skip those operations
+    # gracefully so we don't disrupt the existing IPPS connection.
     $exoConnectedHere = $false
-    $requiredExoCmdlets = @('Get-AdminAuditLogConfig', 'Set-AdminAuditLogConfig', 'Search-UnifiedAuditLog')
-    $missingExoCmdlets = @($requiredExoCmdlets | Where-Object { -not (Get-Command $_ -ErrorAction SilentlyContinue) })
-    if ($missingExoCmdlets.Count -gt 0) {
+    if (-not (Get-Command Get-AdminAuditLogConfig -ErrorAction SilentlyContinue)) {
         try {
             if (-not (Get-Module -ListAvailable -Name ExchangeOnlineManagement)) {
                 throw "ExchangeOnlineManagement module is not installed."
@@ -48,7 +47,7 @@ function Deploy-AuditConfig {
                 $exoParams['UserPrincipalName'] = $env:PURVIEW_LAB_UPN
             }
             Connect-ExchangeOnline @exoParams
-            Write-LabLog -Message "Opened transient Exchange Online session for audit configuration ($cloud). Missing cmdlets in prior session: $($missingExoCmdlets -join ', ')." -Level Info
+            Write-LabLog -Message "Opened transient Exchange Online session for audit configuration ($cloud)." -Level Info
             $exoConnectedHere = $true
             $results.exoConnected = $true
         }
@@ -66,6 +65,9 @@ function Deploy-AuditConfig {
                 Write-LabLog -Message 'Unified audit logging is already enabled.' -Level Info
                 $results.auditEnabled = $true
             }
+            elseif (-not (Get-Command Set-AdminAuditLogConfig -ErrorAction SilentlyContinue)) {
+                Write-LabLog -Message 'Unified audit logging is not enabled and Set-AdminAuditLogConfig is not available in this session. Enable manually: Connect-ExchangeOnline; Set-AdminAuditLogConfig -UnifiedAuditLogIngestionEnabled $true.' -Level Warning
+            }
             else {
                 if ($PSCmdlet.ShouldProcess('Unified Audit Log', 'Enable')) {
                     Set-AdminAuditLogConfig -UnifiedAuditLogIngestionEnabled $true -ErrorAction Stop
@@ -78,15 +80,29 @@ function Deploy-AuditConfig {
             Write-LabLog -Message "Could not configure audit logging: $($_.Exception.Message)" -Level Warning
         }
 
-        # Create saved audit log searches for AI activities
+        # Validate saved audit-log search definitions. Search-UnifiedAuditLog only lives
+        # in Exchange Online PowerShell; if it isn't available in this session we capture
+        # the search definitions in the manifest as 'unvalidated' rather than blocking.
+        # (Search-UnifiedAuditLog has no -Name parameter — naming the search is purely
+        # cosmetic and tracked in the manifest, not as part of the actual cmdlet call.)
+        $searchCmd = Get-Command Search-UnifiedAuditLog -ErrorAction SilentlyContinue
         if ($Config.workloads.PSObject.Properties['auditConfig'] -and $Config.workloads.auditConfig.searches) {
             foreach ($search in $Config.workloads.auditConfig.searches) {
                 $searchName = "$($Config.prefix)-$($search.name)"
 
-                if ($PSCmdlet.ShouldProcess($searchName, 'Create audit log search')) {
+                if (-not $searchCmd) {
+                    Write-LabLog -Message "Audit search '$searchName' definition captured (Search-UnifiedAuditLog not available in this session — validate manually after Connect-ExchangeOnline)." -Level Info
+                    $results.searches += @{
+                        name       = $searchName
+                        operations = $search.operations
+                        status     = 'unvalidated'
+                    }
+                    continue
+                }
+
+                if ($PSCmdlet.ShouldProcess($searchName, 'Probe audit log search')) {
                     try {
                         $searchParams = @{
-                            Name       = $searchName
                             Operations = $search.operations
                             StartDate  = (Get-Date).AddDays(-30)
                             EndDate    = (Get-Date).AddDays(1)
@@ -114,14 +130,16 @@ function Deploy-AuditConfig {
         }
     }
     finally {
+        # Only disconnect when we opened a fresh, isolated session AND no IPPS session
+        # was established by the orchestrator. Disconnect-ExchangeOnline (without
+        # -ConnectionId) closes ALL EXO/IPPS sessions in the runspace and breaks
+        # downstream workloads (observed: post-deploy validation loses
+        # Get-DlpCompliancePolicy when this fires after Connect-IPPSSession was used).
+        # In the only case we open a session here (Get-AdminAuditLogConfig totally
+        # missing — i.e., neither EXO nor IPPS was connected), leaving the session
+        # open is harmless and will be torn down when the pwsh runspace exits.
         if ($exoConnectedHere) {
-            try {
-                Disconnect-ExchangeOnline -Confirm:$false -ErrorAction SilentlyContinue
-                Write-LabLog -Message 'Closed transient Exchange Online session.' -Level Info
-            }
-            catch {
-                Write-Verbose "Disconnect-ExchangeOnline failed (non-fatal): $($_.Exception.Message)"
-            }
+            Write-LabLog -Message 'Leaving transient Exchange Online session open to avoid collapsing the orchestrator IPPS session.' -Level Info
         }
     }
 
