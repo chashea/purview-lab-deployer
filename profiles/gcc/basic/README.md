@@ -54,12 +54,14 @@ Baseline Microsoft Purview lab demonstrating core compliance workloads in GCC.
 
 ### DLP Policies
 
-| Policy | Location | Rules |
+| Policy | Locations | Rules (SIT, minCount, action) |
 |---|---|---|
-| US PII Protection | Exchange, SharePoint, OneDrive, Teams | SSN detection (min 5) |
-| Financial Data Protection | Exchange, SharePoint, OneDrive | Credit card detection (min 1) |
-| HR Case Data Protection | Exchange, SharePoint | SSN detection (min 1) |
-| Workplace Health Record Protection | Exchange, SharePoint | SSN + medical terms (min 1) |
+| US PII Protection | Exchange, SharePoint, OneDrive | SSN (min 1, block); Credit Card (min 1, block) |
+| Financial Data Protection | Exchange, SharePoint, OneDrive, Teams | U.S. Bank Account Number (min 1, block); Credit Card (min 1, block) |
+| HR Case Data Protection | Exchange, SharePoint, OneDrive | SSN (min 1, block); U.S. Bank Account Number (min 1, block) |
+| Workplace Health Record Protection | Exchange, SharePoint, OneDrive, Teams | All Medical Terms And Conditions (min 1, block); SSN (min 1, block) |
+
+> All four policies are exercised by `scripts/Invoke-SmokeTest.ps1` via Exchange (sendMail) and OneDrive (file upload). Teams chat traffic is not exercised by the smoke test — Teams DLP signals must be validated manually.
 
 ### Retention Policies
 

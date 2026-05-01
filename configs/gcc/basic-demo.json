@@ -112,6 +112,7 @@
           "locations": [
             "Exchange",
             "SharePoint",
+            "OneDrive",
             "Teams"
           ],
           "rules": [
@@ -204,6 +205,7 @@
           "locations": [
             "Exchange",
             "SharePoint",
+            "OneDrive",
             "Teams"
           ],
           "rules": [
