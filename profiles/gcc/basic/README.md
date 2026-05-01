@@ -68,16 +68,34 @@ The basic GCC lab targets **pre-existing demo tenant accounts** in `MngEnvMCAP65
 
 ### Retention Policies
 
-- Financial Records Retention — 2555 days (7 years)
-- Legal Hold — 365 days
+| Policy | Action | Duration | Locations |
+|---|---|---|---|
+| `PVLab-Financial Records Retention` | retainAndDelete | 2555 days (7 years) | Exchange, SharePoint |
+| `PVLab-Legal Hold Policy` | retainOnly | 365 days (1 year) | Exchange, OneDrive |
 
 ### eDiscovery
 
-- Case: Data-Breach-Investigation with custodians, hold, and search
+Two Premium eDiscovery cases, each with custodians, hold query, multiple searches, and review sets:
+
+**`PVLab-Data-Breach-Investigation`** — financial breach + PII exfil scenario
+- Custodians: mahmed, NestorW, jkim, JoniS
+- Hold query: confidential / classified / breach / unauthorized (received >= 2025-01-01)
+- Searches → Review sets:
+  - `Financial-Records` (wire transfer / account number) → `Financial-Review`
+  - `PII-Exfil` (social security / SSN / credit card) → `PII-Review`
+  - `Suspicious-Activity` (suspicious / unauthorized access / breach) → `Incident-Review`
+
+**`PVLab-HR-Investigation`** — workplace conduct scenario
+- Custodians: mtorres, jkim, nshah, JoniS
+- Hold query: complaint / investigation / harassment / misconduct / hostile (received >= 2025-01-01)
+- Searches → Review sets:
+  - `Harassment-Complaints` (harassment / hostile / inappropriate behavior) → `Conduct-Review`
+  - `Termination-Records` (termination / severance / departure / resignation) → `Separation-Review`
+  - `Background-Check-PII` (social security / SSN / date of birth / background check) → `PII-Review`
 
 ### Communication Compliance
 
-- Inappropriate Text Policy
+- `PVLab-Inappropriate Text Policy`
 
 > Implemented as a DSPM for AI Know Your Data collection policy
 > (`New-FeatureConfiguration -FeatureScenario KnowYourData`), not a classic
@@ -89,7 +107,38 @@ The basic GCC lab targets **pre-existing demo tenant accounts** in `MngEnvMCAP65
 
 ### Insider Risk Management
 
-- Departing User Data Theft policy
+| Policy | Template focus |
+|---|---|
+| `PVLab-Departing User Data Theft` | Data theft by departing users (HrEvent + AzureAccountDeleted triggers; priority group `PVLab-Executives`) |
+| `PVLab-General-Data-Leaks` | General data leaks across all users |
+| `PVLab-Priority-Executive-Data-Exfil` | Priority-user (executive) data exfiltration signals |
+| `PVLab-Security-Policy-Violations` | Security policy violations |
+
+> GCC marks Insider Risk Management as `limited` — feature parity with commercial may differ. Validate alert/risk-score behavior in the tenant before any production claim.
+
+### Conditional Access
+
+Three policies deployed in **report-only** mode (non-blocking) so the lab does not lock anyone out:
+
+- `PVLab-Require-MFA-AllUsers`
+- `PVLab-Block-HighRisk-SignIns`
+- `PVLab-Require-Compliant-Device`
+
+> Switch any policy to *On* in Entra ID → Security → Conditional Access only after validating its session impact in report-only telemetry.
+
+### Audit Configuration
+
+Unified audit logging is enabled (idempotent — skipped if already on). Seven named audit-log searches are created for ongoing investigation:
+
+| Search | Operations covered |
+|---|---|
+| `PVLab-DLP-Match-Audit` | DlpRuleMatch |
+| `PVLab-DLP-Override-Audit` | DlpRuleUndo |
+| `PVLab-File-Access-Audit` | FileAccessed, FileDownloaded, FileModified, FileUploaded |
+| `PVLab-Sharing-Audit` | SharingInvitationCreated/Accepted, AnonymousLinkCreated, SecureLinkCreated, SharingSet |
+| `PVLab-Mailbox-Permission-Audit` | Add/Remove-MailboxPermission, New/Set-InboxRule |
+| `PVLab-Admin-Role-Audit` | role membership + user lifecycle ops |
+| `PVLab-Sign-In-Failure-Audit` | UserLoginFailed |
 
 ### Test Data
 
