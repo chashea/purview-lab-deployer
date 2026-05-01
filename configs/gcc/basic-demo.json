@@ -420,7 +420,7 @@
             "jkim@MngEnvMCAP659995.onmicrosoft.com",
             "JoniS@MngEnvMCAP659995.onmicrosoft.com"
           ],
-          "holdQuery": "(subject:\"confidential\" OR subject:\"classified\" OR body:\"breach\" OR body:\"unauthorized\") AND received>=2025-01-01",
+          "holdQuery": "(subject:\"confidential\" OR subject:\"classified\" OR body:\"breach\" OR body:\"unauthorized\") AND received>=2024-01-01",
           "searchQuery": "breach OR incident",
           "searches": [
             {
@@ -463,7 +463,7 @@
             "nshah@MngEnvMCAP659995.onmicrosoft.com",
             "JoniS@MngEnvMCAP659995.onmicrosoft.com"
           ],
-          "holdQuery": "(subject:\"complaint\" OR subject:\"investigation\" OR body:\"harassment\" OR body:\"misconduct\" OR body:\"hostile\") AND received>=2025-01-01",
+          "holdQuery": "(subject:\"complaint\" OR subject:\"investigation\" OR body:\"harassment\" OR body:\"misconduct\" OR body:\"hostile\") AND received>=2024-01-01",
           "searches": [
             {
               "name": "Harassment-Complaints",

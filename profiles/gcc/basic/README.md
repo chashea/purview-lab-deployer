@@ -169,3 +169,37 @@ Unified audit logging is enabled (idempotent — skipped if already on). Seven n
 | `Departing-Employee-Files.docx` | opark | *(none)* | Auto-label policies + IRM departing-user file-activity |
 
 > Test emails cannot be recalled. Documents persist in OneDrive until manually deleted (TestData removal is intentionally a no-op).
+
+## Caveats and tenant prerequisites
+
+The basic GCC lab deploys cleanly against a stock GCC Moderate tenant, but a few signals only materialize when adjacent tenant features are wired up. None of these block deploy — they just affect what you'll see in dashboards.
+
+### `HrEvent` triggering event needs an HR data connector
+
+`PVLab-Departing User Data Theft` (Insider Risk) lists `HrEvent` in its triggering events. `HrEvent` only fires when an HR data connector is configured in the Purview portal (Settings → Data connectors → HR) and is feeding termination/transfer events. Without it, the policy still runs on `AzureAccountDeleted` and `UserPerformsExfiltrationActivity` triggers — but the canonical "departing user" trigger never fires.
+
+> Demoing departures? Either stand up the HR connector with a CSV upload, or rely on `AzureAccountDeleted` (delete the test user via Entra ID) to fire the policy.
+
+### `Require-Compliant-Device` needs Intune
+
+`PVLab-Require-Compliant-Device` (Conditional Access) requires the sign-in to come from an Intune-compliant or hybrid Azure AD-joined device. Fresh demo tenants typically have neither — so the report-only policy will record no telemetry. To see results, enroll at least one device in Intune (or HAADJ) and sign in from it.
+
+### Defender for Endpoint indicators degrade gracefully
+
+The four IRM policies enable indicators like `DefenderForEndpointHighSeverityAlert` / `MediumSeverityAlert` / `LowSeverityAlert`. If `New-InsiderRiskPolicy` rejects the indicator parameter shape (cmdlet version drift) or the tenant has no DfE integration, `modules/InsiderRisk.psm1` automatically retries without indicators and logs a warning — the policy still deploys, but DfE-sourced indicators must be enabled manually in Purview → Insider Risk Management → Settings → Policy indicators.
+
+### Two IRM policies overlap on `PVLab-Executives` (intentional)
+
+Both `PVLab-Departing User Data Theft` and `PVLab-Priority-Executive-Data-Exfil` scope `priorityUserGroups: ["PVLab-Executives"]`. This is deliberate: they fire on different scenarios (intellectual-property theft vs. high-value-employee data leak) and produce complementary risk-scoring signals on the same priority cohort. Expect duplicate-looking alerts on `NestorW` / `DebraB` activity — the underlying `InsiderRiskScenario` enum value differs (`IntellectualPropertyTheft` vs `HighValueEmployeeDataLeak`).
+
+### eDiscovery hold queries use a fixed `received>=` date
+
+Both eDiscovery cases (`PVLab-Data-Breach-Investigation`, `PVLab-HR-Investigation`) hardcode `received>=2024-01-01` in their `holdQuery` and content queries. This gives a wide rolling window today, but eventually the date will become too restrictive. Refresh by editing `configs/gcc/basic-demo.json` → `workloads.eDiscovery.cases[].holdQuery` if test mailboxes have content older than the cutoff that you want held.
+
+### DSPM for AI Communication Compliance has limited Copilot parity in GCC
+
+`PVLab-Inappropriate Text Policy` is implemented as a DSPM-for-AI Know Your Data feature configuration with `EnforcementPlanes = ['copilotexperiences']`. The DSPM-for-AI Copilot enforcement surface is rolled out unevenly in GCC compared to commercial — analogous to the GCC `ai` profile note that "SIT-based Copilot prompt blocking is commercial-only". The collection policy will deploy, but full review/remediation behavior depends on Copilot DSPM availability in your specific GCC tenant. Validate the **DSPM for AI → Recommendations → Control Unethical Behavior in AI** flow before depending on it for a customer demo.
+
+### Sentinel is not part of the basic GCC lab
+
+`profiles/gcc/capabilities.json` marks `sentinelIntegration` as `unavailable` (Azure Government endpoints + GCC-specific connector registrations). The `Deploy-Lab.ps1` capability gate will refuse to deploy any config that enables it. The `purview-sentinel` profile is commercial-only.
