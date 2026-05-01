@@ -33,24 +33,27 @@ Baseline Microsoft Purview lab demonstrating core compliance workloads in GCC.
 
 ### Identity (8 users, 3 groups)
 
-| User | Department | Role |
-|---|---|---|
-| rtorres | Executive | Chief Compliance Officer |
-| mchen | Finance | Finance Analyst |
-| nbrooks | Legal | General Counsel |
-| dokafor | IT | IT Manager |
-| sreeves | HR | HR Director |
-| jblake | Sales | Sales Director |
-| msullivan | Marketing | Marketing VP |
-| pnair | Engineering | Engineering Lead |
+The basic GCC lab targets **pre-existing demo tenant accounts** in `MngEnvMCAP659995.onmicrosoft.com` (no users are created by the deployer):
 
-**Groups:** Executives, Finance-Team, Legal-Team
+| User UPN | Group memberships |
+|---|---|
+| mtorres@... | Legal-Team |
+| mahmed@... | Finance-Team |
+| nshah@... | Legal-Team |
+| opark@... | — |
+| DebraB@... | Executives |
+| NestorW@... | Executives, Finance-Team |
+| JoniS@... | — |
+| jkim@... | Legal-Team |
+
+**Groups:** `PVLab-Executives`, `PVLab-Finance-Team`, `PVLab-Legal-Team`
 
 ### Sensitivity Labels
 
-- **Confidential** (parent) with sublabels: Internal, Recipients-Only, Anyone-No-Forwarding, Financial-Data, Legal-Privileged
-- **Highly Confidential** (parent) with sublabels: Internal, Recipients-Only, Anyone-No-Forwarding, Board-Only, Regulated-Data
+- **Confidential** (parent) with sublabels: `Medical`, `Financial`, `HR`, `All-Employees`, `Recipients Only`
+- **Highly Confidential** (parent) with sublabels: `Medical`, `Financial`, `HR`, `All-Employees`, `Recipients Only`
 - Auto-label policies for SSN and credit card detection
+- Sublabel identities follow the pattern `PVLab-<parent>-<sublabel>` with spaces replaced by hyphens (e.g. `PVLab-Highly-Confidential-Financial`)
 
 ### DLP Policies
 
@@ -90,4 +93,30 @@ Baseline Microsoft Purview lab demonstrating core compliance workloads in GCC.
 
 ### Test Data
 
-- 6 sample emails with PII, financial data, and sensitive content
+**Emails (10):** Sent via Graph from the signed-in admin to the user pairs below. Each carries content designed to fire one or more DLP rules (SSN, Credit Card, Bank Account, Medical Terms) or match the eDiscovery case content query.
+
+| From | To | Trigger |
+|---|---|---|
+| mahmed → NestorW | Q4 Financial Summary | Bank Account |
+| DebraB → mahmed | Client Payment Issue | Credit Card |
+| mtorres → nshah | Background Check Results | SSN |
+| opark → NestorW | Insider Trading Concern | eDiscovery / IRM signal |
+| jkim → mtorres | HR Investigation Packet | SSN |
+| JoniS → jkim | Workplace Accommodation | Medical |
+| mahmed → DebraB | Vendor ACH Wire PMT-228 | Bank Account |
+| jkim → nshah | Workplace Conduct Allegation | eDiscovery (harassment / hostile / inappropriate behavior) |
+| jkim → mtorres | Patient Referral Cardiology | Medical |
+| mtorres → jkim | Termination Paperwork SSN | SSN + Bank Account |
+
+**Documents (6):** Uploaded to the owner's OneDrive root via Graph, then optionally tagged with a sensitivity label via `assignSensitivityLabel`. Exercises file-surface DLP, label adoption, auto-label policies, and IRM file-activity signals.
+
+| File | Owner | Label | Trigger |
+|---|---|---|---|
+| `Q4-Board-Financials.docx` | NestorW | `PVLab-Highly-Confidential-Financial` | Financial Data Protection (Bank Account) |
+| `Customer-Master-List.docx` | DebraB | `PVLab-Highly-Confidential-All-Employees` | US PII Protection (SSN + Credit Card) |
+| `Patient-Health-Records.docx` | jkim | `PVLab-Confidential-Medical` | Workplace Health Record Protection (Medical + SSN) |
+| `HR-Termination-Packet.docx` | mtorres | `PVLab-Confidential-HR` | HR Case Data Protection (SSN + Bank Account) |
+| `Legal-Discovery-Notes.docx` | nshah | `PVLab-Highly-Confidential-Recipients-Only` | eDiscovery case content query |
+| `Departing-Employee-Files.docx` | opark | *(none)* | Auto-label policies + IRM departing-user file-activity |
+
+> Test emails cannot be recalled. Documents persist in OneDrive until manually deleted (TestData removal is intentionally a no-op).

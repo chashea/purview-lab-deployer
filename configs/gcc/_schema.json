@@ -591,6 +591,43 @@
                   }
                 }
               }
+            },
+            "documents": {
+              "type": "array",
+              "description": "Files uploaded to test users' OneDrive. Used to exercise file-surface DLP, auto-label policies, IRM file-activity signals, and sensitivity label adoption.",
+              "items": {
+                "type": "object",
+                "required": [
+                  "owner",
+                  "content"
+                ],
+                "properties": {
+                  "fileName": {
+                    "type": "string",
+                    "description": "Target filename in the owner's OneDrive root. Either fileName or name must be present."
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Alias for fileName."
+                  },
+                  "owner": {
+                    "type": "string",
+                    "description": "OneDrive owner mailNickname (resolved against testUsers)."
+                  },
+                  "content": {
+                    "type": "string",
+                    "description": "Raw text content uploaded as the file body."
+                  },
+                  "labelIdentity": {
+                    "type": "string",
+                    "description": "Optional sensitivity label identity (e.g. PVLab-Highly-Confidential-Financial). Applied via Graph assignSensitivityLabel after upload."
+                  },
+                  "label": {
+                    "type": "string",
+                    "description": "Alias for labelIdentity."
+                  }
+                }
+              }
             }
           }
         }

@@ -707,6 +707,67 @@
           "to": "jkim",
           "subject": "Workplace Accommodation Documentation",
           "body": "Priya, occupational health completed review for employee accommodation request 24-771. Documentation includes physician statement, treatment plan, and return-to-work restrictions through 05/31. Please retain per HR medical records policy."
+        },
+        {
+          "from": "mahmed",
+          "to": "DebraB",
+          "subject": "Vendor ACH wire instructions PMT-228",
+          "body": "Debra, please process the vendor wire for PMT-228. Routing 071000013, account 998877665544. Amount $62,400.00 net 30. Confirm before EOD Friday."
+        },
+        {
+          "from": "jkim",
+          "to": "nshah",
+          "subject": "Workplace conduct allegation - urgent",
+          "body": "Natalie, escalating a workplace conduct allegation involving harassment and a hostile work environment between two engineers on the platform team. Several Teams chats reference inappropriate behavior toward a junior contributor. We need legal hold on both mailboxes immediately and a discreet HR interview track. Please advise on eDiscovery scope by tomorrow."
+        },
+        {
+          "from": "jkim",
+          "to": "mtorres",
+          "subject": "Patient referral - cardiology evaluation",
+          "body": "Rachel, occupational health is referring an employee for cardiology evaluation. Symptoms consistent with acute myocardial infarction; cardiologist requested echocardiogram and stress test. Pre-existing conditions include hypertension and Type 2 diabetes mellitus. Please coordinate accommodations."
+        },
+        {
+          "from": "mtorres",
+          "to": "jkim",
+          "subject": "Termination paperwork - SSN verification",
+          "body": "Priya, finalizing termination paperwork for the departing engineer. SSN on file: 632-12-4877. Final paycheck routes to bank account 4455667788, ABA 011401533. Confirm before payroll cutoff Thursday."
+        }
+      ],
+      "documents": [
+        {
+          "fileName": "Q4-Board-Financials.docx",
+          "owner": "NestorW",
+          "labelIdentity": "PVLab-Highly-Confidential-Financial",
+          "content": "Q4 Board Financials - HIGHLY CONFIDENTIAL\n\nProjected Revenue: $18.4M\nWire payment routing 021000021 account 0011223344 was used for the Q4 vendor settlement.\nNet new ARR: $4.2M.\n\nFor board review only. Do not distribute outside the executive committee."
+        },
+        {
+          "fileName": "Customer-Master-List.docx",
+          "owner": "DebraB",
+          "labelIdentity": "PVLab-Highly-Confidential-All-Employees",
+          "content": "Customer Master List - HIGHLY CONFIDENTIAL\n\nCustomer: Jane Smith | SSN: 287-44-9921 | Card on file: 4111-1111-1111-1111 | Account: 9988776655\nCustomer: Robert Lee | SSN: 415-22-7788 | Card on file: 5500-0000-0000-0004 | Account: 1122334455\n\nDo not export. Do not share outside Sales and Finance."
+        },
+        {
+          "fileName": "Patient-Health-Records.docx",
+          "owner": "jkim",
+          "labelIdentity": "PVLab-Confidential-Medical",
+          "content": "Workplace Health Record - CONFIDENTIAL\n\nEmployee SSN: 219-09-9999\nClinical findings: acute myocardial infarction, started on aspirin and clopidogrel; echocardiogram reduced ejection fraction 35%. Co-morbidities: hypertension, Type 2 diabetes mellitus.\nRecommended accommodation: modified work schedule for 6 weeks."
+        },
+        {
+          "fileName": "HR-Termination-Packet.docx",
+          "owner": "mtorres",
+          "labelIdentity": "PVLab-Confidential-HR",
+          "content": "HR Termination Packet - CONFIDENTIAL\n\nEmployee SSN: 512-84-7731\nFinal paycheck wire: routing 011401533, checking account 9876543210\nDisciplinary notes attached. Coordinate with Legal before sending the separation agreement."
+        },
+        {
+          "fileName": "Legal-Discovery-Notes.docx",
+          "owner": "nshah",
+          "labelIdentity": "PVLab-Highly-Confidential-Recipients-Only",
+          "content": "Legal Discovery Notes - PRIVILEGED & CONFIDENTIAL\n\nMatter: HR-2026-118 (workplace harassment investigation)\nKey findings: multiple witnesses describe a hostile work environment and repeated inappropriate behavior by the subject. Recommended immediate legal hold and Teams content collection.\nDraft work product - do not distribute."
+        },
+        {
+          "fileName": "Departing-Employee-Files.docx",
+          "owner": "opark",
+          "content": "Departing Employee Project Notes\n\nMerger project NOVA-2026 timeline, partner contact list, customer SSNs flagged in due diligence (e.g. 078-05-1120), and financial model assumptions. Saving locally before last day. Will email link to personal account.\n\nThis file intentionally has no sensitivity label - the basic lab auto-label policies should classify it on upload."
         }
       ]
     },
