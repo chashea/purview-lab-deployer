@@ -11,10 +11,10 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Cache PSScriptAnalyzer
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.local/share/powershell/Modules/PSScriptAnalyzer
           key: psscriptanalyzer-${{ runner.os }}-v1
@@ -40,7 +40,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install Pester
         shell: pwsh
@@ -59,7 +59,7 @@ jobs:
   smoke-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Import all modules and load config
         shell: pwsh

@@ -30,7 +30,7 @@ jobs:
     environment: commercial
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install PowerShell modules
         shell: pwsh
@@ -40,7 +40,7 @@ jobs:
           Install-Module -Name Microsoft.Graph.Users -Force -Scope CurrentUser
 
       - name: Azure login (OIDC)
-        uses: azure/login@v2
+        uses: azure/login@v3
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -49,24 +49,39 @@ jobs:
       - name: Run DLP smoke test
         shell: pwsh
         run: |
-          $profile = '${{ github.event.inputs.profile }}'
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Path logs -Force | Out-Null
+          $transcriptPath = Join-Path 'logs' 'smoke-${{ github.run_id }}.log'
+          $transcriptStarted = $false
+          Start-Transcript -Path $transcriptPath -Force
+          $transcriptStarted = $true
 
-          foreach ($mod in Get-ChildItem modules/*.psm1) {
-              Import-Module $mod.FullName -Force
-          }
+          try {
+              $profile = '${{ github.event.inputs.profile }}'
 
-          if ([string]::IsNullOrWhiteSpace($profile)) {
-              # Auto-discover mode — tenant-agnostic, works against any Purview tenant
-              ./scripts/Invoke-SmokeTest.ps1 -Cloud commercial
+              foreach ($mod in Get-ChildItem modules/*.psm1) {
+                  Import-Module $mod.FullName -Force
+              }
+
+              if ([string]::IsNullOrWhiteSpace($profile)) {
+                  # Auto-discover mode — tenant-agnostic, works against any Purview tenant
+                  ./scripts/Invoke-SmokeTest.ps1 -Cloud commercial
+              }
+              else {
+                  ./scripts/Invoke-SmokeTest.ps1 -LabProfile $profile -Cloud commercial
+              }
           }
-          else {
-              ./scripts/Invoke-SmokeTest.ps1 -LabProfile $profile -Cloud commercial
+          finally {
+              if ($transcriptStarted) {
+                  Stop-Transcript | Out-Null
+              }
           }
 
       - name: Upload run summary
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: smoke-test-${{ github.run_id }}
           path: logs/
+          if-no-files-found: ignore
           retention-days: 30
