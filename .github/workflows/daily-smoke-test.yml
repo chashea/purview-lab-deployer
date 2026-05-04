@@ -5,6 +5,14 @@ on:
     - cron: '0 14 * * 1-5'  # 2 PM UTC (10 AM ET) weekdays
   workflow_dispatch:
     inputs:
+      cloud:
+        description: 'Cloud environment to smoke test (gcc requires the `gcc` GitHub environment + OIDC federated credential to be configured)'
+        required: false
+        default: 'commercial'
+        type: choice
+        options:
+          - commercial
+          - gcc
       profile:
         description: 'Lab profile to test (leave blank for auto-discover — works against any Purview tenant)'
         required: false
@@ -20,14 +28,16 @@ permissions:
   id-token: write
   contents: read
 
-env:
-  AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
-  AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
-
 jobs:
   smoke-test:
     runs-on: ubuntu-latest
-    environment: commercial
+    # Use the chosen environment on workflow_dispatch; cron runs always default to commercial.
+    environment: ${{ github.event.inputs.cloud || 'commercial' }}
+
+    env:
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      CLOUD: ${{ github.event.inputs.cloud || 'commercial' }}
 
     steps:
       - uses: actions/checkout@v6
@@ -45,6 +55,7 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           allow-no-subscriptions: true
+          environment: ${{ env.CLOUD == 'gcc' && 'AzureUSGovernment' || 'AzureCloud' }}
 
       - name: Run DLP smoke test
         shell: pwsh
@@ -58,17 +69,17 @@ jobs:
 
           try {
               $profile = '${{ github.event.inputs.profile }}'
+              $cloud   = $env:CLOUD
 
               foreach ($mod in Get-ChildItem modules/*.psm1) {
                   Import-Module $mod.FullName -Force
               }
 
               if ([string]::IsNullOrWhiteSpace($profile)) {
-                  # Auto-discover mode — tenant-agnostic, works against any Purview tenant
-                  ./scripts/Invoke-SmokeTest.ps1 -Cloud commercial
+                  ./scripts/Invoke-SmokeTest.ps1 -Cloud $cloud
               }
               else {
-                  ./scripts/Invoke-SmokeTest.ps1 -LabProfile $profile -Cloud commercial
+                  ./scripts/Invoke-SmokeTest.ps1 -LabProfile $profile -Cloud $cloud
               }
           }
           finally {
@@ -81,7 +92,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: smoke-test-${{ github.run_id }}
+          name: smoke-test-${{ env.CLOUD }}-${{ github.run_id }}
           path: logs/
           if-no-files-found: ignore
           retention-days: 30
