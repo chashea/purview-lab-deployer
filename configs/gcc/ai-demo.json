@@ -624,7 +624,7 @@
       ]
     },
     "sentinelIntegration": {
-      "enabled": true,
+      "enabled": false,
       "subscriptionId": "",
       "resourceGroup": {
         "name": "PVAI-rg",

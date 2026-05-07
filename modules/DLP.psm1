@@ -236,7 +236,10 @@ function Get-LabDlpRuleOptionalParameters {
         [System.Management.Automation.CommandInfo]$CommandInfo,
 
         [Parameter(Mandatory)]
-        [string]$RuleName
+        [string]$RuleName,
+
+        [Parameter()]
+        [string]$Cloud = 'commercial'
     )
 
     $optionalParams = @{}
@@ -387,7 +390,16 @@ function Get-LabDlpRuleOptionalParameters {
                 elseif ($hasSits) {
                     # SIT-based Copilot prompt rule: block prompt processing.
                     # Portal UX: "Restrict Copilot from processing content > Processing prompts".
-                    $optionalParams[$restrictParam] = @(@{ setting = 'ExcludeContentProcessing'; value = 'PromptProcessing' })
+                    # GCC engine rejects 'PromptProcessing' (only accepts Warn|Block|Audit|None for
+                    # RestrictAccess.value). Fall back to 'Block' on GCC; this loses the
+                    # prompt-processing nuance but matches what the GCC engine accepts today.
+                    if ($Cloud -eq 'gcc') {
+                        Write-LabLog -Message "Rule '$RuleName' is a Copilot SIT-prompt rule on GCC; using RestrictAccess value 'Block' (GCC does not yet support 'PromptProcessing')." -Level Warning
+                        $optionalParams[$restrictParam] = @(@{ setting = 'ExcludeContentProcessing'; value = 'Block' })
+                    }
+                    else {
+                        $optionalParams[$restrictParam] = @(@{ setting = 'ExcludeContentProcessing'; value = 'PromptProcessing' })
+                    }
                 }
                 else {
                     # Fall back to Block for other Copilot rule shapes
@@ -760,6 +772,16 @@ function Deploy-DLP {
 
             $isCopilotRule = ($policy.PSObject.Properties.Name -contains 'locations') -and (@($policy.locations) -contains 'CopilotExperiences')
 
+            # GCC capability gap: Copilot rules require RestrictAccess action with
+            # setting=ExcludeContentProcessing AND value=PromptProcessing. GCC engine rejects
+            # 'PromptProcessing' but also rejects any other value for that activity on M365Copilot
+            # location ("Only RestrictAccess action for activity 'ExcludeContentProcessing' is
+            # supported..."). Effectively unsupported on GCC today — skip all Copilot rules with a warning.
+            if (([string]$Config.cloud -eq 'gcc') -and $isCopilotRule) {
+                Write-LabLog -Message "Skipping rule '$ruleName' on GCC: Copilot DLP rules are not yet supported (GCC engine rejects all RestrictAccess values for M365Copilot location)." -Level Warning
+                continue
+            }
+
             if ($existingRule) {
                 Write-LabLog -Message "DLP rule already exists: $ruleName" -Level Info
                 # Copilot (M365Copilot) rules: cannot Set-update — engine rejects param combinations
@@ -770,7 +792,7 @@ function Deploy-DLP {
                     continue
                 }
                 $ruleUpdateParams = if ($setRuleCommand) {
-                    Get-LabDlpRuleOptionalParameters -Policy $policy -Rule $rule -CommandInfo $setRuleCommand -RuleName $ruleName
+                    Get-LabDlpRuleOptionalParameters -Policy $policy -Rule $rule -CommandInfo $setRuleCommand -RuleName $ruleName -Cloud ([string]$Config.cloud)
                 }
                 else {
                     @{}
@@ -820,7 +842,7 @@ function Deploy-DLP {
                     }
                 }
 
-                $optionalRuleParams = Get-LabDlpRuleOptionalParameters -Policy $policy -Rule $rule -CommandInfo $newRuleCommand -RuleName $ruleName
+                $optionalRuleParams = Get-LabDlpRuleOptionalParameters -Policy $policy -Rule $rule -CommandInfo $newRuleCommand -RuleName $ruleName -Cloud ([string]$Config.cloud)
 
                 # Split optional params into essential vs enforcement-decoration buckets.
                 # Essential = the mandatory-predicate plus, for Copilot, the RestrictAccess
@@ -875,7 +897,7 @@ function Deploy-DLP {
 
                 if ($createdWithBaseline -and $setRuleCommand -and $enforcementParams.Count -gt 0 -and $PSCmdlet.ShouldProcess($ruleName, 'Apply enforcement settings via Set-DlpComplianceRule')) {
                     $setEnforcementParams = @{}
-                    $setOptionalParams = Get-LabDlpRuleOptionalParameters -Policy $policy -Rule $rule -CommandInfo $setRuleCommand -RuleName $ruleName
+                    $setOptionalParams = Get-LabDlpRuleOptionalParameters -Policy $policy -Rule $rule -CommandInfo $setRuleCommand -RuleName $ruleName -Cloud ([string]$Config.cloud)
                     foreach ($entry in $setOptionalParams.GetEnumerator()) {
                         if ($predicateParamNames -notcontains $entry.Key) {
                             $setEnforcementParams[$entry.Key] = $entry.Value
